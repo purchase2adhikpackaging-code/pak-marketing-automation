@@ -98,19 +98,13 @@ Initial source types are exactly:
 
 A knowledge record has a monotonically increasing integer `revision`.
 
-Changing any grounding-relevant field increments the revision:
+Every successful UPDATE increments `revision` by exactly one, including lifecycle-only changes. This gives the repository one deterministic compare-and-set rule for title/content/provenance edits and status transitions alike.
 
-- title;
-- content;
-- source type;
-- source label;
-- source reference.
-
-Lifecycle-only transitions may also increment revision for consistency; the implementation must use one deterministic rule and tests must enforce it.
+Updates must compare against the caller's expected revision. An older revision may not overwrite a newer edit.
 
 Knowledge records are not silently hard-deleted by ordinary editors. Archiving is the normal retirement mechanism.
 
-OWNER and ADMIN may perform destructive delete if implemented, but deletion must not destroy the historical generation snapshot described below.
+OWNER and ADMIN may perform destructive delete if exposed, but deletion must not destroy the historical generation snapshot described below.
 
 ## 6. Generation-Time Provenance Snapshot
 
@@ -134,7 +128,7 @@ The foreign key to `knowledge_record_id` uses `ON DELETE SET NULL` so provenance
 
 Snapshot rows are created server-side only after selected records are revalidated as belonging to the same organization and currently `ACTIVE`.
 
-A unique constraint must prevent duplicate snapshots of the same selected knowledge record for one content item.
+A unique constraint on `(content_item_id, knowledge_record_id)` prevents duplicate snapshots while the source record exists. `knowledge_record_id` may become null only through the foreign-key delete behavior; historical snapshot rows are never merged or rewritten afterward.
 
 The snapshot is the traceability record. Future edits to a knowledge record must not mutate old content provenance.
 
@@ -153,9 +147,11 @@ Cross-organization record selection must fail server-side even if the browser su
 
 ## 8. Authorization
 
-All authenticated organization members may read `ACTIVE` knowledge records for selection.
+Knowledge visibility is explicit:
 
-For Knowledge Base management views, same-organization members may read records according to product visibility rules; the initial implementation may expose DRAFT/ARCHIVED records only to roles permitted to manage knowledge.
+- OWNER, ADMIN, and EDITOR may read same-organization records in any lifecycle state;
+- REVIEWER and ANALYST may read same-organization `ACTIVE` records only;
+- all roles may select only `ACTIVE` records for grounding.
 
 Mutation permissions:
 
@@ -169,9 +165,9 @@ The server action layer must authorize role and organization before mutations.
 
 Database RLS must independently enforce equivalent tenant/role boundaries.
 
-The RBAC module should gain explicit knowledge permissions rather than hiding Knowledge Base authorization behind an unrelated permission.
+The RBAC module gains explicit knowledge permissions rather than hiding Knowledge Base authorization behind an unrelated permission.
 
-Recommended permissions:
+Permissions:
 
 - `knowledge:view`
 - `knowledge:manage`
@@ -184,6 +180,8 @@ Role mapping:
 - EDITOR: view + manage;
 - REVIEWER: view;
 - ANALYST: view.
+
+`knowledge:view` grants access to the Knowledge Base feature surface; lifecycle visibility remains further constrained by RLS/query rules above.
 
 ## 9. Stable Repository Boundary
 
@@ -198,7 +196,7 @@ export interface KnowledgeRepository {
   getByIds(organizationId: string, ids: string[]): Promise<KnowledgeRecord[]>;
   create(input: CreateKnowledgeInput): Promise<KnowledgeRecord>;
   update(input: UpdateKnowledgeInput): Promise<KnowledgeRecord>;
-  archive(id: string, organizationId: string, actorUserId: string): Promise<KnowledgeRecord>;
+  archive(id: string, organizationId: string, expectedRevision: number, actorUserId: string): Promise<KnowledgeRecord>;
   delete(id: string, organizationId: string): Promise<void>;
 }
 ```
@@ -228,7 +226,7 @@ Constraints:
 - every selected record must be `ACTIVE`;
 - missing, archived, draft, or cross-org records cause a safe validation/domain error before provider generation.
 
-The server builds grounding context deterministically in the selected order using clear source separators.
+The server preserves the request's selected-ID order and builds grounding context deterministically using clear source separators.
 
 Example normalized structure:
 
@@ -240,7 +238,7 @@ Example normalized structure:
 <approved record content>
 ```
 
-The user's existing free-form `knowledgeContext` field remains temporarily supported as optional ad hoc context for backward compatibility. It is appended after approved selected knowledge and is clearly labeled `Additional user-provided context` in the provider grounding payload.
+The existing free-form `knowledgeContext` field remains temporarily supported as optional ad hoc context for backward compatibility. It is appended after approved selected knowledge and clearly labeled `Additional user-provided context` in the provider grounding payload.
 
 Selected Knowledge Base records are authoritative traceable sources; ad hoc context is not represented as a Knowledge Base record unless the user explicitly saves it there.
 
@@ -256,14 +254,17 @@ The generation flow becomes:
 4. resolve selected knowledge records server-side;
 5. reject any invalid selection before AI call;
 6. create/transition content item as today;
-7. generate grounded canonical source script;
-8. persist content result;
-9. persist generation-time knowledge snapshots linked to the content item;
-10. create/return canonical script artifact through the existing multilingual flow.
+7. call the text provider with deterministic grounded context;
+8. persist the generated content item result;
+9. persist generation-time knowledge snapshots linked to that content item;
+10. create/return the canonical script artifact through the existing multilingual flow;
+11. return success only after both content persistence and provenance persistence succeed.
 
-Snapshot persistence must be idempotent for a content item + knowledge source combination.
+Snapshot persistence is idempotent for a content item + knowledge source combination.
 
-If snapshot persistence fails after provider generation, the action must return a safe failure and must not falsely report fully traceable generation success. The implementation plan should choose an explicit recovery strategy rather than silently dropping provenance.
+If provider generation succeeds but snapshot persistence fails, the workflow must not return success. The content item must be transitioned to `FAILED` with normalized failure metadata indicating provenance persistence failure; no canonical artifact is returned from that attempt. The already-generated provider text may remain internally persisted for diagnostic/recovery purposes, but the failed item is not treated as a successfully traceable generation. A later retry creates or executes a fresh governed generation attempt rather than silently asserting provenance for the failed one.
+
+The implementation plan must test this failure path explicitly.
 
 ## 12. Knowledge Base UI
 
@@ -311,8 +312,10 @@ Expected safe errors include:
 - knowledge record unavailable;
 - record no longer ACTIVE;
 - organization mismatch;
+- revision conflict;
 - invalid request;
 - persistence failure;
+- provenance persistence failure;
 - provider generation failure.
 
 Raw Supabase errors, provider errors, URLs containing credentials, API keys, and database internals must not be returned to the browser.
@@ -321,9 +324,9 @@ Provider/API secrets remain server-only.
 
 ## 15. Concurrency
 
-Knowledge updates use compare-and-set semantics based on `revision` where practical.
+Knowledge updates use compare-and-set semantics on `revision`.
 
-An update submitted against an older revision must return a normalized conflict rather than overwrite a newer edit.
+Every update filters by `id`, `organization_id`, and `expectedRevision`. Success increments revision by one. If no row matches, return a normalized conflict instead of retrying blindly.
 
 Content generation uses the knowledge revision loaded by the server and stores that exact revision in the snapshot.
 
@@ -331,9 +334,13 @@ If a record changes after resolution but before snapshot persistence, the snapsh
 
 ## 16. RLS Policies
 
-`knowledge_records`:
+`knowledge_records` SELECT policy must enforce lifecycle visibility, not rely only on UI filtering:
 
-- SELECT: same-organization members; product query layer restricts selection to ACTIVE records;
+- OWNER/ADMIN/EDITOR may SELECT any same-organization record;
+- REVIEWER/ANALYST may SELECT same-organization `ACTIVE` records only.
+
+Mutation policies:
+
 - INSERT: OWNER/ADMIN/EDITOR;
 - UPDATE: OWNER/ADMIN/EDITOR;
 - DELETE: OWNER/ADMIN.
@@ -341,11 +348,11 @@ If a record changes after resolution but before snapshot persistence, the snapsh
 `content_item_knowledge_sources`:
 
 - SELECT: same-organization members;
-- INSERT: OWNER/ADMIN/EDITOR, with same-organization parent integrity;
-- UPDATE: no ordinary mutation path; snapshots are immutable;
-- DELETE: OWNER/ADMIN only if lifecycle cleanup requires it, otherwise no client delete policy.
+- INSERT: OWNER/ADMIN/EDITOR, with same-organization parent/source integrity;
+- UPDATE: no authenticated policy; snapshots are immutable;
+- DELETE: no ordinary authenticated policy in this slice.
 
-Snapshot immutability should be enforced by withholding UPDATE policy from authenticated users.
+Snapshot immutability is enforced by withholding UPDATE and DELETE policies from authenticated users. Administrative lifecycle cleanup, if ever required, is a future privileged/server-only concern.
 
 ## 17. Migration and Backward Compatibility
 
@@ -370,11 +377,13 @@ Cover:
 - unique/bounded selected IDs;
 - role permission mapping;
 - same-org record resolution;
-- rejection of DRAFT/ARCHIVED records;
+- rejection of DRAFT/ARCHIVED records for generation;
+- REVIEWER/ANALYST visibility limited to ACTIVE records;
 - cross-org/missing record rejection;
-- deterministic grounding composition;
+- deterministic request-order grounding composition;
 - revision conflict behavior;
 - immutable snapshot mapping;
+- provenance persistence failure transition;
 - normalized error handling;
 - no secret leakage.
 
@@ -384,7 +393,7 @@ Use injected persistence fakes for deterministic behavior and compare-and-set te
 
 ### Server-action tests
 
-Cover authentication, role authorization, request validation, tenant scoping, and safe errors.
+Cover authentication, role authorization, request validation, tenant scoping, lifecycle visibility, and safe errors.
 
 ### Component tests
 
@@ -400,7 +409,7 @@ A deterministic smoke path should prove the Knowledge Base page renders and Cont
 
 ### RLS harness
 
-Extend SQL assertions for table presence, policy roles, snapshot immutability, organization-integrity triggers/constraints, and critical unique constraints.
+Extend SQL assertions for table presence, lifecycle-aware SELECT policies, mutation roles, snapshot immutability, organization-integrity triggers/constraints, and critical unique constraints.
 
 As with the previous slice, CI structural checks do not constitute proof that migrations were applied to a live Supabase project.
 
@@ -413,6 +422,7 @@ As with the previous slice, CI structural checks do not constitute proof that mi
 - Client-supplied knowledge IDs are untrusted until server resolution.
 - The database is the final tenant boundary.
 - Snapshot provenance must not be rewritten when the source record changes later.
+- URL/document references are metadata only and are never fetched automatically in this slice.
 
 ## 20. Future Extension Boundary
 
@@ -438,13 +448,15 @@ The slice is complete when:
 
 1. PAK users can create and manage organization-scoped knowledge records according to role;
 2. only ACTIVE records are selectable for new script grounding;
-3. Content Studio resolves selected knowledge server-side;
-4. script generation uses deterministic approved knowledge context;
-5. the exact selected knowledge text/revision/provenance is snapshotted per content item;
-6. later knowledge edits do not rewrite historical generation provenance;
-7. cross-org record use is rejected at application and database boundaries;
-8. stale knowledge edits cannot silently overwrite newer revisions;
-9. existing multilingual Content Studio behavior remains functional;
-10. fake-provider CI uses zero OpenAI credits;
-11. full typecheck, lint, unit tests, build, and E2E pass;
-12. live Supabase migration application is not claimed unless separately executed and verified.
+3. DRAFT/ARCHIVED visibility is restricted to OWNER/ADMIN/EDITOR at the database boundary;
+4. Content Studio resolves selected knowledge server-side;
+5. script generation uses deterministic approved knowledge context in selected order;
+6. the exact selected knowledge text/revision/provenance is snapshotted per content item;
+7. later knowledge edits do not rewrite historical generation provenance;
+8. cross-org record use is rejected at application and database boundaries;
+9. stale knowledge edits cannot silently overwrite newer revisions;
+10. provenance persistence failure cannot be reported as generation success;
+11. existing multilingual Content Studio behavior remains functional;
+12. fake-provider CI uses zero OpenAI credits;
+13. full typecheck, lint, unit tests, build, and E2E pass;
+14. live Supabase migration application is not claimed unless separately executed and verified.
