@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       AI_TEXT_PROVIDER: fake
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-placeholder
     steps:
       - name: Checkout
         uses: actions/checkout@v4
