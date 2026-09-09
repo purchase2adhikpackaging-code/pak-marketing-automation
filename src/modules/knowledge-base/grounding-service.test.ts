@@ -43,7 +43,7 @@ describe("resolveKnowledgeGrounding", () => {
       { getByIds: async () => [second, first] },
     );
 
-    expect(result.sources.map((source) => source.record.id)).toEqual([firstId, secondId]);
+    expect(result.sources.map((source: { record: KnowledgeRecord }) => source.record.id)).toEqual([firstId, secondId]);
     expect(result.knowledgeContext).toBe(
       "[Knowledge Source 1: Safety standard]\nUse approved railway safety procedures.\n\n" +
         "[Knowledge Source 2: Workshop capabilities]\nPAK operates practical workshop training.",
