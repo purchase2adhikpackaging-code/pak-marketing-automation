@@ -9,6 +9,13 @@ begin;
 -- OWNER/ADMIN can read memberships in their own org.
 -- ordinary members cannot insert arbitrary membership records.
 
+-- Content Studio content_items assertions:
+-- a member can select content_items belonging to their organization.
+-- a member cannot select content_items belonging to another organization.
+-- OWNER, ADMIN, and EDITOR may insert/update content_items in their organization.
+-- REVIEWER and ANALYST may not insert/update content_items.
+-- only OWNER and ADMIN may delete content_items.
+
 -- Example claim setup:
 -- set local role authenticated;
 -- select set_config('request.jwt.claim.sub', '<user_a_uuid>', true);
