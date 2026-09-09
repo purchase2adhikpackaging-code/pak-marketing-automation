@@ -53,15 +53,15 @@ class FakeRepository implements ScriptArtifactRepository {
   }
   async ensureTarget(_organizationId: string, _contentItemId: string, language: "EN" | "PL" | "HI") {
     if (language !== this.target.language) {
-      this.target = artifact({
+      const next = artifact({
         id: "55555555-5555-4555-8555-555555555555",
         language,
         isSource: false,
         status: "PENDING",
-        scriptText: undefined,
         revision: 1,
-        sourceRevision: undefined,
-      } as Partial<ScriptArtifact>);
+      });
+      const { scriptText: _scriptText, sourceRevision: _sourceRevision, ...target } = next;
+      this.target = target;
     }
     return this.target;
   }
@@ -78,7 +78,7 @@ class FakeRepository implements ScriptArtifactRepository {
       status: "GENERATED",
       scriptText: input.scriptText,
       revision: input.expectedRevision + 1,
-      sourceRevision: input.sourceRevision,
+      ...(input.sourceRevision !== undefined ? { sourceRevision: input.sourceRevision } : {}),
       provider: input.provider,
       providerModel: input.providerModel,
     };
