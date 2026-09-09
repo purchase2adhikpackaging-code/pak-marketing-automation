@@ -12,6 +12,8 @@ const validServer = {
   SUPABASE_SERVICE_ROLE_KEY: "service-role",
   OPENAI_API_KEY: "openai-key",
   LTX_WORKER_SHARED_SECRET: "ltx-secret",
+  AI_TEXT_PROVIDER: "fake" as const,
+  OPENAI_TEXT_MODEL: "gpt-5-mini",
 };
 
 describe("environment schema", () => {
@@ -29,5 +31,15 @@ describe("environment schema", () => {
 
   it("parses complete server environment", () => {
     expect(parseServerEnv(validServer)).toEqual(validServer);
+  });
+
+  it("defaults the AI provider to fake", () => {
+    const { AI_TEXT_PROVIDER, OPENAI_TEXT_MODEL, ...withoutAiConfig } = validServer;
+    expect(parseServerEnv(withoutAiConfig).AI_TEXT_PROVIDER).toBe("fake");
+    expect(OPENAI_TEXT_MODEL).toBe("gpt-5-mini");
+  });
+
+  it("rejects unsupported AI providers", () => {
+    expect(() => parseServerEnv({ ...validServer, AI_TEXT_PROVIDER: "invalid" })).toThrow();
   });
 });
