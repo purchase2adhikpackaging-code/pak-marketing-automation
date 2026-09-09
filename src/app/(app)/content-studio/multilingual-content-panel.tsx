@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useTransition } from "react";
+import React, { useEffect, useMemo, useState, useTransition } from "react";
 
 import type { ScriptArtifact, ScriptArtifactStatus } from "@/modules/content-studio/artifacts/types";
 import { generateTranslationAction, regenerateSourceAction } from "./actions";
@@ -55,6 +55,10 @@ export function MultilingualContentPanel({
   const [error, setError] = useState<string | null>(null);
   const [pendingLanguage, setPendingLanguage] = useState<LanguageCode | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setArtifacts(initialArtifacts);
+  }, [initialArtifacts]);
 
   const byLanguage = useMemo(() => {
     const map = new Map<LanguageCode, ScriptArtifact>();
