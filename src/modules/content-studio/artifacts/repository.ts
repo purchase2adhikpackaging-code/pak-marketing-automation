@@ -21,6 +21,10 @@ export type CompleteArtifactGenerationInput = {
   sourceRevision?: number;
 };
 
+export type ArtifactPatch = Omit<Partial<ScriptArtifact>, "failureMetadata"> & {
+  failureMetadata?: Record<string, unknown> | null;
+};
+
 export interface ScriptArtifactRepository {
   listForContent(organizationId: string, contentItemId: string): Promise<ScriptArtifact[]>;
   getSource(organizationId: string, contentItemId: string): Promise<ScriptArtifact | null>;
@@ -52,7 +56,7 @@ export interface ArtifactPersistence {
     organizationId: string,
     expectedRevision: number,
     allowedStatuses: ScriptArtifactStatus[],
-    patch: Partial<ScriptArtifact>,
+    patch: ArtifactPatch,
   ): Promise<ScriptArtifact | null>;
   markStale(organizationId: string, contentItemId: string, newerSourceRevision: number): Promise<void>;
   loadLegacySource?(organizationId: string, contentItemId: string): Promise<LegacySource | null>;
@@ -146,7 +150,7 @@ export class ArtifactRepository implements ScriptArtifactRepository {
       STARTABLE_STATUSES,
       {
         status: "GENERATING",
-        failureMetadata: undefined,
+        failureMetadata: null,
         updatedAt: new Date().toISOString(),
       },
     );
@@ -170,7 +174,7 @@ export class ArtifactRepository implements ScriptArtifactRepository {
         providerModel: input.providerModel,
         ...(input.providerMetadata ? { providerMetadata: input.providerMetadata } : {}),
         ...(input.sourceRevision !== undefined ? { sourceRevision: input.sourceRevision } : {}),
-        failureMetadata: undefined,
+        failureMetadata: null,
         generatedAt: timestamp,
         updatedAt: timestamp,
       },
@@ -267,7 +271,7 @@ function asRow(value: unknown): ScriptArtifactRow {
   return value as ScriptArtifactRow;
 }
 
-function toDatabasePatch(patch: Partial<ScriptArtifact>): Record<string, unknown> {
+function toDatabasePatch(patch: ArtifactPatch): Record<string, unknown> {
   const db: Record<string, unknown> = {};
   if (patch.status !== undefined) db.status = patch.status;
   if (patch.scriptText !== undefined) db.script_text = patch.scriptText;
@@ -276,7 +280,7 @@ function toDatabasePatch(patch: Partial<ScriptArtifact>): Record<string, unknown
   if (patch.provider !== undefined) db.provider = patch.provider;
   if (patch.providerModel !== undefined) db.provider_model = patch.providerModel;
   if (patch.providerMetadata !== undefined) db.provider_metadata = patch.providerMetadata;
-  if (Object.prototype.hasOwnProperty.call(patch, "failureMetadata")) db.failure_metadata = patch.failureMetadata ?? null;
+  if (patch.failureMetadata !== undefined) db.failure_metadata = patch.failureMetadata;
   if (patch.generatedAt !== undefined) db.generated_at = patch.generatedAt;
   if (patch.updatedAt !== undefined) db.updated_at = patch.updatedAt;
   return db;
@@ -331,7 +335,7 @@ class SupabaseArtifactPersistence implements ArtifactPersistence {
     organizationId: string,
     expectedRevision: number,
     allowedStatuses: ScriptArtifactStatus[],
-    patch: Partial<ScriptArtifact>,
+    patch: ArtifactPatch,
   ): Promise<ScriptArtifact | null> {
     const supabase = await createServerSupabaseClient();
     const { data, error } = await supabase
