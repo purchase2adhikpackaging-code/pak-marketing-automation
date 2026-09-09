@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import type { AppRole } from "@/modules/auth/roles";
-import type { ScriptArtifact } from "@/modules/content-studio/artifacts/types";
+import type {
+  GenerateTranslationRequest,
+  RegenerateSourceRequest,
+  ScriptArtifact,
+} from "@/modules/content-studio/artifacts/types";
 import {
   executeGenerateTranslationAction,
   executeRegenerateSourceAction,
@@ -27,6 +31,11 @@ function artifact(): ScriptArtifact {
   };
 }
 
+function sourceArtifact(): ScriptArtifact {
+  const { sourceRevision: _sourceRevision, ...base } = artifact();
+  return { ...base, language: "EN", isSource: true };
+}
+
 function dependencies(options: {
   authenticated?: boolean;
   role?: AppRole | null;
@@ -42,17 +51,17 @@ function dependencies(options: {
     async getMembership() {
       return role ? { role } : null;
     },
-    async generateTranslation(request, actorUserId) {
+    async generateTranslation(request: GenerateTranslationRequest, actorUserId: string) {
       if (options.fail) throw new Error("provider raw secret sk-do-not-leak");
       expect(actorUserId).toBe("actor-user");
       expect(request).toEqual({ organizationId, contentItemId, targetLanguage: "PL" });
       return artifact();
     },
-    async regenerateSource(request, actorUserId) {
+    async regenerateSource(request: RegenerateSourceRequest, actorUserId: string) {
       if (options.fail) throw new Error("persistence raw secret sk-do-not-leak");
       expect(actorUserId).toBe("actor-user");
       expect(request).toEqual({ organizationId, contentItemId });
-      return { ...artifact(), language: "EN", isSource: true, sourceRevision: undefined } as ScriptArtifact;
+      return sourceArtifact();
     },
   };
 }
