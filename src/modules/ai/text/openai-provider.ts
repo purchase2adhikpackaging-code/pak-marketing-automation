@@ -26,14 +26,14 @@ export class OpenAITextGenerationProvider implements TextGenerationProvider {
   private readonly model: string;
 
   constructor(options: OpenAITextGenerationProviderOptions = {}) {
-    const env = getServerEnv();
-    this.model = options.model ?? env.OPENAI_TEXT_MODEL ?? "gpt-5.6-luna";
-
     if (options.transport) {
+      this.model = options.model ?? "gpt-5.6-luna";
       this.transport = options.transport;
       return;
     }
 
+    const env = getServerEnv();
+    this.model = options.model ?? env.OPENAI_TEXT_MODEL ?? "gpt-5.6-luna";
     const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
     this.transport = {
       create: async (input) => {
@@ -44,9 +44,8 @@ export class OpenAITextGenerationProvider implements TextGenerationProvider {
   }
 
   async validateConfiguration(): Promise<void> {
-    const env = getServerEnv();
-    if (!env.OPENAI_API_KEY) {
-      throw new AppError("PROVIDER_ERROR", "OpenAI text generation is not configured.");
+    if (this.transport) {
+      return;
     }
   }
 
