@@ -24,13 +24,14 @@ type Actor = { id: string };
 type Membership = { role: AppRole } | null;
 
 export type GenerateContentActionResult =
-  | { ok: true; item: ContentItem }
+  | { ok: true; item: ContentItem; artifact: ScriptArtifact }
   | { ok: false; error: string };
 
 export type GenerateContentActionDependencies = {
   getActor(): Promise<Actor | null>;
   getMembership(actorId: string, organizationId: string): Promise<Membership>;
   generate(request: ContentGenerationRequest, actorUserId: string): Promise<ContentItem>;
+  ensureSource(item: ContentItem, actorUserId: string): Promise<ScriptArtifact>;
 };
 
 export type ScriptArtifactActionResult =
@@ -65,7 +66,8 @@ export async function executeGenerateContentAction(
 
   try {
     const item = await dependencies.generate(parsed.data, actor.id);
-    return { ok: true, item };
+    const artifact = await dependencies.ensureSource(item, actor.id);
+    return { ok: true, item, artifact };
   } catch {
     return { ok: false, error: "Content generation is temporarily unavailable." };
   }
@@ -168,6 +170,13 @@ export async function generateContentAction(input: unknown): Promise<GenerateCon
         provider: createTextGenerationProvider(),
         actorUserId,
       });
+    },
+    async ensureSource(item, actorUserId) {
+      return new SupabaseScriptArtifactRepository().ensureSourceFromLegacy(
+        item.organizationId,
+        item.id,
+        actorUserId,
+      );
     },
   });
 }
