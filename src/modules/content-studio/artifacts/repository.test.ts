@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { AppError } from "@/lib/errors/app-error";
-import { ArtifactRepository, type ArtifactPersistence } from "./repository";
+import { ArtifactRepository, type ArtifactPatch, type ArtifactPersistence } from "./repository";
 import type { ScriptArtifact } from "./types";
 
 const now = "2026-09-09T00:00:00.000Z";
@@ -39,12 +39,27 @@ class MemoryPersistence implements ArtifactPersistence {
     return row;
   }
 
-  async compareAndSet(id: string, organizationId: string, expectedRevision: number, allowedStatuses: ScriptArtifact["status"][], patch: Partial<ScriptArtifact>) {
+  async compareAndSet(
+    id: string,
+    organizationId: string,
+    expectedRevision: number,
+    allowedStatuses: ScriptArtifact["status"][],
+    patch: ArtifactPatch,
+  ) {
     const index = this.rows.findIndex(
       (row) => row.id === id && row.organizationId === organizationId && row.revision === expectedRevision && allowedStatuses.includes(row.status),
     );
     if (index < 0) return null;
-    const updated = { ...this.rows[index], ...patch } as ScriptArtifact;
+
+    const current = this.rows[index];
+    const { failureMetadata, ...rest } = patch;
+    const updated: ScriptArtifact = {
+      ...current,
+      ...rest,
+      ...(failureMetadata === null ? {} : failureMetadata ? { failureMetadata } : current.failureMetadata ? { failureMetadata: current.failureMetadata } : {}),
+    };
+    if (failureMetadata === null) delete updated.failureMetadata;
+
     this.rows[index] = updated;
     return updated;
   }
@@ -127,7 +142,9 @@ describe("ArtifactRepository", () => {
   });
 
   it("marks only older generated translations stale", async () => {
-    const source = artifact({ id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", language: "EN", isSource: true, sourceRevision: undefined, revision: 3 });
+    const sourceBase = artifact({ id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", language: "EN", isSource: true, revision: 3 });
+    const { sourceRevision: _ignored, ...sourceWithoutRevision } = sourceBase;
+    const source: ScriptArtifact = sourceWithoutRevision;
     const oldPl = artifact({ sourceRevision: 2 });
     const currentHi = artifact({ id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", language: "HI", sourceRevision: 3 });
     const persistence = new MemoryPersistence([source, oldPl, currentHi]);
