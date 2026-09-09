@@ -10,6 +10,8 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    env:
+      AI_TEXT_PROVIDER: fake
     steps:
       - name: Checkout
         uses: actions/checkout@v4
