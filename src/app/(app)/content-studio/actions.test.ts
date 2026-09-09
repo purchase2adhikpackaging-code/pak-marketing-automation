@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import type { AppRole } from "@/modules/auth/roles";
 import type { ScriptArtifact } from "@/modules/content-studio/artifacts/types";
 import type { ContentItem } from "@/modules/content-studio/types";
 import { executeGenerateContentAction } from "./actions";
@@ -33,19 +34,26 @@ const sourceArtifact: ScriptArtifact = {
   language: "EN",
   isSource: true,
   status: "GENERATED",
-  scriptText: generatedItem.generatedScript,
+  scriptText: "Generated script",
   revision: 1,
-  provider: generatedItem.provider,
-  providerModel: generatedItem.providerModel,
-  createdBy: generatedItem.createdBy,
+  provider: "fake",
+  providerModel: "deterministic-v1",
+  createdBy: "33333333-3333-4333-8333-333333333333",
   createdAt: generatedItem.createdAt,
   updatedAt: generatedItem.updatedAt,
 };
 
-function baseDependencies() {
+type TestDependencies = {
+  getActor(): Promise<{ id: string } | null>;
+  getMembership(): Promise<{ role: AppRole } | null>;
+  generate: ReturnType<typeof vi.fn>;
+  ensureSource: ReturnType<typeof vi.fn>;
+};
+
+function baseDependencies(): TestDependencies {
   return {
     getActor: async () => ({ id: generatedItem.createdBy! }),
-    getMembership: async () => ({ role: "EDITOR" as const }),
+    getMembership: async () => ({ role: "EDITOR" }),
     generate: vi.fn().mockResolvedValue(generatedItem),
     ensureSource: vi.fn().mockResolvedValue(sourceArtifact),
   };
@@ -54,7 +62,7 @@ function baseDependencies() {
 describe("executeGenerateContentAction", () => {
   it("returns a safe authentication error when unauthenticated", async () => {
     const dependencies = baseDependencies();
-    dependencies.getActor = async () => null as never;
+    dependencies.getActor = async () => null;
 
     const result = await executeGenerateContentAction(request, dependencies);
 
@@ -64,7 +72,7 @@ describe("executeGenerateContentAction", () => {
 
   it("returns a safe permission error for a missing or unauthorized membership", async () => {
     const dependencies = baseDependencies();
-    dependencies.getMembership = async () => ({ role: "REVIEWER" as const });
+    dependencies.getMembership = async () => ({ role: "REVIEWER" });
 
     const result = await executeGenerateContentAction(request, dependencies);
 
