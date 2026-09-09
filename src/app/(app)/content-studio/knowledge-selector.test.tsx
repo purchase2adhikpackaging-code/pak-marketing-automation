@@ -10,7 +10,7 @@ function knowledge(index: number): SelectableKnowledgeRecord {
     id: `${String(index).padStart(8, "0")}-1111-4111-8111-111111111111`,
     title: `Approved knowledge ${index}`,
     sourceType: index % 2 === 0 ? "DOCUMENT" : "MANUAL",
-    sourceLabel: index % 2 === 0 ? `Manual ${index}` : undefined,
+    ...(index % 2 === 0 ? { sourceLabel: `Manual ${index}` } : {}),
     revision: index,
   };
 }
