@@ -11,8 +11,8 @@ export type KnowledgeSnapshotInput = {
   titleSnapshot: string;
   contentSnapshot: string;
   sourceTypeSnapshot: KnowledgeSourceType;
-  sourceLabelSnapshot?: string;
-  sourceReferenceSnapshot?: string;
+  sourceLabelSnapshot?: string | undefined;
+  sourceReferenceSnapshot?: string | undefined;
 };
 
 export interface KnowledgeSnapshotPersistence {
