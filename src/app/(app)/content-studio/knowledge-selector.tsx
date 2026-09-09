@@ -1,5 +1,7 @@
 "use client";
 
+import React from "react";
+
 import type { KnowledgeSourceType } from "@/modules/knowledge-base/types";
 
 export type SelectableKnowledgeRecord = {
