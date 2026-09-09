@@ -5,7 +5,8 @@ test("Content Studio renders canonical generation controls without requiring a l
 
   await expect(page.getByRole("heading", { name: "Content Studio" })).toBeVisible();
   await expect(page.getByLabel("Topic")).toBeVisible();
-  await expect(page.getByLabel("Knowledge context")).toBeVisible();
+  await expect(page.getByText("Approved Knowledge Base sources")).toBeVisible();
+  await expect(page.getByLabel("Additional context")).toBeVisible();
   await expect(page.getByLabel("Canonical source language")).toBeVisible();
   await expect(page.getByRole("button", { name: /generate source script/i })).toBeVisible();
 
