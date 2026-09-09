@@ -9,7 +9,7 @@ export type AppErrorCode =
 
 export class AppError extends Error {
   readonly code: AppErrorCode;
-  readonly details?: Record<string, unknown>;
+  readonly details: Record<string, unknown> | undefined;
 
   constructor(code: AppErrorCode, message: string, details?: Record<string, unknown>) {
     super(message);
