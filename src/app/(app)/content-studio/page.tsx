@@ -50,7 +50,7 @@ export default async function ContentStudioPage() {
     const knowledgeRepository = new SupabaseKnowledgeRepository();
     organizations = await Promise.all(
       eligibleOrganizations.map(async (organization) => {
-        const records = await knowledgeRepository.listActive(organization.id);
+        const records = await knowledgeRepository.listSelectable(organization.id);
         return {
           ...organization,
           knowledgeRecords: records.map((record) => ({
