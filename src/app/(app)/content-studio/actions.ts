@@ -17,6 +17,12 @@ import { SupabaseContentItemRepository } from "@/modules/content-studio/reposito
 import { contentGenerationRequestSchema, type ContentGenerationRequest } from "@/modules/content-studio/schema";
 import { generateContentScript } from "@/modules/content-studio/service";
 import type { ContentItem } from "@/modules/content-studio/types";
+import { resolveKnowledgeGrounding, type ResolvedGrounding } from "@/modules/knowledge-base/grounding-service";
+import { SupabaseKnowledgeRepository } from "@/modules/knowledge-base/repository";
+import {
+  KnowledgeSnapshotStore,
+  SupabaseKnowledgeSnapshotPersistence,
+} from "@/modules/knowledge-base/snapshot-repository";
 
 const GENERATION_ROLES: AppRole[] = ["OWNER", "ADMIN", "EDITOR"];
 
@@ -30,7 +36,17 @@ export type GenerateContentActionResult =
 export type GenerateContentActionDependencies = {
   getActor(): Promise<Actor | null>;
   getMembership(actorId: string, organizationId: string): Promise<Membership>;
+  resolveGrounding(input: {
+    organizationId: string;
+    knowledgeRecordIds?: string[];
+    additionalContext?: string;
+  }): Promise<ResolvedGrounding>;
   generate(request: ContentGenerationRequest, actorUserId: string): Promise<ContentItem>;
+  persistSnapshots(
+    contentItemId: string,
+    organizationId: string,
+    grounding: ResolvedGrounding,
+  ): Promise<void>;
   ensureSource(item: ContentItem, actorUserId: string): Promise<ScriptArtifact>;
 };
 
@@ -65,7 +81,27 @@ export async function executeGenerateContentAction(
   }
 
   try {
-    const item = await dependencies.generate(parsed.data, actor.id);
+    const grounding = await dependencies.resolveGrounding({
+      organizationId: parsed.data.organizationId,
+      ...(parsed.data.knowledgeRecordIds !== undefined
+        ? { knowledgeRecordIds: parsed.data.knowledgeRecordIds }
+        : {}),
+      ...(parsed.data.knowledgeContext !== undefined
+        ? { additionalContext: parsed.data.knowledgeContext }
+        : {}),
+    });
+
+    const generationRequest: ContentGenerationRequest = {
+      organizationId: parsed.data.organizationId,
+      topic: parsed.data.topic,
+      ...(grounding.knowledgeContext !== undefined
+        ? { knowledgeContext: grounding.knowledgeContext }
+        : {}),
+      language: parsed.data.language,
+    };
+
+    const item = await dependencies.generate(generationRequest, actor.id);
+    await dependencies.persistSnapshots(item.id, parsed.data.organizationId, grounding);
     const artifact = await dependencies.ensureSource(item, actor.id);
     return { ok: true, item, artifact };
   } catch {
@@ -164,12 +200,36 @@ export async function generateContentAction(input: unknown): Promise<GenerateCon
   return executeGenerateContentAction(input, {
     getActor,
     getMembership,
+    async resolveGrounding(input) {
+      return resolveKnowledgeGrounding(input, new SupabaseKnowledgeRepository());
+    },
     async generate(request, actorUserId) {
       return generateContentScript(request, {
         repository: new SupabaseContentItemRepository(),
         provider: createTextGenerationProvider(),
         actorUserId,
       });
+    },
+    async persistSnapshots(contentItemId, organizationId, grounding) {
+      const supabase = await createServerSupabaseClient();
+      const store = new KnowledgeSnapshotStore(new SupabaseKnowledgeSnapshotPersistence(supabase));
+      await store.insertMany(
+        grounding.sources.map(({ snapshot }) => ({
+          organizationId,
+          contentItemId,
+          knowledgeRecordId: snapshot.knowledgeRecordId,
+          knowledgeRevision: snapshot.knowledgeRevision,
+          titleSnapshot: snapshot.titleSnapshot,
+          contentSnapshot: snapshot.contentSnapshot,
+          sourceTypeSnapshot: snapshot.sourceTypeSnapshot,
+          ...(snapshot.sourceLabelSnapshot !== undefined
+            ? { sourceLabelSnapshot: snapshot.sourceLabelSnapshot }
+            : {}),
+          ...(snapshot.sourceReferenceSnapshot !== undefined
+            ? { sourceReferenceSnapshot: snapshot.sourceReferenceSnapshot }
+            : {}),
+        })),
+      );
     },
     async ensureSource(item, actorUserId) {
       return new SupabaseScriptArtifactRepository().ensureSourceFromLegacy(
