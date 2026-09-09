@@ -12,6 +12,8 @@ export function getServerEnv(): ServerEnv {
       SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
       OPENAI_API_KEY: process.env.OPENAI_API_KEY,
       LTX_WORKER_SHARED_SECRET: process.env.LTX_WORKER_SHARED_SECRET,
+      AI_TEXT_PROVIDER: process.env.AI_TEXT_PROVIDER,
+      OPENAI_TEXT_MODEL: process.env.OPENAI_TEXT_MODEL,
     });
   }
 
