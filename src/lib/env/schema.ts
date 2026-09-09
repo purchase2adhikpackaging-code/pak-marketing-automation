@@ -9,6 +9,8 @@ const serverEnvSchema = publicEnvSchema.extend({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   OPENAI_API_KEY: z.string().min(1),
   LTX_WORKER_SHARED_SECRET: z.string().min(1),
+  AI_TEXT_PROVIDER: z.enum(["fake", "openai"]).default("fake"),
+  OPENAI_TEXT_MODEL: z.string().trim().min(1).optional(),
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
