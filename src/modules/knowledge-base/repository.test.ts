@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { AppError } from "@/lib/errors/app-error";
 import {
   KnowledgeBaseRepository,
   type KnowledgePersistence,
@@ -162,7 +161,7 @@ describe("KnowledgeBaseRepository", () => {
         sourceType: existing.sourceType,
         actorUserId: "77777777-7777-4777-8777-777777777777",
       }),
-    ).rejects.toMatchObject<AppError>({ code: "CONFLICT" });
+    ).rejects.toMatchObject({ code: "CONFLICT" });
   });
 
   it("archives with the same compare-and-set revision rule", async () => {
