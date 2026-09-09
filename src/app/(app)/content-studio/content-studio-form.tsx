@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import React, { useState, useTransition } from "react";
 
 import type { ScriptArtifact } from "@/modules/content-studio/artifacts/types";
 import { generateContentAction } from "./actions";
