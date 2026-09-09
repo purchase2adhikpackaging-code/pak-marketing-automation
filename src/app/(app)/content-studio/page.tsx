@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { AppRole } from "@/modules/auth/roles";
 import { ContentStudioForm } from "./content-studio-form";
