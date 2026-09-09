@@ -72,8 +72,8 @@ describe("MultilingualContentPanel", () => {
     ]);
 
     expect(screen.getByText("Source changed — refresh translation")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Generate Polish translation" })).toHaveTextContent("Generate translation");
-    expect(screen.getByRole("button", { name: "Refresh Hindi translation" })).toHaveTextContent("Refresh translation");
+    expect(screen.getByRole("button", { name: "Generate Polish translation" }).textContent).toContain("Generate translation");
+    expect(screen.getByRole("button", { name: "Refresh Hindi translation" }).textContent).toContain("Refresh translation");
 
     rerender(
       <MultilingualContentPanel
@@ -101,8 +101,8 @@ describe("MultilingualContentPanel", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: "Retry Polish translation" })).toHaveTextContent("Retry translation");
-    expect(screen.getByRole("button", { name: "Hindi translation generating" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Retry Polish translation" }).textContent).toContain("Retry translation");
+    expect((screen.getByRole("button", { name: "Hindi translation generating" }) as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByText("FAILED")).toBeTruthy();
     expect(screen.getByText("GENERATING")).toBeTruthy();
   });
@@ -110,7 +110,7 @@ describe("MultilingualContentPanel", () => {
   it("offers regeneration only on the source card and never translation to the source language", () => {
     renderPanel([artifact()]);
 
-    expect(screen.getByRole("button", { name: "Regenerate English source" })).toHaveTextContent("Regenerate source");
+    expect(screen.getByRole("button", { name: "Regenerate English source" }).textContent).toContain("Regenerate source");
     expect(screen.queryByRole("button", { name: "Generate English translation" })).toBeNull();
   });
 
