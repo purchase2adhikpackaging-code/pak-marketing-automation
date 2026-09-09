@@ -51,14 +51,14 @@ class MemoryPersistence implements ArtifactPersistence {
     );
     if (index < 0) return null;
 
-    const current = this.rows[index];
+    const current = this.rows[index]!;
     const { failureMetadata, ...rest } = patch;
-    const updated: ScriptArtifact = {
-      ...current,
-      ...rest,
-      ...(failureMetadata === null ? {} : failureMetadata ? { failureMetadata } : current.failureMetadata ? { failureMetadata: current.failureMetadata } : {}),
-    };
-    if (failureMetadata === null) delete updated.failureMetadata;
+    const updated = { ...current, ...rest } as ScriptArtifact;
+    if (failureMetadata === null) {
+      delete updated.failureMetadata;
+    } else if (failureMetadata) {
+      updated.failureMetadata = failureMetadata;
+    }
 
     this.rows[index] = updated;
     return updated;
