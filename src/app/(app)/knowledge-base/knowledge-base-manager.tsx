@@ -40,11 +40,7 @@ function formatUpdated(value: string): string {
   return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString("en-GB");
 }
 
-export function KnowledgeBaseManager({
-  organizations,
-}: {
-  organizations: KnowledgeOrganizationWorkspace[];
-}) {
+export function KnowledgeBaseManager({ organizations }: { organizations: KnowledgeOrganizationWorkspace[] }) {
   const [selectedOrganizationId, setSelectedOrganizationId] = useState(organizations[0]?.id ?? "");
   const [recordsByOrganization, setRecordsByOrganization] = useState<Record<string, KnowledgeRecord[]>>(
     Object.fromEntries(organizations.map((organization) => [organization.id, organization.records])),
@@ -55,12 +51,12 @@ export function KnowledgeBaseManager({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const organization = useMemo(
+  const selectedOrganization = useMemo(
     () => organizations.find((option) => option.id === selectedOrganizationId) ?? organizations[0],
     [organizations, selectedOrganizationId],
   );
 
-  if (!organization) {
+  if (!selectedOrganization) {
     return (
       <div className="mt-8 rounded-2xl border border-amber-900/50 bg-amber-950/20 p-5 text-sm text-amber-100">
         No Knowledge Base organization is available for this account.
@@ -68,6 +64,7 @@ export function KnowledgeBaseManager({
     );
   }
 
+  const organization: KnowledgeOrganizationWorkspace = selectedOrganization;
   const canManage = can(organization.role, "knowledge:manage");
   const canDelete = can(organization.role, "knowledge:delete");
   const sourceRecords = recordsByOrganization[organization.id] ?? [];
@@ -91,16 +88,12 @@ export function KnowledgeBaseManager({
         content: createForm.content,
         sourceType: createForm.sourceType,
         ...(createForm.sourceLabel.trim() ? { sourceLabel: createForm.sourceLabel.trim() } : {}),
-        ...(createForm.sourceReference.trim()
-          ? { sourceReference: createForm.sourceReference.trim() }
-          : {}),
+        ...(createForm.sourceReference.trim() ? { sourceReference: createForm.sourceReference.trim() } : {}),
       });
-
       if (!result.ok) {
         setError(result.error);
         return;
       }
-
       setRecordsByOrganization((current) => ({
         ...current,
         [organization.id]: [result.record, ...(current[organization.id] ?? [])],
@@ -133,16 +126,12 @@ export function KnowledgeBaseManager({
         status: record.status,
         sourceType: editForm.sourceType,
         ...(editForm.sourceLabel.trim() ? { sourceLabel: editForm.sourceLabel.trim() } : {}),
-        ...(editForm.sourceReference.trim()
-          ? { sourceReference: editForm.sourceReference.trim() }
-          : {}),
+        ...(editForm.sourceReference.trim() ? { sourceReference: editForm.sourceReference.trim() } : {}),
       });
-
       if (!result.ok) {
         setError(result.error);
         return;
       }
-
       replaceRecord(result.record);
       setEditingId(null);
     });
@@ -167,10 +156,7 @@ export function KnowledgeBaseManager({
   function removeRecord(record: KnowledgeRecord) {
     setError(null);
     startTransition(async () => {
-      const result = await deleteKnowledgeAction({
-        id: record.id,
-        organizationId: record.organizationId,
-      });
+      const result = await deleteKnowledgeAction({ id: record.id, organizationId: record.organizationId });
       if (!result.ok) {
         setError(result.error);
         return;
@@ -200,9 +186,7 @@ export function KnowledgeBaseManager({
             disabled={isPending}
           >
             {organizations.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
+              <option key={option.id} value={option.id}>{option.label}</option>
             ))}
           </select>
         </label>
@@ -217,207 +201,42 @@ export function KnowledgeBaseManager({
         </div>
       ) : null}
 
-      {error ? (
-        <div role="alert" className="rounded-xl border border-red-900/60 bg-red-950/30 p-4 text-sm text-red-200">
-          {error}
-        </div>
-      ) : null}
+      {error ? <div role="alert" className="rounded-xl border border-red-900/60 bg-red-950/30 p-4 text-sm text-red-200">{error}</div> : null}
 
       {canManage ? (
         <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-6">
           <h3 className="text-lg font-semibold text-white">Add knowledge record</h3>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
-            <label className="space-y-2 md:col-span-2">
-              <span className="text-sm font-medium text-slate-200">Title</span>
-              <input
-                aria-label="Title"
-                value={createForm.title}
-                onChange={(event) => setCreateForm((current) => ({ ...current, title: event.target.value }))}
-                className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white"
-                disabled={isPending}
-              />
-            </label>
-            <label className="space-y-2 md:col-span-2">
-              <span className="text-sm font-medium text-slate-200">Content</span>
-              <textarea
-                aria-label="Content"
-                value={createForm.content}
-                onChange={(event) => setCreateForm((current) => ({ ...current, content: event.target.value }))}
-                rows={7}
-                className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white"
-                disabled={isPending}
-              />
-            </label>
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-200">Source type</span>
-              <select
-                aria-label="Source type"
-                value={createForm.sourceType}
-                onChange={(event) =>
-                  setCreateForm((current) => ({
-                    ...current,
-                    sourceType: event.target.value as KnowledgeSourceType,
-                  }))
-                }
-                className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white"
-                disabled={isPending}
-              >
-                <option value="MANUAL">Manual</option>
-                <option value="DOCUMENT">Document</option>
-                <option value="URL">URL</option>
-              </select>
-            </label>
-            <label className="space-y-2">
-              <span className="text-sm font-medium text-slate-200">Source label</span>
-              <input
-                aria-label="Source label"
-                value={createForm.sourceLabel}
-                onChange={(event) =>
-                  setCreateForm((current) => ({ ...current, sourceLabel: event.target.value }))
-                }
-                className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white"
-                disabled={isPending}
-              />
-            </label>
-            <label className="space-y-2 md:col-span-2">
-              <span className="text-sm font-medium text-slate-200">Source reference</span>
-              <input
-                aria-label="Source reference"
-                value={createForm.sourceReference}
-                onChange={(event) =>
-                  setCreateForm((current) => ({ ...current, sourceReference: event.target.value }))
-                }
-                className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white"
-                disabled={isPending}
-              />
-            </label>
+            <label className="space-y-2 md:col-span-2"><span className="text-sm font-medium text-slate-200">Title</span><input aria-label="Title" value={createForm.title} onChange={(event) => setCreateForm((current) => ({ ...current, title: event.target.value }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" disabled={isPending} /></label>
+            <label className="space-y-2 md:col-span-2"><span className="text-sm font-medium text-slate-200">Content</span><textarea aria-label="Content" value={createForm.content} onChange={(event) => setCreateForm((current) => ({ ...current, content: event.target.value }))} rows={7} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" disabled={isPending} /></label>
+            <label className="space-y-2"><span className="text-sm font-medium text-slate-200">Source type</span><select aria-label="Source type" value={createForm.sourceType} onChange={(event) => setCreateForm((current) => ({ ...current, sourceType: event.target.value as KnowledgeSourceType }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" disabled={isPending}><option value="MANUAL">Manual</option><option value="DOCUMENT">Document</option><option value="URL">URL</option></select></label>
+            <label className="space-y-2"><span className="text-sm font-medium text-slate-200">Source label</span><input aria-label="Source label" value={createForm.sourceLabel} onChange={(event) => setCreateForm((current) => ({ ...current, sourceLabel: event.target.value }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" disabled={isPending} /></label>
+            <label className="space-y-2 md:col-span-2"><span className="text-sm font-medium text-slate-200">Source reference</span><input aria-label="Source reference" value={createForm.sourceReference} onChange={(event) => setCreateForm((current) => ({ ...current, sourceReference: event.target.value }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" disabled={isPending} /></label>
           </div>
-          <button
-            type="button"
-            onClick={createRecord}
-            disabled={isPending || createForm.title.trim().length < 3 || createForm.content.trim().length === 0}
-            className="mt-5 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-950 disabled:opacity-50"
-          >
-            Create draft
-          </button>
+          <button type="button" onClick={createRecord} disabled={isPending || createForm.title.trim().length < 3 || createForm.content.trim().length === 0} className="mt-5 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-950 disabled:opacity-50">Create draft</button>
         </section>
       ) : null}
 
       <section className="space-y-4">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h3 className="text-lg font-semibold text-white">Knowledge records</h3>
-            <p className="mt-1 text-sm text-slate-500">{visibleRecords.length} record{visibleRecords.length === 1 ? "" : "s"}</p>
-          </div>
-        </div>
-
-        {visibleRecords.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-800 p-6 text-sm text-slate-500">
-            No Knowledge Base records are available for this organization.
-          </div>
-        ) : null}
-
+        <div><h3 className="text-lg font-semibold text-white">Knowledge records</h3><p className="mt-1 text-sm text-slate-500">{visibleRecords.length} record{visibleRecords.length === 1 ? "" : "s"}</p></div>
+        {visibleRecords.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-800 p-6 text-sm text-slate-500">No Knowledge Base records are available for this organization.</div> : null}
         {visibleRecords.map((record) => {
           const editing = editingId === record.id;
           return (
             <article key={record.id} className="rounded-2xl border border-slate-800 bg-slate-950/60 p-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <h4 className="text-base font-semibold text-white">{record.title}</h4>
-                  <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400">
-                    <span>{record.status}</span>
-                    <span>Revision {record.revision}</span>
-                    <span>Updated {formatUpdated(record.updatedAt)}</span>
-                  </div>
-                </div>
-                {canManage ? (
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      aria-label={`Edit ${record.title}`}
-                      onClick={() => beginEdit(record)}
-                      disabled={isPending}
-                      className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200"
-                    >
-                      Edit
-                    </button>
-                    {record.status !== "ARCHIVED" ? (
-                      <button
-                        type="button"
-                        aria-label={`Archive ${record.title}`}
-                        onClick={() => archiveRecord(record)}
-                        disabled={isPending}
-                        className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200"
-                      >
-                        Archive
-                      </button>
-                    ) : null}
-                    {canDelete ? (
-                      <button
-                        type="button"
-                        aria-label={`Delete ${record.title}`}
-                        onClick={() => removeRecord(record)}
-                        disabled={isPending}
-                        className="rounded-lg border border-red-900/70 px-3 py-2 text-xs font-semibold text-red-200"
-                      >
-                        Delete
-                      </button>
-                    ) : null}
-                  </div>
-                ) : null}
+                <div><h4 className="text-base font-semibold text-white">{record.title}</h4><div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400"><span>{record.status}</span><span>Revision {record.revision}</span><span>Updated {formatUpdated(record.updatedAt)}</span></div></div>
+                {canManage ? <div className="flex flex-wrap gap-2">
+                  <button type="button" aria-label={`Edit ${record.title}`} onClick={() => beginEdit(record)} disabled={isPending} className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200">Edit</button>
+                  {record.status !== "ARCHIVED" ? <button type="button" aria-label={`Archive ${record.title}`} onClick={() => archiveRecord(record)} disabled={isPending} className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200">Archive</button> : null}
+                  {canDelete ? <button type="button" aria-label={`Delete ${record.title}`} onClick={() => removeRecord(record)} disabled={isPending} className="rounded-lg border border-red-900/70 px-3 py-2 text-xs font-semibold text-red-200">Delete</button> : null}
+                </div> : null}
               </div>
-
-              {editing ? (
-                <div className="mt-5 space-y-4 border-t border-slate-800 pt-5">
-                  <label className="block space-y-2">
-                    <span className="text-sm text-slate-300">Edit title</span>
-                    <input
-                      aria-label="Edit title"
-                      value={editForm.title}
-                      onChange={(event) => setEditForm((current) => ({ ...current, title: event.target.value }))}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white"
-                    />
-                  </label>
-                  <label className="block space-y-2">
-                    <span className="text-sm text-slate-300">Edit content</span>
-                    <textarea
-                      aria-label="Edit content"
-                      value={editForm.content}
-                      onChange={(event) => setEditForm((current) => ({ ...current, content: event.target.value }))}
-                      rows={6}
-                      className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white"
-                    />
-                  </label>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      aria-label={`Save ${record.title}`}
-                      onClick={() => saveEdit(record)}
-                      disabled={isPending}
-                      className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-950"
-                    >
-                      Save
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setEditingId(null)}
-                      disabled={isPending}
-                      className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="mt-5 space-y-3 text-sm leading-6 text-slate-300">
-                  <p className="whitespace-pre-wrap">{record.content}</p>
-                  <div className="text-xs text-slate-500">
-                    <span>{record.sourceType}</span>
-                    {record.sourceLabel ? <span className="ml-3">{record.sourceLabel}</span> : null}
-                    {record.sourceReference ? <span className="ml-3">{record.sourceReference}</span> : null}
-                  </div>
-                </div>
-              )}
+              {editing ? <div className="mt-5 space-y-4 border-t border-slate-800 pt-5">
+                <label className="block space-y-2"><span className="text-sm text-slate-300">Edit title</span><input aria-label="Edit title" value={editForm.title} onChange={(event) => setEditForm((current) => ({ ...current, title: event.target.value }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" /></label>
+                <label className="block space-y-2"><span className="text-sm text-slate-300">Edit content</span><textarea aria-label="Edit content" value={editForm.content} onChange={(event) => setEditForm((current) => ({ ...current, content: event.target.value }))} rows={6} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" /></label>
+                <div className="flex gap-2"><button type="button" aria-label={`Save ${record.title}`} onClick={() => saveEdit(record)} disabled={isPending} className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-950">Save</button><button type="button" onClick={() => setEditingId(null)} disabled={isPending} className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300">Cancel</button></div>
+              </div> : <div className="mt-5 space-y-3 text-sm leading-6 text-slate-300"><p className="whitespace-pre-wrap">{record.content}</p><div className="text-xs text-slate-500"><span>{record.sourceType}</span>{record.sourceLabel ? <span className="ml-3">{record.sourceLabel}</span> : null}{record.sourceReference ? <span className="ml-3">{record.sourceReference}</span> : null}</div></div>}
             </article>
           );
         })}
