@@ -6,23 +6,27 @@ import type { ContentItem } from "@/modules/content-studio/types";
 import type { ResolvedGrounding } from "@/modules/knowledge-base/grounding-service";
 import { executeGenerateContentAction } from "./actions";
 
+const organizationId = "11111111-1111-4111-8111-111111111111";
+const knowledgeRecordId = "55555555-5555-4555-8555-555555555555";
+const groundingContext =
+  "[Knowledge Source 1: Safety standard]\nApproved railway safety procedures.\n\n" +
+  "[Additional user-provided context]\nUse a concise tone for recruitment managers.";
+
 const request = {
-  organizationId: "11111111-1111-4111-8111-111111111111",
+  organizationId,
   topic: "Railway safety training",
   knowledgeContext: "Use a concise tone for recruitment managers.",
-  knowledgeRecordIds: ["55555555-5555-4555-8555-555555555555"],
+  knowledgeRecordIds: [knowledgeRecordId],
   language: "EN" as const,
 };
 
 const resolvedGrounding: ResolvedGrounding = {
-  knowledgeContext:
-    "[Knowledge Source 1: Safety standard]\nApproved railway safety procedures.\n\n" +
-    "[Additional user-provided context]\nUse a concise tone for recruitment managers.",
+  knowledgeContext: groundingContext,
   sources: [
     {
       record: {
-        id: request.knowledgeRecordIds[0],
-        organizationId: request.organizationId,
+        id: knowledgeRecordId,
+        organizationId,
         title: "Safety standard",
         content: "Approved railway safety procedures.",
         status: "ACTIVE",
@@ -34,7 +38,7 @@ const resolvedGrounding: ResolvedGrounding = {
         updatedAt: "2026-09-09T00:00:00.000Z",
       },
       snapshot: {
-        knowledgeRecordId: request.knowledgeRecordIds[0],
+        knowledgeRecordId,
         knowledgeRevision: 7,
         titleSnapshot: "Safety standard",
         contentSnapshot: "Approved railway safety procedures.",
@@ -48,9 +52,9 @@ const resolvedGrounding: ResolvedGrounding = {
 
 const generatedItem: ContentItem = {
   id: "22222222-2222-4222-8222-222222222222",
-  organizationId: request.organizationId,
+  organizationId,
   topic: request.topic,
-  knowledgeContext: resolvedGrounding.knowledgeContext,
+  knowledgeContext: groundingContext,
   language: request.language,
   status: "GENERATED",
   generatedScript: "Generated script",
@@ -126,21 +130,21 @@ describe("executeGenerateContentAction", () => {
     await executeGenerateContentAction(request, dependencies);
 
     expect(dependencies.resolveGrounding).toHaveBeenCalledWith({
-      organizationId: request.organizationId,
-      knowledgeRecordIds: request.knowledgeRecordIds,
+      organizationId,
+      knowledgeRecordIds: [knowledgeRecordId],
       additionalContext: request.knowledgeContext,
     });
     expect(dependencies.generate).toHaveBeenCalledWith(
       {
-        organizationId: request.organizationId,
+        organizationId,
         topic: request.topic,
-        knowledgeContext: resolvedGrounding.knowledgeContext,
+        knowledgeContext: groundingContext,
         language: request.language,
       },
       generatedItem.createdBy,
     );
-    expect(dependencies.resolveGrounding.mock.invocationCallOrder[0]).toBeLessThan(
-      dependencies.generate.mock.invocationCallOrder[0],
+    expect(dependencies.resolveGrounding.mock.invocationCallOrder[0]!).toBeLessThan(
+      dependencies.generate.mock.invocationCallOrder[0]!,
     );
   });
 
@@ -150,11 +154,11 @@ describe("executeGenerateContentAction", () => {
 
     expect(dependencies.persistSnapshots).toHaveBeenCalledWith(
       generatedItem.id,
-      request.organizationId,
+      organizationId,
       resolvedGrounding,
     );
-    expect(dependencies.persistSnapshots.mock.invocationCallOrder[0]).toBeLessThan(
-      dependencies.ensureSource.mock.invocationCallOrder[0],
+    expect(dependencies.persistSnapshots.mock.invocationCallOrder[0]!).toBeLessThan(
+      dependencies.ensureSource.mock.invocationCallOrder[0]!,
     );
     expect(dependencies.ensureSource).toHaveBeenCalledWith(generatedItem, generatedItem.createdBy);
     expect(result).toEqual({ ok: true, item: generatedItem, artifact: sourceArtifact });
@@ -175,7 +179,7 @@ describe("executeGenerateContentAction", () => {
   it("preserves free-form behavior when no knowledge records are selected", async () => {
     const dependencies = baseDependencies();
     const freeFormRequest = {
-      organizationId: request.organizationId,
+      organizationId,
       topic: request.topic,
       knowledgeContext: "Use workshop context supplied by the editor.",
       language: request.language,
@@ -190,7 +194,7 @@ describe("executeGenerateContentAction", () => {
     expect(dependencies.generate).toHaveBeenCalledWith(freeFormRequest, generatedItem.createdBy);
     expect(dependencies.persistSnapshots).toHaveBeenCalledWith(
       generatedItem.id,
-      request.organizationId,
+      organizationId,
       { knowledgeContext: freeFormRequest.knowledgeContext, sources: [] },
     );
   });
