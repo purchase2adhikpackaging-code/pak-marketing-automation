@@ -71,6 +71,10 @@ function mapContentItem(row: ContentItemRow): ContentItem {
   };
 }
 
+function asContentItemRow(data: unknown): ContentItemRow {
+  return data as ContentItemRow;
+}
+
 function persistenceError(operation: string): AppError {
   return new AppError("INTERNAL_ERROR", `Unable to ${operation} content item.`);
 }
@@ -95,7 +99,7 @@ export class SupabaseContentItemRepository implements ContentItemRepository {
       throw persistenceError("create");
     }
 
-    return mapContentItem(data as ContentItemRow);
+    return mapContentItem(asContentItemRow(data));
   }
 
   async markGenerating(id: string, organizationId: string): Promise<void> {
@@ -133,7 +137,7 @@ export class SupabaseContentItemRepository implements ContentItemRepository {
       throw persistenceError("mark as generated");
     }
 
-    return mapContentItem(data as ContentItemRow);
+    return mapContentItem(asContentItemRow(data));
   }
 
   async markFailed(input: MarkFailedInput): Promise<ContentItem> {
@@ -154,6 +158,6 @@ export class SupabaseContentItemRepository implements ContentItemRepository {
       throw persistenceError("mark as failed");
     }
 
-    return mapContentItem(data as ContentItemRow);
+    return mapContentItem(asContentItemRow(data));
   }
 }
