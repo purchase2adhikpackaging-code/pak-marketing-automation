@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import React, { useMemo, useState, useTransition } from "react";
 
 import type { ScriptArtifact, ScriptArtifactStatus } from "@/modules/content-studio/artifacts/types";
 import { generateTranslationAction, regenerateSourceAction } from "./actions";
@@ -195,7 +195,7 @@ export function MultilingualContentPanel({
                     type="button"
                     onClick={() => translate(code)}
                     disabled={busy || action.disabled}
-                    aria-label={`${action.ariaLabel} ${label} translation${action.ariaLabel === "generating" ? "" : ""}`}
+                    aria-label={action.ariaLabel === "generating" ? `${label} translation generating` : `${action.ariaLabel} ${label} translation`}
                     className="inline-flex min-h-10 w-full items-center justify-center rounded-xl border border-slate-700 px-3 py-2 text-sm font-semibold text-slate-100 transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {busy && !action.disabled ? "Generating…" : action.label}
