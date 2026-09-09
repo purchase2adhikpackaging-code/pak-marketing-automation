@@ -57,7 +57,9 @@ class FakeArtifactRepository implements ScriptArtifactRepository {
     if (!this.source) throw new AppError("NOT_FOUND", "Canonical source script is unavailable.");
     return this.source;
   }
-  async ensureTarget() { throw new Error("not used"); }
+  async ensureTarget(): Promise<ScriptArtifact> {
+    throw new Error("not used");
+  }
   async startGeneration(input: StartArtifactGenerationInput) {
     this.started.push(input);
     if (!this.source) throw new AppError("NOT_FOUND", "Canonical source script is unavailable.");
@@ -95,10 +97,19 @@ class FakeContentRepository implements ContentItemRepository {
   async getById(id: string, organizationId: string) {
     return this.item?.id === id && this.item.organizationId === organizationId ? this.item : null;
   }
-  async createDraft() { throw new Error("not used"); }
+  async createDraft(): Promise<ContentItem> {
+    if (!this.item) throw new Error("not used");
+    return this.item;
+  }
   async markGenerating() {}
-  async markGenerated() { throw new Error("not used"); }
-  async markFailed() { throw new Error("not used"); }
+  async markGenerated(): Promise<ContentItem> {
+    if (!this.item) throw new Error("not used");
+    return this.item;
+  }
+  async markFailed(): Promise<ContentItem> {
+    if (!this.item) throw new Error("not used");
+    return this.item;
+  }
 }
 
 class FakeProvider implements TextGenerationProvider {
@@ -127,14 +138,12 @@ describe("regenerateSourceArtifact", () => {
     const content = new FakeContentRepository();
     const provider = new FakeProvider();
 
-    const pending = regenerateSourceArtifact(request(), {
+    const result = await regenerateSourceArtifact(request(), {
       artifactRepository: artifacts,
       contentRepository: content,
       provider,
       actorUserId: "actor",
     });
-
-    const result = await pending;
 
     expect(artifacts.started).toEqual([{
       id: "11111111-1111-4111-8111-111111111111",
