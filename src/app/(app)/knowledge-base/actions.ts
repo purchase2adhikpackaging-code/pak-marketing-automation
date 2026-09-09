@@ -101,7 +101,14 @@ export async function executeCreateKnowledgeAction(
 
   try {
     const record = await dependencies.create({
-      ...parsed.data,
+      organizationId: parsed.data.organizationId,
+      title: parsed.data.title,
+      content: parsed.data.content,
+      sourceType: parsed.data.sourceType,
+      ...(parsed.data.sourceLabel !== undefined ? { sourceLabel: parsed.data.sourceLabel } : {}),
+      ...(parsed.data.sourceReference !== undefined
+        ? { sourceReference: parsed.data.sourceReference }
+        : {}),
       actorUserId: authorization.actorId,
     });
     return { ok: true, record };
@@ -126,7 +133,17 @@ export async function executeUpdateKnowledgeAction(
 
   try {
     const record = await dependencies.update({
-      ...parsed.data,
+      id: parsed.data.id,
+      organizationId: parsed.data.organizationId,
+      expectedRevision: parsed.data.expectedRevision,
+      title: parsed.data.title,
+      content: parsed.data.content,
+      status: parsed.data.status,
+      sourceType: parsed.data.sourceType,
+      ...(parsed.data.sourceLabel !== undefined ? { sourceLabel: parsed.data.sourceLabel } : {}),
+      ...(parsed.data.sourceReference !== undefined
+        ? { sourceReference: parsed.data.sourceReference }
+        : {}),
       actorUserId: authorization.actorId,
     });
     return { ok: true, record };
