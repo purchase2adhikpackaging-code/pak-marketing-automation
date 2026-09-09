@@ -9,6 +9,7 @@ import type { CompleteArtifactGenerationInput, ScriptArtifactRepository, StartAr
 import { regenerateSourceArtifact } from "./source-service";
 import type { ScriptArtifact } from "./types";
 
+// RED gate: this contract intentionally precedes source-service implementation.
 const now = "2026-09-09T00:00:00.000Z";
 
 function sourceArtifact(overrides: Partial<ScriptArtifact> = {}): ScriptArtifact {
