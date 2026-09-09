@@ -56,8 +56,8 @@ const deleteInput = {
 
 function dependencies(role: AppRole = "EDITOR"): KnowledgeActionDependencies {
   return {
-    getActor: async () => ({ id: actorId }),
-    getMembership: async () => ({ role }),
+    getActor: vi.fn().mockResolvedValue({ id: actorId }),
+    getMembership: vi.fn().mockResolvedValue({ role }),
     create: vi.fn().mockResolvedValue(createdRecord),
     update: vi.fn().mockResolvedValue({ ...createdRecord, status: "ACTIVE", revision: 2 }),
     archive: vi.fn().mockResolvedValue({ ...createdRecord, status: "ARCHIVED", revision: 2 }),
