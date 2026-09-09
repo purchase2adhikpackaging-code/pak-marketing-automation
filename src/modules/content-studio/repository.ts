@@ -12,6 +12,7 @@ import type {
 } from "./types";
 
 export interface ContentItemRepository {
+  getById(id: string, organizationId: string): Promise<ContentItem | null>;
   createDraft(input: CreateDraftInput): Promise<ContentItem>;
   markGenerating(id: string, organizationId: string): Promise<void>;
   markGenerated(input: MarkGeneratedInput): Promise<ContentItem>;
@@ -80,6 +81,22 @@ function persistenceError(operation: string): AppError {
 }
 
 export class SupabaseContentItemRepository implements ContentItemRepository {
+  async getById(id: string, organizationId: string): Promise<ContentItem | null> {
+    const supabase = await createServerSupabaseClient();
+    const { data, error } = await supabase
+      .from("content_items")
+      .select(CONTENT_ITEM_COLUMNS)
+      .eq("id", id)
+      .eq("organization_id", organizationId)
+      .maybeSingle();
+
+    if (error) {
+      throw persistenceError("load");
+    }
+
+    return data ? mapContentItem(asContentItemRow(data)) : null;
+  }
+
   async createDraft(input: CreateDraftInput): Promise<ContentItem> {
     const supabase = await createServerSupabaseClient();
     const { data, error } = await supabase

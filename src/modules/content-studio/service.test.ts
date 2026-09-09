@@ -31,6 +31,10 @@ class InMemoryRepository implements ContentItemRepository {
   events: string[] = [];
   current?: ContentItem;
 
+  async getById(id: string, organizationId: string): Promise<ContentItem | null> {
+    return this.current?.id === id && this.current.organizationId === organizationId ? this.current : null;
+  }
+
   async createDraft(input: CreateDraftInput): Promise<ContentItem> {
     this.events.push("createDraft");
     this.current = buildDraft(input);

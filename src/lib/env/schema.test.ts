@@ -34,9 +34,52 @@ describe("environment schema", () => {
   });
 
   it("defaults the AI provider to fake", () => {
-    const { AI_TEXT_PROVIDER, OPENAI_TEXT_MODEL, ...withoutAiConfig } = validServer;
+    const withoutAiConfig = {
+      ...validServer,
+      AI_TEXT_PROVIDER: undefined,
+      OPENAI_TEXT_MODEL: undefined,
+    };
+
     expect(parseServerEnv(withoutAiConfig).AI_TEXT_PROVIDER).toBe("fake");
-    expect(OPENAI_TEXT_MODEL).toBe("gpt-5-mini");
+  });
+
+  it("allows fake provider without an OpenAI key and normalizes a blank model", () => {
+    const env = parseServerEnv({
+      ...validPublic,
+      SUPABASE_SERVICE_ROLE_KEY: "service-role",
+      LTX_WORKER_SHARED_SECRET: "ltx-secret",
+      AI_TEXT_PROVIDER: "fake",
+      OPENAI_TEXT_MODEL: "",
+    });
+
+    expect(env.AI_TEXT_PROVIDER).toBe("fake");
+    expect(env.OPENAI_API_KEY).toBeUndefined();
+    expect(env.OPENAI_TEXT_MODEL).toBeUndefined();
+  });
+
+  it("requires an OpenAI key when the OpenAI provider is selected", () => {
+    expect(() =>
+      parseServerEnv({
+        ...validPublic,
+        SUPABASE_SERVICE_ROLE_KEY: "service-role",
+        LTX_WORKER_SHARED_SECRET: "ltx-secret",
+        AI_TEXT_PROVIDER: "openai",
+        OPENAI_TEXT_MODEL: "gpt-5.6-luna",
+      }),
+    ).toThrow();
+  });
+
+  it("accepts OpenAI when a key is present", () => {
+    const env = parseServerEnv({
+      ...validPublic,
+      SUPABASE_SERVICE_ROLE_KEY: "service-role",
+      OPENAI_API_KEY: "server-secret",
+      LTX_WORKER_SHARED_SECRET: "ltx-secret",
+      AI_TEXT_PROVIDER: "openai",
+      OPENAI_TEXT_MODEL: "gpt-5.6-luna",
+    });
+
+    expect(env.OPENAI_API_KEY).toBe("server-secret");
   });
 
   it("rejects unsupported AI providers", () => {
