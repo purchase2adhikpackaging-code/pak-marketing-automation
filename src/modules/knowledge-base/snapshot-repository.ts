@@ -34,21 +34,26 @@ export class KnowledgeSnapshotStore {
 }
 
 type SupabaseClient = {
-  from(table: string): {
-    upsert(
-      values: Record<string, unknown>[],
-      options: { onConflict: string; ignoreDuplicates: boolean },
-    ): PromiseLike<{ error: { message?: string } | null }>;
-  };
+  rpc(
+    fn: string,
+    args: Record<string, unknown>,
+  ): PromiseLike<{ error: { message?: string } | null }>;
 };
 
+type SupabaseClientSource = SupabaseClient | Promise<SupabaseClient>;
+
 export class SupabaseKnowledgeSnapshotPersistence implements KnowledgeSnapshotPersistence {
-  constructor(private readonly supabase: SupabaseClient) {}
+  constructor(private readonly supabaseSource: SupabaseClientSource) {}
 
   async insertIgnoringConflicts(inputs: KnowledgeSnapshotInput[]): Promise<void> {
-    const rows = inputs.map((input) => ({
-      organization_id: input.organizationId,
-      content_item_id: input.contentItemId,
+    if (inputs.length === 0) return;
+
+    const { organizationId, contentItemId } = inputs[0]!;
+    if (inputs.some((input) => input.organizationId !== organizationId || input.contentItemId !== contentItemId)) {
+      throw new Error("Knowledge snapshots must belong to the same organization and content item.");
+    }
+
+    const snapshots = inputs.map((input) => ({
       knowledge_record_id: input.knowledgeRecordId,
       knowledge_revision: input.knowledgeRevision,
       title_snapshot: input.titleSnapshot,
@@ -58,9 +63,11 @@ export class SupabaseKnowledgeSnapshotPersistence implements KnowledgeSnapshotPe
       source_reference_snapshot: input.sourceReferenceSnapshot ?? null,
     }));
 
-    const { error } = await this.supabase.from("content_item_knowledge_sources").upsert(rows, {
-      onConflict: "content_item_id,knowledge_record_id",
-      ignoreDuplicates: true,
+    const supabase = await this.supabaseSource;
+    const { error } = await supabase.rpc("persist_content_knowledge_snapshots", {
+      _organization_id: organizationId,
+      _content_item_id: contentItemId,
+      _snapshots: snapshots,
     });
 
     if (error) {

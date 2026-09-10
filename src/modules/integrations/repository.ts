@@ -1,7 +1,6 @@
 import "server-only";
 
 import { AppError } from "@/lib/errors/app-error";
-import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type {
   IntegrationAuditEventType,
@@ -85,6 +84,10 @@ export interface IntegrationMetadataStore {
   ): Promise<IntegrationConnection>;
 }
 
+/**
+ * Injectable legacy contract used only by domain-level tests. Production secret
+ * persistence and reads live in Supabase Vault behind authenticated Edge Functions.
+ */
 export interface IntegrationSecretStore {
   saveEncryptedSecret(input: {
     organizationId: string;
@@ -173,98 +176,5 @@ export class SupabaseIntegrationMetadataStore implements IntegrationMetadataStor
     if (error) throw new AppError("INTERNAL_ERROR", "Unable to update integration settings.");
     if (!data) throw new AppError("NOT_FOUND", "Integration connection is not configured.");
     return mapConnection(data as unknown as ConnectionRow);
-  }
-}
-
-export class SupabaseIntegrationSecretStore implements IntegrationSecretStore {
-  async saveEncryptedSecret(input: {
-    organizationId: string;
-    provider: IntegrationProvider;
-    actorUserId: string;
-    secretName: string;
-    ciphertext: string;
-    encryptionVersion: number;
-    maskedHint?: string;
-  }): Promise<string> {
-    const supabase = createSupabaseAdminClient();
-    const { data, error } = await supabase.rpc("save_integration_secret_server", {
-      _organization_id: input.organizationId,
-      _provider: input.provider,
-      _actor_user_id: input.actorUserId,
-      _secret_name: input.secretName,
-      _ciphertext: input.ciphertext,
-      _encryption_version: input.encryptionVersion,
-      _masked_hint: input.maskedHint ?? null,
-    });
-
-    if (error || typeof data !== "string") {
-      throw new AppError("INTERNAL_ERROR", "Unable to save integration credential.");
-    }
-    return data;
-  }
-
-  async removeEncryptedSecret(input: {
-    organizationId: string;
-    provider: IntegrationProvider;
-    actorUserId: string;
-    secretName: string;
-  }): Promise<boolean> {
-    const supabase = createSupabaseAdminClient();
-    const { data, error } = await supabase.rpc("remove_integration_secret_server", {
-      _organization_id: input.organizationId,
-      _provider: input.provider,
-      _actor_user_id: input.actorUserId,
-      _secret_name: input.secretName,
-    });
-
-    if (error) throw new AppError("INTERNAL_ERROR", "Unable to remove integration credential.");
-    return data === true;
-  }
-
-  async getEncryptedSecret(
-    organizationId: string,
-    provider: IntegrationProvider,
-    secretName: string,
-  ): Promise<SecretRow | null> {
-    const supabase = createSupabaseAdminClient();
-    const { data: connection, error: connectionError } = await supabase
-      .from("integration_connections")
-      .select("id")
-      .eq("organization_id", organizationId)
-      .eq("provider", provider)
-      .maybeSingle();
-
-    if (connectionError) throw new AppError("INTERNAL_ERROR", "Unable to resolve integration credential.");
-    if (!connection) return null;
-
-    const { data, error } = await supabase
-      .from("integration_secrets")
-      .select("ciphertext,encryption_version")
-      .eq("organization_id", organizationId)
-      .eq("connection_id", connection.id)
-      .eq("secret_name", secretName)
-      .maybeSingle();
-
-    if (error) throw new AppError("INTERNAL_ERROR", "Unable to resolve integration credential.");
-    return data ? (data as SecretRow) : null;
-  }
-
-  async appendAudit(input: {
-    organizationId: string;
-    connectionId: string | null;
-    actorUserId: string;
-    eventType: IntegrationAuditEventType;
-    metadata?: Record<string, unknown>;
-  }): Promise<void> {
-    const supabase = createSupabaseAdminClient();
-    const { error } = await supabase.from("integration_audit_events").insert({
-      organization_id: input.organizationId,
-      connection_id: input.connectionId,
-      actor_user_id: input.actorUserId,
-      event_type: input.eventType,
-      metadata: input.metadata ?? {},
-    });
-
-    if (error) throw new AppError("INTERNAL_ERROR", "Unable to record integration audit event.");
   }
 }

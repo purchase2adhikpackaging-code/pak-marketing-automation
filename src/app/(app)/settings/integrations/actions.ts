@@ -1,10 +1,9 @@
 "use server";
 
-import OpenAI from "openai";
-
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { can } from "@/modules/auth/authorization";
 import type { AppRole } from "@/modules/auth/roles";
+import { invokeIntegrationVault } from "@/modules/integrations/edge-client";
 import {
   removeIntegrationSecretSchema,
   saveIntegrationSecretSchema,
@@ -12,11 +11,11 @@ import {
   testIntegrationConnectionSchema,
   updateIntegrationConfigSchema,
 } from "@/modules/integrations/schema";
-import { createIntegrationVaultService } from "@/modules/integrations/service";
 import type { IntegrationProvider, SafeIntegrationConnection } from "@/modules/integrations/types";
 
 type Actor = { id: string };
 type Membership = { role: AppRole } | null;
+type EdgeConnectionResponse = { connection: SafeIntegrationConnection };
 
 export type IntegrationActionResult =
   | { ok: true; connection: SafeIntegrationConnection }
@@ -87,10 +86,7 @@ export async function executeSaveIntegrationSecretAction(
   if ("error" in authorization) return { ok: false, error: authorization.error };
 
   try {
-    const connection = await dependencies.saveSecret({
-      ...parsed.data,
-      actorUserId: authorization.actorId,
-    });
+    const connection = await dependencies.saveSecret({ ...parsed.data, actorUserId: authorization.actorId });
     return { ok: true, connection };
   } catch {
     return safeFailure();
@@ -188,30 +184,45 @@ async function getMembership(actorId: string, organizationId: string): Promise<M
   return { role: data.role as AppRole };
 }
 
+async function edgeConnection(body: Record<string, unknown>): Promise<SafeIntegrationConnection> {
+  const result = await invokeIntegrationVault<EdgeConnectionResponse>(body);
+  return result.connection;
+}
+
 function productionDependencies(): IntegrationActionDependencies {
-  const vault = createIntegrationVaultService();
   return {
     getActor,
     getMembership,
-    saveSecret: (input) => vault.saveSecret(input),
-    removeSecret: (input) => vault.removeSecret(input),
-    updateConfig: (input) => vault.updateConfig(input),
-    setDisabled: (input) => vault.setDisabled(input),
-    testConnection: async (input) => {
-      if (input.provider !== "OPENAI") {
-        throw new Error("Provider connection test is not implemented yet");
-      }
-
-      const apiKey = await vault.getSecret(input.organizationId, "OPENAI", "API_KEY");
-      try {
-        const client = new OpenAI({ apiKey });
-        await client.models.list();
-        return vault.recordTestResult({ ...input, ok: true });
-      } catch {
-        await vault.recordTestResult({ ...input, ok: false, errorCode: "AUTH_INVALID" });
-        throw new Error("OpenAI connection test failed");
-      }
-    },
+    saveSecret: (input) => edgeConnection({
+      action: "save",
+      organizationId: input.organizationId,
+      provider: input.provider,
+      secretName: input.secretName,
+      secretValue: input.secretValue,
+    }),
+    removeSecret: (input) => edgeConnection({
+      action: "remove",
+      organizationId: input.organizationId,
+      provider: input.provider,
+      secretName: input.secretName,
+    }),
+    updateConfig: (input) => edgeConnection({
+      action: "update_config",
+      organizationId: input.organizationId,
+      provider: input.provider,
+      config: input.config,
+    }),
+    setDisabled: (input) => edgeConnection({
+      action: "set_disabled",
+      organizationId: input.organizationId,
+      provider: input.provider,
+      disabled: input.disabled,
+    }),
+    testConnection: (input) => edgeConnection({
+      action: "test",
+      organizationId: input.organizationId,
+      provider: input.provider,
+    }),
   };
 }
 

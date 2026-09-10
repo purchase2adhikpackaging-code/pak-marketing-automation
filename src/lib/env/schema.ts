@@ -11,9 +11,7 @@ const optionalTrimmedString = z.preprocess(
 );
 
 const serverEnvSchema = publicEnvSchema.extend({
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-  INTEGRATION_VAULT_ENCRYPTION_KEY: optionalTrimmedString,
-  LTX_WORKER_SHARED_SECRET: z.string().min(1),
+  LTX_WORKER_SHARED_SECRET: optionalTrimmedString,
   AI_TEXT_PROVIDER: z.enum(["fake", "openai"]).default("fake"),
 });
 

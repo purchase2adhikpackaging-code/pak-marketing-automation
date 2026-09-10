@@ -1,16 +1,12 @@
 import "server-only";
 
-import { createClient } from "@supabase/supabase-js";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-import { getServerEnv } from "@/lib/env/server";
-
+/**
+ * Temporary compatibility alias for the remaining provenance call site.
+ * This no longer creates a privileged/admin client and never reads a service-role key.
+ * Privileged provenance insertion is enforced inside Supabase by the guarded RPC.
+ */
 export function createSupabaseAdminClient() {
-  const env = getServerEnv();
-
-  return createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
+  return createServerSupabaseClient();
 }

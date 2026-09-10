@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { AppError } from "@/lib/errors/app-error";
-import type { IntegrationCredentialResolver } from "@/modules/integrations/types";
 import { OpenAITextGenerationProvider, type OpenAIResponsesTransport } from "./openai-provider";
 
 const request = {
@@ -28,19 +27,14 @@ describe("OpenAITextGenerationProvider", () => {
     });
   });
 
-  it("resolves organization API key and model from Integration Vault", async () => {
-    const resolver: IntegrationCredentialResolver = {
-      getProviderConfig: vi.fn().mockResolvedValue({ defaultModel: "gpt-vault-model" }),
-      getSecret: vi.fn().mockResolvedValue("sk-vault-key"),
-    };
+  it("uses an organization-scoped Edge transport without resolving a provider key in Next.js", async () => {
     const transport: OpenAIResponsesTransport = {
-      create: vi.fn().mockResolvedValue({ output_text: "Vault-backed output." }),
+      create: vi.fn().mockResolvedValue({ output_text: "Vault-backed output.", model: "gpt-vault-model" }),
     };
-    const transportFactory = vi.fn().mockReturnValue(transport);
+    const edgeTransportFactory = vi.fn().mockReturnValue(transport);
     const provider = new OpenAITextGenerationProvider({
       organizationId,
-      credentialResolver: resolver,
-      transportFactory,
+      edgeTransportFactory,
     });
 
     await expect(provider.generate(request)).resolves.toEqual({
@@ -48,9 +42,7 @@ describe("OpenAITextGenerationProvider", () => {
       provider: "openai",
       model: "gpt-vault-model",
     });
-    expect(resolver.getSecret).toHaveBeenCalledWith(organizationId, "OPENAI", "API_KEY");
-    expect(resolver.getProviderConfig).toHaveBeenCalledWith(organizationId, "OPENAI");
-    expect(transportFactory).toHaveBeenCalledWith("sk-vault-key");
+    expect(edgeTransportFactory).toHaveBeenCalledWith(organizationId);
   });
 
   it("rejects empty provider output", async () => {
