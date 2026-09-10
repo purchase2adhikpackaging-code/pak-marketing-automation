@@ -3,7 +3,7 @@
 # Academic Curriculum & Study Material Blueprint
 
 **Product Requirements Document (PRD)**  
-**Version:** 0.1.2  
+**Version:** 0.1.3  
 **Status:** Living Master Blueprint  
 **Baseline Date:** 10 September 2026  
 **Language:** English  
@@ -222,7 +222,8 @@ This PRD defines curriculum architecture only. It does not itself confer degree-
 |---|---|---|
 | v0.1 | Master programme catalogue, qualification architecture and governing rules | COMPLETE |
 | v0.1.1 | PAK-D01 year/semester-wise subject architecture | COMPLETE |
-| v0.1.2 | PAK-D02 year/semester-wise subject architecture | **CURRENT** |
+| v0.1.2 | PAK-D02 year/semester-wise subject architecture | COMPLETE |
+| v0.1.3 | PAK-D03 year/semester-wise subject architecture | **CURRENT** |
 | v0.2 | Complete year/semester-wise subject architecture for all programmes | IN PROGRESS |
 | v0.3 | Complete subject-wise chapter architecture | PLANNED |
 | v0.4 | Learning outcomes, contact hours/credits, theory/practical mapping and prerequisites | PLANNED |
@@ -247,11 +248,11 @@ The GitHub Markdown file is the canonical working copy for subsequent curriculum
 
 ## 14. Next Controlled Work Item
 
-With PAK-D01 and PAK-D02 subject architectures now defined in Sections 17 and 18, the next controlled curriculum work item is:
+With PAK-D01, PAK-D02 and PAK-D03 subject architectures now defined in Sections 17–19, the next controlled curriculum work item is:
 
-### `PAK-D03 — Diploma in Railway Electrical & Control Systems`
+### `PAK-D04 — Diploma in Railway Operations & Transport Management`
 
-The next revision must define the complete Year 1 / Semester 1 through Year 2 / Semester 4 subject architecture for PAK-D03 using the same controlled structure used for PAK-D01 and PAK-D02.
+The next revision must define the complete Year 1 / Semester 1 through Year 2 / Semester 4 subject architecture for PAK-D04 using the same controlled curriculum methodology.
 
 Once all programme subject structures are complete, the PRD will advance to the subject-wise chapter architecture stage.
 
@@ -263,7 +264,8 @@ Once all programme subject structures are complete, the PRD will advance to the 
 |---|---|---|---|
 | 0.1 | 10 Sep 2026 | Initial master programme catalogue and study-material governance baseline | Superseded |
 | 0.1.1 | 10 Sep 2026 | Added complete four-semester subject architecture for PAK-D01 | Superseded |
-| 0.1.2 | 10 Sep 2026 | Added complete four-semester subject architecture for PAK-D02 | Active |
+| 0.1.2 | 10 Sep 2026 | Added complete four-semester subject architecture for PAK-D02 | Superseded |
+| 0.1.3 | 10 Sep 2026 | Added complete four-semester subject architecture for PAK-D03 | Active |
 
 ---
 
@@ -680,6 +682,258 @@ For each of the 24 modules, the chapter stage must define:
 - learning-outcome placeholders;
 - assessment linkage placeholders;
 - reference and standards families;
+- safety-critical content flags.
+
+No full textbook prose should be generated before that subject's chapter architecture has been approved or frozen.
+
+---
+
+# 19. PAK-D03 — Diploma in Railway Electrical & Control Systems
+
+## 19.1 Programme Identity
+
+**Programme Code:** `PAK-D03`  
+**Programme Title:** Diploma in Railway Electrical & Control Systems  
+**Duration:** 2 Academic Years  
+**Academic Structure:** 4 Semesters  
+**Primary Language:** English  
+**Orientation:** Railway electrical engineering, traction power, onboard electrical equipment, control systems, diagnostics and maintenance  
+**Curriculum Status:** Subject Architecture v1 — Chapter decomposition pending
+
+### Programme Purpose
+
+PAK-D03 is designed to prepare railway electrical technicians and junior engineering professionals who can understand, test, inspect, maintain and troubleshoot electrical and control systems used in railway vehicles and related railway technical environments. The programme combines electrical and electronic fundamentals with traction machines, power conversion, onboard auxiliaries, control and instrumentation, train communication, signalling interfaces, protection, diagnostics and maintenance practice.
+
+The curriculum begins with electrical science, electronics, mathematics, drawings, measurement and safe laboratory practice. It then advances into electrical machines, power systems, control engineering, traction and onboard systems. Year 2 develops power-electronics competence, train-control and signalling interfaces, protection and diagnostic skills, before culminating in advanced traction, TCMS/communications, maintenance engineering, interoperability awareness and an industry capstone.
+
+### Curriculum Design Principles
+
+1. **Electrical safety first:** Isolation, earthing, lockout/tagout, safe measurement and electrical hazard awareness precede practical work on energized or traction-related systems.
+2. **Fundamentals before traction:** Circuit theory, electronics, machines, measurement and control concepts are established before railway-specific power and control systems.
+3. **Power and control integration:** Students learn both the energy path and the command/control path of railway electrical systems.
+4. **Measurement-led diagnostics:** Oscilloscopes, multimeters, insulation testing, current/voltage measurement, sensors and diagnostic data underpin troubleshooting methodology.
+5. **Onboard railway relevance:** Traction, auxiliaries, batteries, charging, lighting, HVAC interfaces, doors, braking-control interfaces and train networks are treated in railway context.
+6. **Interface awareness:** The programme introduces the interfaces between rolling stock, signalling, train protection and infrastructure without conflating technician training with licensed or authorization-specific operational roles.
+7. **Digital readiness:** PLC concepts, embedded control, communication buses, TCMS, data logging, remote diagnostics and predictive maintenance are introduced progressively.
+8. **Compliance traceability:** Later modules distinguish engineering knowledge from specific regulatory, TSI, manufacturer and maintenance-organization requirements.
+
+---
+
+## 19.2 Year 1 — Semester 1: Electrical, Electronic & Railway Foundations
+
+**Semester Objective:** Establish the electrical-science, electronics, mathematics, measurement, documentation and safety foundations required for railway electrical and control specialization.
+
+| Code | Subject | Classification | Orientation | Prerequisite |
+|---|---|---|---|---|
+| D03-101 | Applied Electrical Mathematics & Engineering Physics | Core | Theory + Problem Solving | None |
+| D03-102 | DC & AC Circuit Fundamentals | Core | Theory + Electrical Laboratory | None |
+| D03-103 | Analog & Digital Electronics Fundamentals | Core | Theory + Electronics Laboratory | None |
+| D03-104 | Electrical Engineering Drawing, Schematics & Technical Documentation | Core | Theory + CAD / Schematic Lab | None |
+| D03-105 | Electrical Measurements, Instruments & Safe Laboratory Practice | Practical Core | Laboratory-Dominant | None |
+| D03-106 | Railway Systems, Electrical Safety & Technical Communication | Core | Theory + Demonstration + Practical Exercises | None |
+
+### Semester 1 Progression Logic
+
+- `D03-101` supplies the mathematical and physical basis for circuit, power and control calculations.
+- `D03-102` establishes voltage, current, resistance, capacitance, inductance, single/three-phase concepts and basic circuit analysis.
+- `D03-103` introduces semiconductor devices, switching, digital logic and signal concepts needed for control electronics.
+- `D03-104` develops competence in reading and producing electrical schematics, wiring diagrams, terminal plans and technical records.
+- `D03-105` trains students to select instruments, make measurements safely and recognize measurement uncertainty and instrument limitations.
+- `D03-106` provides the railway-system context and establishes electrical safety, hazard communication and professional documentation behaviours.
+
+---
+
+## 19.3 Year 1 — Semester 2: Machines, Power, Control & Railway Electrical Systems
+
+**Semester Objective:** Develop competence in electrical machines, power distribution, control fundamentals and the principal electrical subsystems found on railway vehicles.
+
+| Code | Subject | Classification | Orientation | Prerequisite |
+|---|---|---|---|---|
+| D03-201 | Electrical Machines & Transformers | Core / Specialization | Theory + Machines Laboratory | D03-101, D03-102 |
+| D03-202 | Power Systems, Protection, Earthing & Railway Electrification Fundamentals | Core / Specialization | Theory + Laboratory / Demonstration | D03-102, D03-105, D03-106 |
+| D03-203 | Control Engineering, Sensors & Instrumentation I | Core / Specialization | Theory + Control Laboratory | D03-101, D03-102, D03-103 |
+| D03-204 | PLC, Relays, Contactors & Industrial Control Circuits | Practical Specialization | Theory + PLC / Wiring Lab | D03-103, D03-104, D03-105 |
+| D03-205 | Railway Traction Electrical Systems I — Motors, Supply & Drive Fundamentals | Specialization Core | Theory + Laboratory / Component Study | D03-201; co-requisite D03-202 |
+| D03-206 | Rolling Stock Auxiliary Electrical Systems — Batteries, Charging, Lighting, HVAC & Doors | Specialization Core | Theory + Laboratory / Workshop | D03-102, D03-104, D03-105, D03-106 |
+
+### Semester 2 Progression Logic
+
+Semester 2 takes students from basic circuits to functioning electrical systems. Electrical machines and transformers establish the energy-conversion foundation; power-system and protection concepts explain supply and fault containment; control and PLC modules establish command logic and automation.
+
+`D03-205` connects these concepts to traction motors and railway drive architecture, while `D03-206` ensures students understand the large family of lower-voltage and auxiliary systems that dominate routine rolling-stock electrical maintenance.
+
+---
+
+## 19.4 Year 2 — Semester 3: Power Electronics, Train Control, Protection & Diagnostics
+
+**Semester Objective:** Develop applied competence in modern traction power conversion, onboard control, train communication/signalling interfaces, protection and systematic electrical troubleshooting.
+
+| Code | Subject | Classification | Orientation | Prerequisite |
+|---|---|---|---|---|
+| D03-301 | Power Electronics, Converters, Inverters & Traction Drives | Specialization Core | Theory + Power-Electronics Lab | D03-103, D03-201, D03-205 |
+| D03-302 | Railway Traction Electrical Systems II — Drive Control, Regeneration & Auxiliaries Integration | Specialization Core | Theory + Laboratory / Simulation | D03-203, D03-205, D03-301 |
+| D03-303 | Train Control, Signalling Interfaces & Train Protection Fundamentals | Specialization | Theory + Simulation / Demonstration | D03-203, D03-204, D03-106 |
+| D03-304 | Railway Communication Networks, Data Buses & Embedded Control Fundamentals | Specialization Core | Theory + Network / Embedded Lab | D03-103, D03-203, D03-204 |
+| D03-305 | Electrical Protection, Fault Finding, Insulation Testing & Diagnostic Methods | Specialization Core | Laboratory + Workshop | D03-202, D03-205, D03-206 |
+| D03-306 | Electrical & Control Systems Practicum I — Wiring, Testing, Commissioning & Troubleshooting | Practical Core | Laboratory / Workshop Competency Practice | D03-204, D03-205, D03-206; co-requisite D03-305 |
+
+### Semester 3 Progression Logic
+
+Semester 3 focuses on the technologies that make modern railway electrical systems controllable and diagnosable. Students study semiconductor power conversion, motor-drive control, regenerative-braking concepts, onboard communication and train-control interfaces.
+
+`D03-305` formalizes a safe troubleshooting methodology: symptom definition, documentation review, isolation, measurement planning, fault localization, verification and restoration. `D03-306` integrates wiring, control circuits, measurement and fault-finding through controlled practical exercises.
+
+`D03-303` is deliberately framed as **signalling and train-protection fundamentals/interface awareness**. It does not by itself qualify a student for safety-critical signalling design, testing, authorization or operational duties that require separate competence, certification or employer authorization.
+
+---
+
+## 19.5 Year 2 — Semester 4: Advanced Control, Maintenance, Compliance & Industry Application
+
+**Semester Objective:** Integrate traction and control-system knowledge with TCMS, advanced diagnostics, maintenance engineering, quality/compliance and real-world electrical project work.
+
+| Code | Subject | Classification | Orientation | Prerequisite |
+|---|---|---|---|---|
+| D03-401 | Advanced Traction Drives, Energy Management & Electrical Braking | Specialization Core | Theory + Simulation / Laboratory | D03-301, D03-302 |
+| D03-402 | Train Control & Management Systems (TCMS), Vehicle Networks & Remote Diagnostics | Specialization Core | Theory + Network / Diagnostic Lab | D03-304, D03-305 |
+| D03-403 | Railway Electrical Maintenance, Reliability & Condition-Based Maintenance | Core / Specialization | Theory + Laboratory + Case Study | D03-305, D03-306 |
+| D03-404 | Electrical Safety, EMC, Quality, Documentation & Railway Compliance | Core / Specialization | Theory + Compliance / Documentation Exercises | D03-202, D03-305 |
+| D03-405 | Advanced Automation, Data Acquisition & Predictive Diagnostics | Specialization | PLC / DAQ Lab + Project | D03-203, D03-204, D03-304, D03-305 |
+| D03-406 | Industry Practicum & Electrical/Control Systems Capstone Project | Practical / Capstone | Industry + Project + Competency Assessment | Completion of Semesters 1–3; co-requisite D03-401 to D03-405 |
+
+### Semester 4 Progression Logic
+
+The final semester moves from subsystem troubleshooting to system-level electrical maintenance and engineering support. `D03-401` deepens traction-drive and energy-flow understanding; `D03-402` introduces TCMS and vehicle-network architecture; `D03-403` connects diagnostics with reliability and maintenance strategy; and `D03-404` introduces the documentation, EMC, safety and compliance framework surrounding railway electrical work.
+
+`D03-405` provides a modern automation and diagnostic layer using PLC/control logic, data acquisition, sensor data and condition-monitoring concepts. `D03-406` requires students to integrate design interpretation, safe testing, troubleshooting, technical records and system reasoning in an applied project or supervised industry environment.
+
+---
+
+## 19.6 PAK-D03 Subject Inventory
+
+PAK-D03 contains **24 semester subjects/modules**:
+
+- Semester 1: 6 subjects
+- Semester 2: 6 subjects
+- Semester 3: 6 subjects
+- Semester 4: 6 subjects
+
+Contact hours, credits/ECTS-equivalent workload, detailed learning outcomes and assessment weightings remain intentionally unassigned until the dedicated workload and credit-mapping phase.
+
+---
+
+## 19.7 Shared-Module Strategy
+
+PAK-D03 should reuse common master modules from D01/D02 only where level, scope and learning outcomes are genuinely equivalent. Potential shared families include:
+
+- railway systems fundamentals and technical communication;
+- occupational and workshop safety foundations;
+- technical documentation principles;
+- maintenance engineering and reliability foundations;
+- quality, traceability and maintenance-record principles;
+- generic sensors, measurements and condition-monitoring concepts.
+
+D03 requires independent or substantially expanded treatment for:
+
+- DC/AC circuit analysis;
+- analog/digital electronics;
+- electrical machines and transformers;
+- power electronics;
+- traction drives;
+- electrical protection and insulation diagnostics;
+- PLC and industrial control;
+- onboard auxiliary electrical systems;
+- train communication networks and TCMS;
+- EMC and electrical railway compliance.
+
+**Control rule:** common textbooks may be reused only when academic depth, practical competencies and assessment requirements match. Shared titles must not conceal materially different electrical-safety or system-specific competencies.
+
+---
+
+## 19.8 Subject Dependency Spine
+
+Electrical foundation progression:
+
+`D03-101 Electrical Mathematics & Physics`
++ `D03-102 DC/AC Circuits`
++ `D03-103 Electronics`
++ `D03-105 Measurements`
+→ `D03-201 Electrical Machines`
++ `D03-202 Power Systems & Protection`
++ `D03-203 Control Engineering`
++ `D03-204 PLC & Control Circuits`
+→ `D03-301 Power Electronics`
++ `D03-304 Railway Communication Networks`
++ `D03-305 Diagnostics`
+→ `D03-402 TCMS`
++ `D03-403 Electrical Maintenance`
++ `D03-405 Advanced Automation & Predictive Diagnostics`
+→ `D03-406 Capstone`.
+
+Railway traction progression:
+
+`D03-106 Railway Systems`
+→ `D03-205 Traction Electrical Systems I`
+→ `D03-301 Power Electronics` + `D03-302 Traction Electrical Systems II`
+→ `D03-401 Advanced Traction Drives & Energy Management`
+→ `D03-406 Capstone`.
+
+Train-control/interface progression:
+
+`D03-203 Control Engineering` + `D03-204 PLC`
+→ `D03-303 Train Control & Signalling Interfaces`
++ `D03-304 Railway Communication Networks`
+→ `D03-402 TCMS & Remote Diagnostics`.
+
+---
+
+## 19.9 Technical & Regulatory Reference Baseline for Future Chapter Development
+
+Chapter development for PAK-D03 must verify current requirements using authoritative sources appropriate to the specific system. Reference families may include:
+
+- Directive (EU) 2016/797 on interoperability of the rail system within the European Union, as amended/consolidated;
+- Directive (EU) 2016/798 on railway safety, as amended/consolidated;
+- applicable rolling-stock, energy and control-command/signalling TSIs according to the chapter scope and current consolidated versions;
+- current ERA guidance and technical documents;
+- applicable EN/IEC/ISO standards for electrical safety, railway applications, insulation coordination, EMC, electrical equipment, electronic systems, functional safety, communication, measurement and maintenance where relevant;
+- relevant Polish electrical and railway requirements where applicable;
+- authorized manufacturer schematics, manuals, diagnostic procedures and maintenance instructions where legitimately available for training use.
+
+**Control rule:** educational circuit diagrams, thresholds and troubleshooting examples must not be presented as universal railway acceptance limits. Safety-critical limits, test voltages, insulation criteria, protection settings, software parameters and release-to-service criteria must come from the applicable approved specification, standard, maintenance instruction or authorized engineering source.
+
+---
+
+## 19.10 Safety-Critical Content Controls
+
+Future D03 textbooks and practical manuals must clearly classify exercises into:
+
+1. **De-energized training work** — default practical mode wherever feasible.
+2. **Low-voltage supervised laboratory work** — permitted only under defined laboratory controls.
+3. **High-voltage / traction-power awareness** — primarily theory, simulation and demonstration unless an appropriately equipped facility, competent instructor and formal safety system are available.
+4. **Safety-critical control/signalling content** — educational analysis only unless delivered under a separately governed competence and authorization framework.
+
+Practical manuals must include hazard identification, isolation verification, PPE requirements where relevant, instrument-category suitability, emergency response and instructor-control points before any energized exercise.
+
+---
+
+## 19.11 PAK-D03 Chapter-Decomposition Readiness
+
+PAK-D03 is ready for subject-wise chapter design after portfolio-level subject architecture is completed, or earlier if selected as a pilot programme.
+
+For each of the 24 modules, the chapter stage must define:
+
+- subject purpose and scope;
+- chapter titles and sequence;
+- mathematics/electronics prerequisite depth;
+- circuit and system diagrams;
+- railway application points;
+- theory/laboratory/simulation split;
+- worked calculations and diagnostic examples;
+- laboratory exercises and safe test procedures;
+- equipment/instrument requirements;
+- learning-outcome placeholders;
+- assessment linkage placeholders;
+- reference and standards families;
+- electrical-safety classification;
 - safety-critical content flags.
 
 No full textbook prose should be generated before that subject's chapter architecture has been approved or frozen.
