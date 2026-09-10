@@ -21,8 +21,8 @@ const now = "2026-09-09T00:00:00.000Z";
 const knowledgeOne: SelectableKnowledgeRecord = { id: recordOne, title: "Approved workshop safety", sourceType: "DOCUMENT", sourceLabel: "Safety manual", revision: 4 };
 const knowledgeTwo: SelectableKnowledgeRecord = { id: recordTwo, title: "Approved signalling basics", sourceType: "MANUAL", revision: 2 };
 const organizations = [
-  { id: organizationOne, label: "PAK Poland", knowledgeRecords: [knowledgeOne] },
-  { id: organizationTwo, label: "PAK Egypt", knowledgeRecords: [knowledgeTwo] },
+  { id: organizationOne, label: "PAK Poland", role: "EDITOR" as const, knowledgeRecords: [knowledgeOne] },
+  { id: organizationTwo, label: "PAK Egypt", role: "OWNER" as const, knowledgeRecords: [knowledgeTwo] },
 ];
 
 const item: ContentItem = {
@@ -121,5 +121,33 @@ describe("ContentStudioForm Knowledge grounding", () => {
     fireEvent.change(screen.getByRole("textbox", { name: "Topic" }), { target: { value: "Workshop safety training" } });
     fireEvent.click(screen.getByRole("button", { name: "Generate source script" }));
     expect(await screen.findByText(/OpenAI · gpt-5.6-luna/i)).toBeTruthy();
+  });
+
+  it("shows the selected organization and effective generation role as operating context", () => {
+    render(<ContentStudioForm organizations={organizations} />);
+    expect(screen.getByText("Current generation context")).toBeTruthy();
+    expect(screen.getByText("PAK Poland · EDITOR")).toBeTruthy();
+  });
+
+  it("announces generation while the server action is pending", async () => {
+    let resolveAction!: (value: { ok: true; item: ContentItem; artifact: ScriptArtifact }) => void;
+    vi.mocked(generateContentAction).mockImplementation(
+      () => new Promise((resolve) => { resolveAction = resolve; }),
+    );
+
+    render(<ContentStudioForm organizations={organizations} />);
+    fireEvent.change(screen.getByRole("textbox", { name: "Topic" }), { target: { value: "Workshop safety training" } });
+    fireEvent.click(screen.getByRole("button", { name: "Generate source script" }));
+
+    expect(await screen.findByText("Generating source script…")).toBeTruthy();
+    resolveAction({ ok: true, item, artifact });
+    await waitFor(() => expect(screen.queryByText("Generating source script…")).toBeNull());
+  });
+
+  it("announces that the canonical source is ready after generation", async () => {
+    render(<ContentStudioForm organizations={organizations} />);
+    fireEvent.change(screen.getByRole("textbox", { name: "Topic" }), { target: { value: "Workshop safety training" } });
+    fireEvent.click(screen.getByRole("button", { name: "Generate source script" }));
+    expect(await screen.findByText("Canonical source generated. Translation actions are available below.")).toBeTruthy();
   });
 });
