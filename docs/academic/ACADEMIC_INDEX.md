@@ -3,8 +3,16 @@
 **Status:** Modular working index  
 **Master governance source:** `docs/academic/PAK_ACADEMIC_CURRICULUM_STUDY_MATERIAL_BLUEPRINT_PRD.md`  
 **Current master version:** `0.1.9`  
-**Migration status:** Infrastructure in progress  
+**Migration status:** Complete for PAK-C01–C04 and PAK-D01–D05  
+**Preserved Certificate module placements:** 48  
+**Preserved Diploma semester subject placements:** 120  
 **Next Controlled Target: PAK-C05**
+
+## Source-of-Truth Relationship
+
+`ACADEMIC_INDEX.md` is the primary navigation and continuation entry point for day-to-day curriculum work. Detailed curriculum work is performed in the corresponding modular programme/semester/block files.
+
+The master PRD remains the **consolidated governance and audit authority**. This migration deliberately leaves the 200 KB master PRD unchanged so its historical programme sections and approved governance remain intact. Approved programme-level or major governance milestones must be synchronized back into the master PRD through a controlled update.
 
 ## Continuation Protocol
 
@@ -67,6 +75,17 @@
 - Completed Diploma semester subject placements: **120**
 - Chapter architecture: **not yet started**
 - Full study-material writing: **not yet started**
+
+## Migration Checkpoint
+
+- Modular migration complete for: **PAK-C01–C04 and PAK-D01–D05**
+- Certificate programme files created: **4**
+- Certificate module placements preserved: **48**
+- Diploma programme overview files created: **5**
+- Diploma semester files created: **20**
+- Diploma subject placements preserved: **120**
+- Master PRD historical content: **preserved unchanged during modular extraction**
+- Global print-ready governance: **mirrored and mandatory**
 
 ## Immediate Working Target
 
