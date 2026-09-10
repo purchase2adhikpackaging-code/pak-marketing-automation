@@ -40,4 +40,11 @@ describe("integration-vault Edge security boundary", () => {
     expect(branch).not.toContain('.from("integration_connections").update');
     expect(branch).not.toContain('.from("integration_audit_events").insert');
   });
+
+  it("records credential verification status and audit atomically", () => {
+    expect(vaultSource).toContain('admin.rpc("record_integration_test_result", {');
+    const branch = vaultSource.match(/const providerResponse = await fetch\([\s\S]*?const connection = await getConnection\(\);/)?.[0] ?? "";
+    expect(branch).not.toContain('.from("integration_connections").update');
+    expect(branch).not.toContain('.from("integration_audit_events").insert');
+  });
 });
