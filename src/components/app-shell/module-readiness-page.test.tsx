@@ -19,7 +19,7 @@ describe("B3 module readiness surface", () => {
     expect(screen.getByRole("heading", { name: "Current availability" })).toBeInTheDocument();
     expect(screen.getByText(/publishing performance analytics are not active/i)).toBeInTheDocument();
     expect(screen.getByText(/real publishing outcomes and normalized metric ingestion/i)).toBeInTheDocument();
-    expect(screen.getByText("Phase 12")).toBeInTheDocument();
+    expect(screen.getByText("Phase 12", { selector: ":not(.sr-only)" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open Dashboard" })).toHaveAttribute("href", "/dashboard");
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
