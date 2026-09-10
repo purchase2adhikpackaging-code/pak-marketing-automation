@@ -1,0 +1,80 @@
+name: Temporary C04 PRD append
+
+on:
+  push:
+    branches:
+      - docs/curriculum-c04-append
+    paths:
+      - docs/academic/.c04_append_payload.md
+
+permissions:
+  contents: write
+
+jobs:
+  append-c04:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: docs/curriculum-c04-append
+          fetch-depth: 0
+
+      - name: Update canonical academic PRD
+        shell: python
+        run: |
+          from pathlib import Path
+
+          prd_path = Path('docs/academic/PAK_ACADEMIC_CURRICULUM_STUDY_MATERIAL_BLUEPRINT_PRD.md')
+          payload_path = Path('docs/academic/.c04_append_payload.md')
+          workflow_path = Path('.github/workflows/tmp-c04-prd-append.yml')
+
+          text = prd_path.read_text(encoding='utf-8')
+          payload = payload_path.read_text(encoding='utf-8').strip() + '\n'
+
+          if '# 29. PAK-C04 — Certificate in Locomotive Maintenance' in text:
+              raise SystemExit('C04 section already exists; refusing duplicate append')
+
+          if '**Version:** 0.1.8' not in text:
+              raise SystemExit('Expected PRD version 0.1.8 not found')
+          text = text.replace('**Version:** 0.1.8', '**Version:** 0.1.9', 1)
+
+          roadmap_old = '| v0.1.8 | Global print-ready academic publishing standard + PAK-C03 Freight Wagon Maintenance certificate module architecture | **CURRENT** |\n| v0.2 | Complete programme/module and year/semester-wise subject architecture for all programmes | IN PROGRESS |'
+          roadmap_new = '| v0.1.8 | Global print-ready academic publishing standard + PAK-C03 Freight Wagon Maintenance certificate module architecture | COMPLETE |\n| v0.1.9 | PAK-C04 6-month Locomotive Maintenance certificate module architecture | **CURRENT** |\n| v0.2 | Complete programme/module and year/semester-wise subject architecture for all programmes | IN PROGRESS |'
+          if roadmap_old not in text:
+              raise SystemExit('Expected roadmap block not found')
+          text = text.replace(roadmap_old, roadmap_new, 1)
+
+          s14 = text.index('## 14. Next Controlled Work Item')
+          e14 = text.index('\n---\n\n## 15. Revision Log', s14)
+          new14 = '''## 14. Next Controlled Work Item
+
+With PAK-D01 through PAK-D05 and PAK-C01 through PAK-C04 now mapped at subject/module level, the next controlled curriculum work item is:
+
+### `PAK-C05 — Certificate in Wheelset & Bogie Technology`
+
+The next revision must define the complete 4-month module/block architecture for PAK-C05, including wheelset construction, wheels/axles/bearings/axleboxes, bogie frames, suspension, running gear, measurement and inspection, common defects, maintenance practice, safety-critical boundaries, traceability and final applied assessment.
+
+All future curriculum development and textbook production must comply with Section 26 — Global Print-Ready Academic Publishing & Book Production Standard.
+'''
+          text = text[:s14] + new14 + text[e14:]
+
+          rev_old = '| 0.1.8 | 10 Sep 2026 | Added global print-ready textbook/workbook/journal publishing standard and complete 24-week / 12-module architecture for PAK-C03 Freight Wagon Maintenance | Active |'
+          rev_new = '| 0.1.8 | 10 Sep 2026 | Added global print-ready textbook/workbook/journal publishing standard and complete 24-week / 12-module architecture for PAK-C03 Freight Wagon Maintenance | Superseded |\n| 0.1.9 | 10 Sep 2026 | Added complete 24-week / 12-module architecture for PAK-C04 Locomotive Maintenance with print-publication and technical-visual requirements | Active |'
+          if rev_old not in text:
+              raise SystemExit('Expected revision-log row not found')
+          text = text.replace(rev_old, rev_new, 1)
+
+          text = text.rstrip() + '\n\n---\n\n' + payload
+          prd_path.write_text(text, encoding='utf-8')
+
+          payload_path.unlink()
+          workflow_path.unlink()
+
+      - name: Commit branch result
+        run: |
+          git config user.name "PAK Curriculum Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "docs: append PAK-C04 locomotive maintenance curriculum v0.1.9"
+          git push origin HEAD:docs/curriculum-c04-append
