@@ -34,6 +34,38 @@ create table if not exists public.content_item_knowledge_sources (
 
 create index if not exists content_item_knowledge_sources_org_content_idx
   on public.content_item_knowledge_sources (organization_id, content_item_id);
+create index if not exists content_item_knowledge_sources_record_idx
+  on public.content_item_knowledge_sources (knowledge_record_id);
+
+create or replace function public.enforce_knowledge_record_audit_integrity()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if auth.uid() is not null then
+    if new.created_by is distinct from old.created_by
+      or new.created_at is distinct from old.created_at then
+      raise exception 'knowledge record creation audit fields are immutable';
+    end if;
+
+    new.updated_by := auth.uid();
+    new.updated_at := now();
+  end if;
+
+  return new;
+end;
+$$;
+
+revoke all on function public.enforce_knowledge_record_audit_integrity() from public;
+revoke all on function public.enforce_knowledge_record_audit_integrity() from anon;
+revoke all on function public.enforce_knowledge_record_audit_integrity() from authenticated;
+
+drop trigger if exists knowledge_record_audit_guard on public.knowledge_records;
+create trigger knowledge_record_audit_guard
+before update on public.knowledge_records
+for each row
+execute function public.enforce_knowledge_record_audit_integrity();
 
 create or replace function public.enforce_knowledge_record_revision_increment()
 returns trigger
@@ -41,6 +73,26 @@ language plpgsql
 set search_path = public
 as $$
 begin
+  -- FK ON DELETE SET NULL maintenance runs without an authenticated JWT and may
+  -- null only author references. That internal cleanup must not manufacture a
+  -- business revision.
+  if auth.uid() is null
+    and new.revision = old.revision
+    and new.organization_id is not distinct from old.organization_id
+    and new.title is not distinct from old.title
+    and new.content is not distinct from old.content
+    and new.status is not distinct from old.status
+    and new.source_type is not distinct from old.source_type
+    and new.source_label is not distinct from old.source_label
+    and new.source_reference is not distinct from old.source_reference
+    and new.created_at is not distinct from old.created_at
+    and new.updated_at is not distinct from old.updated_at
+    and (new.created_by is null or new.created_by is not distinct from old.created_by)
+    and (new.updated_by is null or new.updated_by is not distinct from old.updated_by)
+    and (new.created_by is distinct from old.created_by or new.updated_by is distinct from old.updated_by) then
+    return new;
+  end if;
+
   if new.revision <> old.revision + 1 then
     raise exception 'knowledge record revision must increment exactly once';
   end if;
@@ -50,6 +102,8 @@ end;
 $$;
 
 revoke all on function public.enforce_knowledge_record_revision_increment() from public;
+revoke all on function public.enforce_knowledge_record_revision_increment() from anon;
+revoke all on function public.enforce_knowledge_record_revision_increment() from authenticated;
 
 drop trigger if exists knowledge_record_revision_guard on public.knowledge_records;
 create trigger knowledge_record_revision_guard
@@ -99,6 +153,8 @@ end;
 $$;
 
 revoke all on function public.enforce_content_item_knowledge_source_integrity() from public;
+revoke all on function public.enforce_content_item_knowledge_source_integrity() from anon;
+revoke all on function public.enforce_content_item_knowledge_source_integrity() from authenticated;
 
 drop trigger if exists content_item_knowledge_source_integrity_guard
   on public.content_item_knowledge_sources;
@@ -131,8 +187,8 @@ for insert
 to authenticated
 with check (
   public.has_org_role(organization_id, array['OWNER','ADMIN','EDITOR'])
-  and (created_by is null or created_by = auth.uid())
-  and (updated_by is null or updated_by = auth.uid())
+  and created_by = auth.uid()
+  and updated_by = auth.uid()
 );
 
 drop policy if exists knowledge_records_update_editor on public.knowledge_records;
@@ -143,7 +199,7 @@ to authenticated
 using (public.has_org_role(organization_id, array['OWNER','ADMIN','EDITOR']))
 with check (
   public.has_org_role(organization_id, array['OWNER','ADMIN','EDITOR'])
-  and (updated_by is null or updated_by = auth.uid())
+  and updated_by = auth.uid()
 );
 
 drop policy if exists knowledge_records_delete_admin on public.knowledge_records;
@@ -161,13 +217,8 @@ for select
 to authenticated
 using (public.is_org_member(organization_id));
 
+-- Intentionally no INSERT, UPDATE, or DELETE policy for ordinary authenticated
+-- users. Generation provenance is written only by the server-only admin client
+-- after server-side knowledge resolution.
 drop policy if exists content_item_knowledge_sources_insert_editor
   on public.content_item_knowledge_sources;
-create policy content_item_knowledge_sources_insert_editor
-on public.content_item_knowledge_sources
-for insert
-to authenticated
-with check (public.has_org_role(organization_id, array['OWNER','ADMIN','EDITOR']));
-
--- Intentionally no UPDATE or DELETE policies for content_item_knowledge_sources.
--- Generation provenance is immutable for ordinary authenticated users.
