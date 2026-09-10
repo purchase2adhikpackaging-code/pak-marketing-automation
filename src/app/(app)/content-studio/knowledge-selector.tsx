@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React from "react";
 
 import type { KnowledgeSourceType } from "@/modules/knowledge-base/types";
@@ -48,7 +49,10 @@ export function KnowledgeSelector({
 
       {records.length === 0 ? (
         <div className="mt-4 rounded-lg border border-dashed border-slate-800 p-4 text-sm text-slate-500">
-          No ACTIVE Knowledge Base records are available for this organization.
+          <p>No ACTIVE Knowledge Base records are available for this organization.</p>
+          <Link href="/knowledge-base" className="mt-3 inline-flex min-h-10 items-center font-semibold text-slate-200 underline underline-offset-4">
+            Open Knowledge Base
+          </Link>
         </div>
       ) : (
         <div className="mt-4 max-h-72 space-y-2 overflow-y-auto pr-1">
@@ -57,10 +61,7 @@ export function KnowledgeSelector({
             const checkboxDisabled = disabled || (!isSelected && selectionFull);
 
             return (
-              <label
-                key={record.id}
-                className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-800 bg-slate-900/60 p-3"
-              >
+              <label key={record.id} className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-800 bg-slate-900/60 p-3">
                 <input
                   type="checkbox"
                   aria-label={record.title}
