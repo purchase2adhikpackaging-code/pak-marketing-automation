@@ -3,7 +3,8 @@ import "server-only";
 import OpenAI from "openai";
 
 import { AppError } from "@/lib/errors/app-error";
-import { getServerEnv } from "@/lib/env/server";
+import { createIntegrationVaultService } from "@/modules/integrations/service";
+import type { IntegrationCredentialResolver } from "@/modules/integrations/types";
 import type { TextGenerationProvider } from "./provider";
 import type { TextGenerationRequest, TextGenerationResult } from "./types";
 
@@ -18,41 +19,75 @@ export interface OpenAIResponsesTransport {
 type OpenAITextGenerationProviderOptions = {
   transport?: OpenAIResponsesTransport;
   model?: string;
+  organizationId?: string;
+  credentialResolver?: IntegrationCredentialResolver;
+  transportFactory?: (apiKey: string) => OpenAIResponsesTransport;
 };
+
+type OpenAIProviderConfig = {
+  defaultModel?: string;
+};
+
+function createOpenAITransport(apiKey: string): OpenAIResponsesTransport {
+  const client = new OpenAI({ apiKey });
+  return {
+    create: async (input) => {
+      const response = await client.responses.create(input);
+      return { output_text: response.output_text };
+    },
+  };
+}
 
 export class OpenAITextGenerationProvider implements TextGenerationProvider {
   readonly name = "openai";
-  private readonly transport: OpenAIResponsesTransport;
-  private readonly model: string;
+  private readonly directTransport: OpenAIResponsesTransport | undefined;
+  private readonly modelOverride: string | undefined;
+  private readonly organizationId: string | undefined;
+  private readonly credentialResolver: IntegrationCredentialResolver | undefined;
+  private readonly transportFactory: (apiKey: string) => OpenAIResponsesTransport;
 
   constructor(options: OpenAITextGenerationProviderOptions = {}) {
-    if (options.transport) {
-      this.model = options.model ?? "gpt-5.6-luna";
-      this.transport = options.transport;
-      return;
+    this.directTransport = options.transport;
+    this.modelOverride = options.model;
+    this.organizationId = options.organizationId;
+    this.credentialResolver = options.credentialResolver;
+    this.transportFactory = options.transportFactory ?? createOpenAITransport;
+  }
+
+  private async resolveRuntime(): Promise<{ transport: OpenAIResponsesTransport; model: string }> {
+    if (this.directTransport) {
+      return {
+        transport: this.directTransport,
+        model: this.modelOverride ?? "gpt-5.6-luna",
+      };
     }
 
-    const env = getServerEnv();
-    this.model = options.model ?? env.OPENAI_TEXT_MODEL ?? "gpt-5.6-luna";
-    const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
-    this.transport = {
-      create: async (input) => {
-        const response = await client.responses.create(input);
-        return { output_text: response.output_text };
-      },
+    if (!this.organizationId) {
+      throw new AppError("INTERNAL_ERROR", "OpenAI organization context is unavailable.");
+    }
+
+    const resolver = this.credentialResolver ?? createIntegrationVaultService();
+    const [apiKey, config] = await Promise.all([
+      resolver.getSecret(this.organizationId, "OPENAI", "API_KEY"),
+      resolver.getProviderConfig<OpenAIProviderConfig>(this.organizationId, "OPENAI"),
+    ]);
+    const configuredModel = config.defaultModel?.trim();
+
+    return {
+      transport: this.transportFactory(apiKey),
+      model: this.modelOverride ?? configuredModel ?? "gpt-5.6-luna",
     };
   }
 
   async validateConfiguration(): Promise<void> {
-    if (this.transport) {
-      return;
-    }
+    await this.resolveRuntime();
   }
 
   async generate(request: TextGenerationRequest): Promise<TextGenerationResult> {
     try {
-      const response = await this.transport.create({
-        model: this.model,
+      const runtime = await this.resolveRuntime();
+      const response = await runtime.transport.create({
+        model: runtime.model,
         instructions: request.systemInstructions,
         input: [
           `Target language: ${request.language}`,
@@ -71,10 +106,10 @@ export class OpenAITextGenerationProvider implements TextGenerationProvider {
       return {
         text,
         provider: this.name,
-        model: this.model,
+        model: runtime.model,
       };
     } catch (error) {
-      if (error instanceof AppError) {
+      if (error instanceof AppError && error.code === "PROVIDER_ERROR") {
         throw error;
       }
 

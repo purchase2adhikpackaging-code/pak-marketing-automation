@@ -241,6 +241,113 @@ begin
 end
 $$;
 
+-- Integration Vault structural and privilege assertions.
+do $$
+declare
+  connection_select pg_policies%rowtype;
+  connection_insert pg_policies%rowtype;
+  connection_update pg_policies%rowtype;
+  connection_delete pg_policies%rowtype;
+  audit_select pg_policies%rowtype;
+  table_name text;
+  rls_enabled boolean;
+begin
+  foreach table_name in array array['integration_connections','integration_secrets','integration_audit_events'] loop
+    if to_regclass('public.' || table_name) is null then
+      raise exception '% table is missing', table_name;
+    end if;
+    select relrowsecurity into rls_enabled from pg_class where oid = to_regclass('public.' || table_name);
+    if not coalesce(rls_enabled, false) then
+      raise exception '% RLS is not enabled', table_name;
+    end if;
+  end loop;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.integration_connections'::regclass
+      and contype = 'u'
+      and pg_get_constraintdef(oid) ilike '%organization_id%provider%'
+  ) then
+    raise exception 'integration provider uniqueness constraint is missing';
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.integration_connections'::regclass
+      and contype = 'c'
+      and pg_get_constraintdef(oid) ilike '%NOT_CONFIGURED%CONFIGURED%INVALID%DISABLED%'
+  ) then
+    raise exception 'integration connection status constraint is missing';
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.integration_secrets'::regclass
+      and contype = 'u'
+      and pg_get_constraintdef(oid) ilike '%connection_id%secret_name%'
+  ) then
+    raise exception 'integration secret uniqueness constraint is missing';
+  end if;
+
+  select * into connection_select from pg_policies
+  where schemaname='public' and tablename='integration_connections'
+    and policyname='integration_connections_select_member';
+  if connection_select.policyname is null or connection_select.cmd <> 'SELECT'
+     or connection_select.qual not ilike '%is_org_member%organization_id%' then
+    raise exception 'integration connection SELECT policy is missing or malformed';
+  end if;
+
+  select * into connection_insert from pg_policies
+  where schemaname='public' and tablename='integration_connections'
+    and policyname='integration_connections_insert_admin';
+  if connection_insert.policyname is null or connection_insert.cmd <> 'INSERT'
+     or connection_insert.with_check not ilike '%has_org_role%organization_id%OWNER%ADMIN%'
+     or connection_insert.with_check ilike '%EDITOR%' then
+    raise exception 'integration connection INSERT policy is missing or malformed';
+  end if;
+
+  select * into connection_update from pg_policies
+  where schemaname='public' and tablename='integration_connections'
+    and policyname='integration_connections_update_admin';
+  if connection_update.policyname is null or connection_update.cmd <> 'UPDATE'
+     or connection_update.qual not ilike '%has_org_role%organization_id%OWNER%ADMIN%'
+     or connection_update.with_check not ilike '%has_org_role%organization_id%OWNER%ADMIN%' then
+    raise exception 'integration connection UPDATE policy is missing or malformed';
+  end if;
+
+  select * into connection_delete from pg_policies
+  where schemaname='public' and tablename='integration_connections'
+    and policyname='integration_connections_delete_admin';
+  if connection_delete.policyname is null or connection_delete.cmd <> 'DELETE'
+     or connection_delete.qual not ilike '%has_org_role%organization_id%OWNER%ADMIN%' then
+    raise exception 'integration connection DELETE policy is missing or malformed';
+  end if;
+
+  if exists (
+    select 1 from pg_policies
+    where schemaname='public' and tablename='integration_secrets'
+  ) then
+    raise exception 'integration_secrets must expose no authenticated RLS policies';
+  end if;
+
+  select * into audit_select from pg_policies
+  where schemaname='public' and tablename='integration_audit_events'
+    and policyname='integration_audit_events_select_admin';
+  if audit_select.policyname is null or audit_select.cmd <> 'SELECT'
+     or audit_select.qual not ilike '%has_org_role%organization_id%OWNER%ADMIN%' then
+    raise exception 'integration audit SELECT policy is missing or malformed';
+  end if;
+
+  if exists (
+    select 1 from pg_policies
+    where schemaname='public' and tablename='integration_audit_events'
+      and cmd in ('INSERT','UPDATE','DELETE')
+  ) then
+    raise exception 'integration audit events must be backend-inserted and immutable to authenticated users';
+  end if;
+end
+$$;
+
 select 1;
 
 rollback;

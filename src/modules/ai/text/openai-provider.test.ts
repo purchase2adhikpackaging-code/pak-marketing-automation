@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { AppError } from "@/lib/errors/app-error";
+import type { IntegrationCredentialResolver } from "@/modules/integrations/types";
 import { OpenAITextGenerationProvider, type OpenAIResponsesTransport } from "./openai-provider";
 
 const request = {
@@ -10,6 +11,8 @@ const request = {
   systemInstructions: "Write a concise training script.",
   idempotencyKey: "content:123:script:v1",
 };
+
+const organizationId = "11111111-1111-4111-8111-111111111111";
 
 describe("OpenAITextGenerationProvider", () => {
   it("maps non-empty output text into the provider-neutral result", async () => {
@@ -23,6 +26,31 @@ describe("OpenAITextGenerationProvider", () => {
       provider: "openai",
       model: "gpt-test",
     });
+  });
+
+  it("resolves organization API key and model from Integration Vault", async () => {
+    const resolver: IntegrationCredentialResolver = {
+      getProviderConfig: vi.fn().mockResolvedValue({ defaultModel: "gpt-vault-model" }),
+      getSecret: vi.fn().mockResolvedValue("sk-vault-key"),
+    };
+    const transport: OpenAIResponsesTransport = {
+      create: vi.fn().mockResolvedValue({ output_text: "Vault-backed output." }),
+    };
+    const transportFactory = vi.fn().mockReturnValue(transport);
+    const provider = new OpenAITextGenerationProvider({
+      organizationId,
+      credentialResolver: resolver,
+      transportFactory,
+    });
+
+    await expect(provider.generate(request)).resolves.toEqual({
+      text: "Vault-backed output.",
+      provider: "openai",
+      model: "gpt-vault-model",
+    });
+    expect(resolver.getSecret).toHaveBeenCalledWith(organizationId, "OPENAI", "API_KEY");
+    expect(resolver.getProviderConfig).toHaveBeenCalledWith(organizationId, "OPENAI");
+    expect(transportFactory).toHaveBeenCalledWith("sk-vault-key");
   });
 
   it("rejects empty provider output", async () => {
