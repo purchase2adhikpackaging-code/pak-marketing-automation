@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState, useTransition } from "react";
+import React, { FormEvent, useEffect, useState, useTransition } from "react";
 
 import { can } from "@/modules/auth/authorization";
 import type { AppRole } from "@/modules/auth/roles";
