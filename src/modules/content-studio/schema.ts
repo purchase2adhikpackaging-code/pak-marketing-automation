@@ -4,6 +4,11 @@ export const contentGenerationRequestSchema = z.object({
   organizationId: z.string().uuid(),
   topic: z.string().trim().min(3).max(300),
   knowledgeContext: z.string().trim().max(12000).optional(),
+  knowledgeRecordIds: z
+    .array(z.string().uuid())
+    .max(20)
+    .refine((ids) => new Set(ids).size === ids.length, "Knowledge record IDs must be unique")
+    .optional(),
   language: z.enum(["EN", "PL", "HI"]),
 });
 

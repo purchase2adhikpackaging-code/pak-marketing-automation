@@ -1,5 +1,6 @@
 "use server";
 
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createTextGenerationProvider } from "@/modules/ai/text/provider-factory";
 import type { AppRole } from "@/modules/auth/roles";
@@ -17,6 +18,12 @@ import { SupabaseContentItemRepository } from "@/modules/content-studio/reposito
 import { contentGenerationRequestSchema, type ContentGenerationRequest } from "@/modules/content-studio/schema";
 import { generateContentScript } from "@/modules/content-studio/service";
 import type { ContentItem } from "@/modules/content-studio/types";
+import { resolveKnowledgeGrounding, type ResolvedGrounding } from "@/modules/knowledge-base/grounding-service";
+import { SupabaseKnowledgeRepository } from "@/modules/knowledge-base/repository";
+import {
+  KnowledgeSnapshotStore,
+  SupabaseKnowledgeSnapshotPersistence,
+} from "@/modules/knowledge-base/snapshot-repository";
 
 const GENERATION_ROLES: AppRole[] = ["OWNER", "ADMIN", "EDITOR"];
 
@@ -30,7 +37,18 @@ export type GenerateContentActionResult =
 export type GenerateContentActionDependencies = {
   getActor(): Promise<Actor | null>;
   getMembership(actorId: string, organizationId: string): Promise<Membership>;
+  resolveGrounding(input: {
+    organizationId: string;
+    knowledgeRecordIds?: string[];
+    additionalContext?: string;
+  }): Promise<ResolvedGrounding>;
   generate(request: ContentGenerationRequest, actorUserId: string): Promise<ContentItem>;
+  persistSnapshots(
+    contentItemId: string,
+    organizationId: string,
+    grounding: ResolvedGrounding,
+  ): Promise<void>;
+  markFailed?(item: ContentItem, failureMetadata: Record<string, unknown>): Promise<void>;
   ensureSource(item: ContentItem, actorUserId: string): Promise<ScriptArtifact>;
 };
 
@@ -65,7 +83,43 @@ export async function executeGenerateContentAction(
   }
 
   try {
-    const item = await dependencies.generate(parsed.data, actor.id);
+    const grounding = await dependencies.resolveGrounding({
+      organizationId: parsed.data.organizationId,
+      ...(parsed.data.knowledgeRecordIds !== undefined
+        ? { knowledgeRecordIds: parsed.data.knowledgeRecordIds }
+        : {}),
+      ...(parsed.data.knowledgeContext !== undefined
+        ? { additionalContext: parsed.data.knowledgeContext }
+        : {}),
+    });
+
+    const generationRequest: ContentGenerationRequest = {
+      organizationId: parsed.data.organizationId,
+      topic: parsed.data.topic,
+      ...(grounding.knowledgeContext !== undefined
+        ? { knowledgeContext: grounding.knowledgeContext }
+        : {}),
+      language: parsed.data.language,
+    };
+
+    const item = await dependencies.generate(generationRequest, actor.id);
+
+    try {
+      await dependencies.persistSnapshots(item.id, parsed.data.organizationId, grounding);
+    } catch {
+      if (dependencies.markFailed) {
+        try {
+          await dependencies.markFailed(item, {
+            code: "PROVENANCE_PERSISTENCE_FAILED",
+            message: "Generated content could not be bound to immutable knowledge provenance.",
+          });
+        } catch {
+          // Preserve the original safe action failure even if recovery persistence also fails.
+        }
+      }
+      return { ok: false, error: "Content generation is temporarily unavailable." };
+    }
+
     const artifact = await dependencies.ensureSource(item, actor.id);
     return { ok: true, item, artifact };
   } catch {
@@ -161,14 +215,47 @@ async function getMembership(actorId: string, organizationId: string): Promise<M
 }
 
 export async function generateContentAction(input: unknown): Promise<GenerateContentActionResult> {
+  const contentRepository = new SupabaseContentItemRepository();
+
   return executeGenerateContentAction(input, {
     getActor,
     getMembership,
+    async resolveGrounding(input) {
+      return resolveKnowledgeGrounding(input, new SupabaseKnowledgeRepository());
+    },
     async generate(request, actorUserId) {
       return generateContentScript(request, {
-        repository: new SupabaseContentItemRepository(),
+        repository: contentRepository,
         provider: createTextGenerationProvider(),
         actorUserId,
+      });
+    },
+    async persistSnapshots(contentItemId, organizationId, grounding) {
+      const supabase = createSupabaseAdminClient();
+      const store = new KnowledgeSnapshotStore(new SupabaseKnowledgeSnapshotPersistence(supabase));
+      await store.insertMany(
+        grounding.sources.map(({ snapshot }) => ({
+          organizationId,
+          contentItemId,
+          knowledgeRecordId: snapshot.knowledgeRecordId,
+          knowledgeRevision: snapshot.knowledgeRevision,
+          titleSnapshot: snapshot.titleSnapshot,
+          contentSnapshot: snapshot.contentSnapshot,
+          sourceTypeSnapshot: snapshot.sourceTypeSnapshot,
+          ...(snapshot.sourceLabelSnapshot !== undefined
+            ? { sourceLabelSnapshot: snapshot.sourceLabelSnapshot }
+            : {}),
+          ...(snapshot.sourceReferenceSnapshot !== undefined
+            ? { sourceReferenceSnapshot: snapshot.sourceReferenceSnapshot }
+            : {}),
+        })),
+      );
+    },
+    async markFailed(item, failureMetadata) {
+      await contentRepository.markFailed({
+        id: item.id,
+        organizationId: item.organizationId,
+        failureMetadata,
       });
     },
     async ensureSource(item, actorUserId) {

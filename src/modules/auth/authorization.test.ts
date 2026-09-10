@@ -20,6 +20,28 @@ describe("RBAC authorization", () => {
     expect(can("ANALYST", "content:create")).toBe(false);
   });
 
+  it("maps Knowledge Base permissions by role", () => {
+    expect(can("OWNER", "knowledge:view")).toBe(true);
+    expect(can("OWNER", "knowledge:manage")).toBe(true);
+    expect(can("OWNER", "knowledge:delete")).toBe(true);
+
+    expect(can("ADMIN", "knowledge:view")).toBe(true);
+    expect(can("ADMIN", "knowledge:manage")).toBe(true);
+    expect(can("ADMIN", "knowledge:delete")).toBe(true);
+
+    expect(can("EDITOR", "knowledge:view")).toBe(true);
+    expect(can("EDITOR", "knowledge:manage")).toBe(true);
+    expect(can("EDITOR", "knowledge:delete")).toBe(false);
+
+    expect(can("REVIEWER", "knowledge:view")).toBe(true);
+    expect(can("REVIEWER", "knowledge:manage")).toBe(false);
+    expect(can("REVIEWER", "knowledge:delete")).toBe(false);
+
+    expect(can("ANALYST", "knowledge:view")).toBe(true);
+    expect(can("ANALYST", "knowledge:manage")).toBe(false);
+    expect(can("ANALYST", "knowledge:delete")).toBe(false);
+  });
+
   it("defaults to deny for unsupported permission values at runtime", () => {
     expect(can("ANALYST", "unknown:permission" as Permission)).toBe(false);
   });

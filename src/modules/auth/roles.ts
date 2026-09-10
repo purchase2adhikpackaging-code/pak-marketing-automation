@@ -10,6 +10,9 @@ export const ALL_PERMISSIONS = [
   "content:approve",
   "publishing:manage",
   "analytics:view",
+  "knowledge:view",
+  "knowledge:manage",
+  "knowledge:delete",
 ] as const;
 
 export type Permission = (typeof ALL_PERMISSIONS)[number];
@@ -24,8 +27,11 @@ export const ROLE_PERMISSIONS: Record<AppRole, readonly Permission[]> = {
     "content:approve",
     "publishing:manage",
     "analytics:view",
+    "knowledge:view",
+    "knowledge:manage",
+    "knowledge:delete",
   ],
-  EDITOR: ["content:create", "content:edit", "analytics:view"],
-  REVIEWER: ["content:approve", "analytics:view"],
-  ANALYST: ["analytics:view"],
+  EDITOR: ["content:create", "content:edit", "analytics:view", "knowledge:view", "knowledge:manage"],
+  REVIEWER: ["content:approve", "analytics:view", "knowledge:view"],
+  ANALYST: ["analytics:view", "knowledge:view"],
 };

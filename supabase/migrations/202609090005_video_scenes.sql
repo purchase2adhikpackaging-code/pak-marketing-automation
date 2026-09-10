@@ -22,6 +22,12 @@ create table if not exists public.video_scenes (
   unique (organization_id, content_item_id, scene_order)
 );
 
+alter table public.media_assets
+  drop constraint if exists media_assets_scene_id_fkey;
+alter table public.media_assets
+  add constraint media_assets_scene_id_fkey
+  foreign key (scene_id) references public.video_scenes(id) on delete set null;
+
 create index if not exists video_scenes_org_content_idx
   on public.video_scenes(organization_id, content_item_id, scene_order);
 

@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import React, { useMemo, useState, useTransition } from "react";
 
 import type { ScriptArtifact } from "@/modules/content-studio/artifacts/types";
 import { generateContentAction } from "./actions";
+import { KnowledgeSelector, type SelectableKnowledgeRecord } from "./knowledge-selector";
 import { MultilingualContentPanel } from "./multilingual-content-panel";
 
 type OrganizationOption = {
   id: string;
   label: string;
+  knowledgeRecords: SelectableKnowledgeRecord[];
 };
 
 type FormState = {
@@ -31,6 +33,7 @@ const LANGUAGE_OPTIONS = [
 
 export function ContentStudioForm({ organizations }: { organizations: OrganizationOption[] }) {
   const [organizationId, setOrganizationId] = useState(organizations[0]?.id ?? "");
+  const [selectedKnowledgeIds, setSelectedKnowledgeIds] = useState<string[]>([]);
   const [form, setForm] = useState<FormState>({
     topic: "",
     knowledgeContext: "",
@@ -40,6 +43,11 @@ export function ContentStudioForm({ organizations }: { organizations: Organizati
   const [workspace, setWorkspace] = useState<GeneratedWorkspace | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  const knowledgeRecords = useMemo(
+    () => organizations.find((organization) => organization.id === organizationId)?.knowledgeRecords ?? [],
+    [organizations, organizationId],
+  );
+
   function submit() {
     setResult({});
     setWorkspace(null);
@@ -47,7 +55,10 @@ export function ContentStudioForm({ organizations }: { organizations: Organizati
       const response = await generateContentAction({
         organizationId,
         topic: form.topic,
-        knowledgeContext: form.knowledgeContext || undefined,
+        ...(selectedKnowledgeIds.length > 0 ? { knowledgeRecordIds: selectedKnowledgeIds } : {}),
+        ...(form.knowledgeContext.trim().length > 0
+          ? { knowledgeContext: form.knowledgeContext.trim() }
+          : {}),
         language: form.language,
       });
 
@@ -76,7 +87,10 @@ export function ContentStudioForm({ organizations }: { organizations: Organizati
               <span className="text-sm font-medium text-slate-200">Organization</span>
               <select
                 value={organizationId}
-                onChange={(event) => setOrganizationId(event.target.value)}
+                onChange={(event) => {
+                  setSelectedKnowledgeIds([]);
+                  setOrganizationId(event.target.value);
+                }}
                 className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none focus:border-slate-500"
                 disabled={organizations.length === 0 || isPending}
               >
@@ -101,14 +115,21 @@ export function ContentStudioForm({ organizations }: { organizations: Organizati
               />
             </label>
 
+            <KnowledgeSelector
+              records={knowledgeRecords}
+              selectedIds={selectedKnowledgeIds}
+              onChange={setSelectedKnowledgeIds}
+              disabled={isPending}
+            />
+
             <label className="block space-y-2">
-              <span className="text-sm font-medium text-slate-200">Knowledge context</span>
+              <span className="text-sm font-medium text-slate-200">Additional context</span>
               <textarea
                 value={form.knowledgeContext}
                 onChange={(event) => setForm((current) => ({ ...current, knowledgeContext: event.target.value }))}
-                placeholder="Add factual PAK context, positioning, facilities, programme details, or other approved source material."
+                placeholder="Optional supplemental context that is not already captured in the approved Knowledge Base sources."
                 maxLength={12000}
-                rows={10}
+                rows={7}
                 className="w-full resize-y rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm leading-6 text-white outline-none placeholder:text-slate-500 focus:border-slate-500"
                 disabled={isPending}
               />
@@ -158,7 +179,7 @@ export function ContentStudioForm({ organizations }: { organizations: Organizati
             <div className="mt-6 whitespace-pre-wrap text-sm leading-7 text-slate-200">{result.script}</div>
           ) : (
             <div className="mt-6 rounded-xl border border-dashed border-slate-800 p-6 text-sm leading-6 text-slate-500">
-              Enter an approved topic and grounding context, then generate the canonical source. The server will re-check your organization access before any AI request is made.
+              Select approved Knowledge Base sources, optionally add supplemental context, and generate the canonical source. The server re-resolves selected record IDs and re-checks organization access before any AI request is made.
             </div>
           )}
         </section>

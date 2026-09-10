@@ -97,4 +97,5 @@ end;
 $$;
 
 revoke all on function public.claim_next_job(text, integer, text[]) from public;
+revoke all on function public.claim_next_job(text, integer, text[]) from anon;
 revoke all on function public.claim_next_job(text, integer, text[]) from authenticated;

@@ -10,7 +10,7 @@ create table if not exists public.media_assets (
   duration_seconds numeric(10,2) check (duration_seconds is null or duration_seconds > 0),
   checksum text,
   generating_job_id uuid references public.jobs(id) on delete set null,
-  scene_id uuid references public.video_scenes(id) on delete set null,
+  scene_id uuid,
   status text not null default 'ACTIVE' check (status in ('ACTIVE','ARCHIVED','FAILED')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
