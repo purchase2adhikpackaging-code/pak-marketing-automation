@@ -13,6 +13,7 @@ const optionalTrimmedString = z.preprocess(
 const serverEnvSchema = publicEnvSchema
   .extend({
     SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+    INTEGRATION_VAULT_ENCRYPTION_KEY: optionalTrimmedString,
     OPENAI_API_KEY: optionalTrimmedString,
     LTX_WORKER_SHARED_SECRET: z.string().min(1),
     AI_TEXT_PROVIDER: z.enum(["fake", "openai"]).default("fake"),
@@ -23,7 +24,7 @@ const serverEnvSchema = publicEnvSchema
       ctx.addIssue({
         code: "custom",
         path: ["OPENAI_API_KEY"],
-        message: "OPENAI_API_KEY is required when AI_TEXT_PROVIDER=openai",
+        message: "OPENAI_API_KEY is required when AI_TEXT_PROVIDER=openai until vault runtime resolution is enabled",
       });
     }
   });
