@@ -226,7 +226,7 @@ export async function generateContentAction(input: unknown): Promise<GenerateCon
     async generate(request, actorUserId) {
       return generateContentScript(request, {
         repository: contentRepository,
-        provider: createTextGenerationProvider(),
+        provider: createTextGenerationProvider({ organizationId: request.organizationId }),
         actorUserId,
       });
     },
@@ -275,7 +275,7 @@ export async function generateTranslationAction(input: unknown): Promise<ScriptA
     async generateTranslation(request, actorUserId) {
       return generateTranslationArtifact(request, {
         repository: new SupabaseScriptArtifactRepository(),
-        provider: createTextGenerationProvider(),
+        provider: createTextGenerationProvider({ organizationId: request.organizationId }),
         actorUserId,
       });
     },
@@ -283,7 +283,7 @@ export async function generateTranslationAction(input: unknown): Promise<ScriptA
       return regenerateSourceArtifact(request, {
         artifactRepository: new SupabaseScriptArtifactRepository(),
         contentRepository: new SupabaseContentItemRepository(),
-        provider: createTextGenerationProvider(),
+        provider: createTextGenerationProvider({ organizationId: request.organizationId }),
         actorUserId,
       });
     },
@@ -297,7 +297,7 @@ export async function regenerateSourceAction(input: unknown): Promise<ScriptArti
     async generateTranslation(request, actorUserId) {
       return generateTranslationArtifact(request, {
         repository: new SupabaseScriptArtifactRepository(),
-        provider: createTextGenerationProvider(),
+        provider: createTextGenerationProvider({ organizationId: request.organizationId }),
         actorUserId,
       });
     },
@@ -305,7 +305,7 @@ export async function regenerateSourceAction(input: unknown): Promise<ScriptArti
       return regenerateSourceArtifact(request, {
         artifactRepository: new SupabaseScriptArtifactRepository(),
         contentRepository: new SupabaseContentItemRepository(),
-        provider: createTextGenerationProvider(),
+        provider: createTextGenerationProvider({ organizationId: request.organizationId }),
         actorUserId,
       });
     },
