@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState, useTransition } from "react";
+import { FormEvent, useEffect, useState, useTransition } from "react";
 
 import { can } from "@/modules/auth/authorization";
 import type { AppRole } from "@/modules/auth/roles";
@@ -54,7 +54,7 @@ export function IntegrationsManager({ organizations }: { organizations: Integrat
       ? openAiConnection.config.defaultModel
       : "gpt-5.6-luna";
 
-  useMemo(() => {
+  useEffect(() => {
     setModel(configuredModel);
   }, [configuredModel, selectedOrganizationId]);
 
