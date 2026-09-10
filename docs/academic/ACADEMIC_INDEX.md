@@ -3,16 +3,16 @@
 **Status:** Modular working index  
 **Master governance source:** `docs/academic/PAK_ACADEMIC_CURRICULUM_STUDY_MATERIAL_BLUEPRINT_PRD.md`  
 **Current master version:** `0.1.9`  
-**Migration status:** Complete for PAK-C01–C04 and PAK-D01–D05  
-**Preserved Certificate module placements:** 48  
+**Migration status:** Complete for PAK-C01–C05 and PAK-D01–D05  
+**Preserved Certificate module placements:** 56  
 **Preserved Diploma semester subject placements:** 120  
-**Next Controlled Target: PAK-C05**
+**Next Controlled Target: PAK-C06**
 
 ## Source-of-Truth Relationship
 
 `ACADEMIC_INDEX.md` is the primary navigation and continuation entry point for day-to-day curriculum work. Detailed curriculum work is performed in the corresponding modular programme/semester/block files.
 
-The master PRD remains the **consolidated governance and audit authority**. This migration deliberately leaves the 200 KB master PRD unchanged so its historical programme sections and approved governance remain intact. Approved programme-level or major governance milestones must be synchronized back into the master PRD through a controlled update.
+The master PRD remains the **consolidated governance and audit authority**. The modular workflow avoids repeatedly rewriting the large master PRD during small programme additions. Approved modular programme work is synchronized back into the master PRD at controlled batch or major-governance milestones.
 
 ## Continuation Protocol
 
@@ -20,7 +20,7 @@ The master PRD remains the **consolidated governance and audit authority**. This
 2. Read only the target programme/semester file plus applicable governance files.
 3. Write detailed curriculum changes to the modular file first.
 4. Update this index in the same change.
-5. Synchronize the master PRD at approved programme/milestone boundaries.
+5. Synchronize the master PRD at approved batch/major milestone boundaries.
 
 ## Governance Shortcuts
 
@@ -36,7 +36,7 @@ The master PRD remains the **consolidated governance and audit authority**. This
 | PAK-C02 | Certificate in Railway Vehicle Maintenance | Certificate | 6 Months | 12 two-week modules | `certificates/C02/PAK-C02.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | §24 |
 | PAK-C03 | Certificate in Freight Wagon Maintenance | Certificate | 6 Months | 12 two-week modules | `certificates/C03/PAK-C03.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | §27 |
 | PAK-C04 | Certificate in Locomotive Maintenance | Certificate | 6 Months | 12 two-week modules | `certificates/C04/PAK-C04.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | §29 |
-| PAK-C05 | Certificate in Wheelset & Bogie Technology | Certificate | 4 Months | Block/week structure pending | `certificates/C05/PAK-C05.md` | Catalogue Only | Pending | Not Started | Not Started | §4.1 |
+| PAK-C05 | Certificate in Wheelset & Bogie Technology | Certificate | 4 Months | 8 two-week modules | `certificates/C05/PAK-C05.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | Pending master sync |
 | PAK-C06 | Certificate in Railway Braking Systems | Certificate | 4 Months | Block/week structure pending | `certificates/C06/PAK-C06.md` | Catalogue Only | Pending | Not Started | Not Started | §4.1 |
 | PAK-C07 | Certificate in Railway Welding & Fabrication | Certificate | 6 Months | Block/week structure pending | `certificates/C07/PAK-C07.md` | Catalogue Only | Pending | Not Started | Not Started | §4.1 |
 | PAK-C08 | Certificate in Railway Electrical Systems | Certificate | 6 Months | Block/week structure pending | `certificates/C08/PAK-C08.md` | Catalogue Only | Pending | Not Started | Not Started | §4.1 |
@@ -69,26 +69,26 @@ The master PRD remains the **consolidated governance and audit authority**. This
 
 ## Completed-Architecture Baseline
 
-- Completed Certificate programmes: **4 of 12**
-- Completed Certificate module placements: **48**
+- Completed Certificate programmes: **5 of 12**
+- Completed Certificate module placements: **56**
 - Completed Diploma programmes: **5 of 5**
 - Completed Diploma semester subject placements: **120**
 - Chapter architecture: **not yet started**
 - Full study-material writing: **not yet started**
 
-## Migration Checkpoint
+## Modular Curriculum Checkpoint
 
-- Modular migration complete for: **PAK-C01–C04 and PAK-D01–D05**
-- Certificate programme files created: **4**
-- Certificate module placements preserved: **48**
-- Diploma programme overview files created: **5**
-- Diploma semester files created: **20**
+- Modular programme files complete for: **PAK-C01–C05 and PAK-D01–D05**
+- Certificate programme files created: **5**
+- Certificate module placements defined: **56**
+- Diploma programme overview files: **5**
+- Diploma semester files: **20**
 - Diploma subject placements preserved: **120**
-- Master PRD historical content: **preserved unchanged during modular extraction**
+- Master PRD consolidated synchronization: **deferred to controlled batch milestone**
 - Global print-ready governance: **mirrored and mandatory**
 
 ## Immediate Working Target
 
-**PAK-C05 — Certificate in Wheelset & Bogie Technology — 4 Months**
+**PAK-C06 — Certificate in Railway Braking Systems — 4 Months**
 
-Before writing any textbook prose for C05 or any other programme, first complete and approve its module/subject and chapter architecture, then apply the print-ready publishing standard.
+Before writing any textbook prose for C06 or any other programme, first complete and approve its module/subject and chapter architecture, then apply the print-ready publishing standard.
