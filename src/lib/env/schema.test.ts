@@ -10,10 +10,9 @@ const validPublic = {
 const validServer = {
   ...validPublic,
   SUPABASE_SERVICE_ROLE_KEY: "service-role",
-  OPENAI_API_KEY: "openai-key",
+  INTEGRATION_VAULT_ENCRYPTION_KEY: Buffer.alloc(32, 3).toString("base64"),
   LTX_WORKER_SHARED_SECRET: "ltx-secret",
   AI_TEXT_PROVIDER: "fake" as const,
-  OPENAI_TEXT_MODEL: "gpt-5-mini",
 };
 
 describe("environment schema", () => {
@@ -21,7 +20,7 @@ describe("environment schema", () => {
     expect(() => parsePublicEnv({})).toThrow();
   });
 
-  it("requires all server-only secrets", () => {
+  it("requires server bootstrap secrets", () => {
     expect(() => parseServerEnv(validPublic)).toThrow();
   });
 
@@ -37,49 +36,35 @@ describe("environment schema", () => {
     const withoutAiConfig = {
       ...validServer,
       AI_TEXT_PROVIDER: undefined,
-      OPENAI_TEXT_MODEL: undefined,
     };
 
     expect(parseServerEnv(withoutAiConfig).AI_TEXT_PROVIDER).toBe("fake");
   });
 
-  it("allows fake provider without an OpenAI key and normalizes a blank model", () => {
+  it("allows fake provider without a vault encryption key until vault features execute", () => {
     const env = parseServerEnv({
       ...validPublic,
       SUPABASE_SERVICE_ROLE_KEY: "service-role",
       LTX_WORKER_SHARED_SECRET: "ltx-secret",
       AI_TEXT_PROVIDER: "fake",
-      OPENAI_TEXT_MODEL: "",
+      INTEGRATION_VAULT_ENCRYPTION_KEY: "",
     });
 
     expect(env.AI_TEXT_PROVIDER).toBe("fake");
-    expect(env.OPENAI_API_KEY).toBeUndefined();
-    expect(env.OPENAI_TEXT_MODEL).toBeUndefined();
+    expect(env.INTEGRATION_VAULT_ENCRYPTION_KEY).toBeUndefined();
   });
 
-  it("requires an OpenAI key when the OpenAI provider is selected", () => {
-    expect(() =>
-      parseServerEnv({
-        ...validPublic,
-        SUPABASE_SERVICE_ROLE_KEY: "service-role",
-        LTX_WORKER_SHARED_SECRET: "ltx-secret",
-        AI_TEXT_PROVIDER: "openai",
-        OPENAI_TEXT_MODEL: "gpt-5.6-luna",
-      }),
-    ).toThrow();
-  });
-
-  it("accepts OpenAI when a key is present", () => {
+  it("accepts OpenAI provider selection without a host-level OpenAI key", () => {
     const env = parseServerEnv({
       ...validPublic,
       SUPABASE_SERVICE_ROLE_KEY: "service-role",
-      OPENAI_API_KEY: "server-secret",
+      INTEGRATION_VAULT_ENCRYPTION_KEY: Buffer.alloc(32, 4).toString("base64"),
       LTX_WORKER_SHARED_SECRET: "ltx-secret",
       AI_TEXT_PROVIDER: "openai",
-      OPENAI_TEXT_MODEL: "gpt-5.6-luna",
     });
 
-    expect(env.OPENAI_API_KEY).toBe("server-secret");
+    expect(env.AI_TEXT_PROVIDER).toBe("openai");
+    expect(env).not.toHaveProperty("OPENAI_API_KEY");
   });
 
   it("rejects unsupported AI providers", () => {
