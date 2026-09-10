@@ -114,26 +114,56 @@ export function KnowledgeBaseManager({ organizations }: { organizations: Knowled
     });
   }
 
+  function updateRecord(record: KnowledgeRecord, status = record.status) {
+    return updateKnowledgeAction({
+      id: record.id,
+      organizationId: record.organizationId,
+      expectedRevision: record.revision,
+      title: editForm.title || record.title,
+      content: editForm.content || record.content,
+      status,
+      sourceType: editingId === record.id ? editForm.sourceType : record.sourceType,
+      ...((editingId === record.id ? editForm.sourceLabel : record.sourceLabel)?.trim()
+        ? { sourceLabel: (editingId === record.id ? editForm.sourceLabel : record.sourceLabel)?.trim() }
+        : {}),
+      ...((editingId === record.id ? editForm.sourceReference : record.sourceReference)?.trim()
+        ? { sourceReference: (editingId === record.id ? editForm.sourceReference : record.sourceReference)?.trim() }
+        : {}),
+    });
+  }
+
   function saveEdit(record: KnowledgeRecord) {
     setError(null);
     startTransition(async () => {
-      const result = await updateKnowledgeAction({
-        id: record.id,
-        organizationId: record.organizationId,
-        expectedRevision: record.revision,
-        title: editForm.title,
-        content: editForm.content,
-        status: record.status,
-        sourceType: editForm.sourceType,
-        ...(editForm.sourceLabel.trim() ? { sourceLabel: editForm.sourceLabel.trim() } : {}),
-        ...(editForm.sourceReference.trim() ? { sourceReference: editForm.sourceReference.trim() } : {}),
-      });
+      const result = await updateRecord(record);
       if (!result.ok) {
         setError(result.error);
         return;
       }
       replaceRecord(result.record);
       setEditingId(null);
+    });
+  }
+
+  function activateRecord(record: KnowledgeRecord) {
+    setError(null);
+    startTransition(async () => {
+      const result = await updateKnowledgeAction({
+        id: record.id,
+        organizationId: record.organizationId,
+        expectedRevision: record.revision,
+        title: record.title,
+        content: record.content,
+        status: "ACTIVE",
+        sourceType: record.sourceType,
+        ...(record.sourceLabel ? { sourceLabel: record.sourceLabel } : {}),
+        ...(record.sourceReference ? { sourceReference: record.sourceReference } : {}),
+      });
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      replaceRecord(result.record);
     });
   }
 
@@ -228,6 +258,7 @@ export function KnowledgeBaseManager({ organizations }: { organizations: Knowled
                 <div><h4 className="text-base font-semibold text-white">{record.title}</h4><div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400"><span>{record.status}</span><span>Revision {record.revision}</span><span>Updated {formatUpdated(record.updatedAt)}</span></div></div>
                 {canManage ? <div className="flex flex-wrap gap-2">
                   <button type="button" aria-label={`Edit ${record.title}`} onClick={() => beginEdit(record)} disabled={isPending} className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200">Edit</button>
+                  {record.status !== "ACTIVE" ? <button type="button" aria-label={`Activate ${record.title}`} onClick={() => activateRecord(record)} disabled={isPending} className="rounded-lg border border-emerald-800 px-3 py-2 text-xs font-semibold text-emerald-200">Activate</button> : null}
                   {record.status !== "ARCHIVED" ? <button type="button" aria-label={`Archive ${record.title}`} onClick={() => archiveRecord(record)} disabled={isPending} className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200">Archive</button> : null}
                   {canDelete ? <button type="button" aria-label={`Delete ${record.title}`} onClick={() => removeRecord(record)} disabled={isPending} className="rounded-lg border border-red-900/70 px-3 py-2 text-xs font-semibold text-red-200">Delete</button> : null}
                 </div> : null}
@@ -235,6 +266,11 @@ export function KnowledgeBaseManager({ organizations }: { organizations: Knowled
               {editing ? <div className="mt-5 space-y-4 border-t border-slate-800 pt-5">
                 <label className="block space-y-2"><span className="text-sm text-slate-300">Edit title</span><input aria-label="Edit title" value={editForm.title} onChange={(event) => setEditForm((current) => ({ ...current, title: event.target.value }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" /></label>
                 <label className="block space-y-2"><span className="text-sm text-slate-300">Edit content</span><textarea aria-label="Edit content" value={editForm.content} onChange={(event) => setEditForm((current) => ({ ...current, content: event.target.value }))} rows={6} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" /></label>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="space-y-2"><span className="text-sm text-slate-300">Edit source type</span><select aria-label="Edit source type" value={editForm.sourceType} onChange={(event) => setEditForm((current) => ({ ...current, sourceType: event.target.value as KnowledgeSourceType }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white"><option value="MANUAL">Manual</option><option value="DOCUMENT">Document</option><option value="URL">URL</option></select></label>
+                  <label className="space-y-2"><span className="text-sm text-slate-300">Edit source label</span><input aria-label="Edit source label" value={editForm.sourceLabel} onChange={(event) => setEditForm((current) => ({ ...current, sourceLabel: event.target.value }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" /></label>
+                  <label className="space-y-2 md:col-span-2"><span className="text-sm text-slate-300">Edit source reference</span><input aria-label="Edit source reference" value={editForm.sourceReference} onChange={(event) => setEditForm((current) => ({ ...current, sourceReference: event.target.value }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" /></label>
+                </div>
                 <div className="flex gap-2"><button type="button" aria-label={`Save ${record.title}`} onClick={() => saveEdit(record)} disabled={isPending} className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-950">Save</button><button type="button" onClick={() => setEditingId(null)} disabled={isPending} className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300">Cancel</button></div>
               </div> : <div className="mt-5 space-y-3 text-sm leading-6 text-slate-300"><p className="whitespace-pre-wrap">{record.content}</p><div className="text-xs text-slate-500"><span>{record.sourceType}</span>{record.sourceLabel ? <span className="ml-3">{record.sourceLabel}</span> : null}{record.sourceReference ? <span className="ml-3">{record.sourceReference}</span> : null}</div></div>}
             </article>
