@@ -10,24 +10,12 @@ const optionalTrimmedString = z.preprocess(
   z.string().trim().min(1).optional(),
 );
 
-const serverEnvSchema = publicEnvSchema
-  .extend({
-    SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-    INTEGRATION_VAULT_ENCRYPTION_KEY: optionalTrimmedString,
-    OPENAI_API_KEY: optionalTrimmedString,
-    LTX_WORKER_SHARED_SECRET: z.string().min(1),
-    AI_TEXT_PROVIDER: z.enum(["fake", "openai"]).default("fake"),
-    OPENAI_TEXT_MODEL: optionalTrimmedString,
-  })
-  .superRefine((env, ctx) => {
-    if (env.AI_TEXT_PROVIDER === "openai" && !env.OPENAI_API_KEY) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["OPENAI_API_KEY"],
-        message: "OPENAI_API_KEY is required when AI_TEXT_PROVIDER=openai until vault runtime resolution is enabled",
-      });
-    }
-  });
+const serverEnvSchema = publicEnvSchema.extend({
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+  INTEGRATION_VAULT_ENCRYPTION_KEY: optionalTrimmedString,
+  LTX_WORKER_SHARED_SECRET: z.string().min(1),
+  AI_TEXT_PROVIDER: z.enum(["fake", "openai"]).default("fake"),
+});
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
