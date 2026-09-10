@@ -3,7 +3,7 @@
 # Academic Curriculum & Study Material Blueprint
 
 **Product Requirements Document (PRD)**  
-**Version:** 0.1.3  
+**Version:** 0.1.4  
 **Status:** Living Master Blueprint  
 **Baseline Date:** 10 September 2026  
 **Language:** English  
@@ -223,7 +223,8 @@ This PRD defines curriculum architecture only. It does not itself confer degree-
 | v0.1 | Master programme catalogue, qualification architecture and governing rules | COMPLETE |
 | v0.1.1 | PAK-D01 year/semester-wise subject architecture | COMPLETE |
 | v0.1.2 | PAK-D02 year/semester-wise subject architecture | COMPLETE |
-| v0.1.3 | PAK-D03 year/semester-wise subject architecture | **CURRENT** |
+| v0.1.3 | PAK-D03 year/semester-wise subject architecture | COMPLETE |
+| v0.1.4 | PAK-D04 year/semester-wise subject architecture | **CURRENT** |
 | v0.2 | Complete year/semester-wise subject architecture for all programmes | IN PROGRESS |
 | v0.3 | Complete subject-wise chapter architecture | PLANNED |
 | v0.4 | Learning outcomes, contact hours/credits, theory/practical mapping and prerequisites | PLANNED |
@@ -248,11 +249,11 @@ The GitHub Markdown file is the canonical working copy for subsequent curriculum
 
 ## 14. Next Controlled Work Item
 
-With PAK-D01, PAK-D02 and PAK-D03 subject architectures now defined in Sections 17–19, the next controlled curriculum work item is:
+With PAK-D01 through PAK-D04 subject architectures now defined in Sections 17–20, the next controlled curriculum work item is:
 
-### `PAK-D04 — Diploma in Railway Operations & Transport Management`
+### `PAK-D05 — Diploma in Railway Manufacturing, Welding & Quality`
 
-The next revision must define the complete Year 1 / Semester 1 through Year 2 / Semester 4 subject architecture for PAK-D04 using the same controlled curriculum methodology.
+The next revision must define the complete Year 1 / Semester 1 through Year 2 / Semester 4 subject architecture for PAK-D05 using the same controlled curriculum methodology.
 
 Once all programme subject structures are complete, the PRD will advance to the subject-wise chapter architecture stage.
 
@@ -265,7 +266,8 @@ Once all programme subject structures are complete, the PRD will advance to the 
 | 0.1 | 10 Sep 2026 | Initial master programme catalogue and study-material governance baseline | Superseded |
 | 0.1.1 | 10 Sep 2026 | Added complete four-semester subject architecture for PAK-D01 | Superseded |
 | 0.1.2 | 10 Sep 2026 | Added complete four-semester subject architecture for PAK-D02 | Superseded |
-| 0.1.3 | 10 Sep 2026 | Added complete four-semester subject architecture for PAK-D03 | Active |
+| 0.1.3 | 10 Sep 2026 | Added complete four-semester subject architecture for PAK-D03 | Superseded |
+| 0.1.4 | 10 Sep 2026 | Added complete four-semester subject architecture for PAK-D04 | Active |
 
 ---
 
@@ -935,5 +937,270 @@ For each of the 24 modules, the chapter stage must define:
 - reference and standards families;
 - electrical-safety classification;
 - safety-critical content flags.
+
+No full textbook prose should be generated before that subject's chapter architecture has been approved or frozen.
+
+---
+
+# 20. PAK-D04 — Diploma in Railway Operations & Transport Management
+
+## 20.1 Programme Identity
+
+**Programme Code:** `PAK-D04`  
+**Programme Title:** Diploma in Railway Operations & Transport Management  
+**Duration:** 2 Academic Years  
+**Academic Structure:** 4 Semesters  
+**Primary Language:** English  
+**Orientation:** Railway operations, traffic and capacity planning, passenger and freight transport, terminals, safety, disruption management, commercial management and data-driven transport performance  
+**Curriculum Status:** Subject Architecture v1 — Chapter decomposition pending
+
+### Programme Purpose
+
+PAK-D04 is designed to prepare operations coordinators, transport-planning assistants, terminal and yard personnel, junior traffic-management professionals, freight and passenger operations staff, and future railway managers with a structured understanding of how railway services are planned, controlled, measured and improved.
+
+The programme combines railway-system knowledge with transport economics, operations rules, timetable and capacity concepts, passenger and freight service planning, yards and terminals, traffic control, disruption management, safety management, supply-chain coordination, customer experience, commercial practice, sustainability and operational analytics.
+
+The programme is educational and managerial in scope. It does **not** by itself confer competence, licensing or employer authorization for safety-critical functions such as train driving, signaller/dispatcher duties, traffic-control authority, shunting command, safety-critical communications or infrastructure access where such authorization is legally or operationally required.
+
+### Curriculum Design Principles
+
+1. **Network thinking:** Students learn to understand railway performance as the interaction of infrastructure, rolling stock, signalling/control, staff, timetable, terminals, customers and external constraints.
+2. **Operations before optimization:** Basic railway operating concepts and rules precede timetable, capacity and performance optimization.
+3. **Passenger and freight balance:** Both passenger-service management and freight/intermodal operations are treated as core railway business domains.
+4. **Safety embedded in operations:** Safety management, human factors, operational risk and degraded-mode awareness are integrated across the programme.
+5. **Simulation before authority:** Safety-critical operating scenarios are taught through controlled case studies and simulation unless delivered within an authorized competence framework.
+6. **Data-driven management:** Statistics, KPIs, delay analysis, capacity utilization and operational dashboards support evidence-based decisions.
+7. **Commercial awareness:** Costing, contracts, customer service, procurement and revenue concepts connect railway operations with business sustainability.
+8. **European interoperability context:** Later modules introduce EU operational interoperability and cross-border information flows without replacing infrastructure-manager, railway-undertaking or national operating rules.
+
+---
+
+## 20.2 Year 1 — Semester 1: Railway, Transport & Management Foundations
+
+**Semester Objective:** Establish the railway-system, quantitative, economic, safety, digital and technical foundations required for later transport-operations specialization.
+
+| Code | Subject | Classification | Orientation | Prerequisite |
+|---|---|---|---|---|
+| D04-101 | Railway Systems & Transport Industry Fundamentals | Core | Theory + System Demonstration | None |
+| D04-102 | Applied Mathematics, Statistics & Data Literacy for Transport | Core | Theory + Problem Solving + Spreadsheet Lab | None |
+| D04-103 | Principles of Transport Economics, Business & Management | Core | Theory + Case Study | None |
+| D04-104 | Railway Operations Safety, Human Factors & Technical Communication | Core | Theory + Case Study + Communication Exercises | None |
+| D04-105 | Digital Tools, Operational Documentation & Transport Information Systems | Practical Core | Computer Lab + Documentation Practice | None |
+| D04-106 | Rolling Stock, Infrastructure & Signalling Fundamentals for Operations | Core / Technical Foundation | Theory + Demonstration | D04-101 recommended |
+
+### Semester 1 Progression Logic
+
+- `D04-101` establishes railway-industry vocabulary, actors, service types and system relationships.
+- `D04-102` develops the quantitative literacy later required for timetable, capacity, demand, delay and KPI analysis.
+- `D04-103` introduces economic and managerial reasoning behind transport services and resource allocation.
+- `D04-104` introduces operational safety culture, human performance and professional communication before students study traffic-management scenarios.
+- `D04-105` develops disciplined use of spreadsheets, records, schedules, operational forms and information systems.
+- `D04-106` gives operations students enough technical understanding of track, stations, signalling, rolling stock and traction constraints to interpret later planning decisions correctly.
+
+---
+
+## 20.3 Year 1 — Semester 2: Train Operations, Timetabling, Passenger & Freight Services
+
+**Semester Objective:** Build practical understanding of how train services are planned and organized across traffic management, timetables, passenger operations, freight flows, yards and commercial processes.
+
+| Code | Subject | Classification | Orientation | Prerequisite |
+|---|---|---|---|---|
+| D04-201 | Train Operations, Operating Rules & Traffic Management Fundamentals | Specialization Core | Theory + Scenario Exercises | D04-101, D04-104, D04-106 |
+| D04-202 | Timetable Planning, Headways & Railway Capacity Fundamentals | Specialization Core | Theory + Planning Exercises + Simulation | D04-102, D04-106; co-requisite D04-201 |
+| D04-203 | Passenger Railway Operations & Service Management | Specialization Core | Theory + Case Study | D04-101, D04-103 |
+| D04-204 | Freight Rail Operations, Wagon Flow & Intermodal Logistics | Specialization Core | Theory + Flow-Planning Exercises | D04-101, D04-103, D04-106 |
+| D04-205 | Stations, Yards, Terminals & Shunting Operations Fundamentals | Specialization Core | Theory + Layout / Simulation Exercises | D04-106, D04-201 |
+| D04-206 | Transport Costing, Commercial Processes & Contract Fundamentals | Core / Management | Theory + Numerical Exercises + Case Study | D04-102, D04-103 |
+
+### Semester 2 Progression Logic
+
+Semester 2 establishes the basic operating model of railway transport. `D04-201` provides the conceptual framework for train movement and traffic management, while `D04-202` introduces timetable construction, headway and capacity constraints.
+
+`D04-203` and `D04-204` separate passenger and freight operating models so students understand the different service, terminal, commercial and customer requirements of each. `D04-205` brings the network down to station, yard and terminal level, and `D04-206` connects operational choices to cost and commercial consequences.
+
+Safety-critical rules taught in `D04-201` and `D04-205` must remain clearly identified as educational principles unless the material is explicitly mapped to the current authorized rulebook and competence framework of the relevant infrastructure manager, railway undertaking or jurisdiction.
+
+---
+
+## 20.4 Year 2 — Semester 3: Traffic Control, Disruption, Safety & Service Optimization
+
+**Semester Objective:** Develop the ability to analyze and manage operational performance, disruption, risk, logistics flows and passenger service through simulations, case studies and structured decision-making.
+
+| Code | Subject | Classification | Orientation | Prerequisite |
+|---|---|---|---|---|
+| D04-301 | Railway Control Centre Operations & Traffic Regulation | Specialization Core | Theory + Traffic Simulation | D04-201, D04-202 |
+| D04-302 | Disruption, Incident & Emergency Operations Management | Specialization Core | Theory + Scenario Simulation + Case Study | D04-104, D04-201, D04-301 |
+| D04-303 | Railway Safety Management Systems, Operational Risk & Human Performance | Core / Specialization | Theory + Risk Exercises + Case Study | D04-104, D04-201 |
+| D04-304 | Freight Logistics, Supply Chain & Terminal Planning | Specialization | Theory + Planning / Optimization Exercises | D04-204, D04-205, D04-206 |
+| D04-305 | Passenger Demand, Revenue, Ticketing & Customer Experience | Specialization | Theory + Data Analysis + Case Study | D04-102, D04-203, D04-206 |
+| D04-306 | Operations Practicum I — Timetable, Yard, Dispatch & Disruption Simulation | Practical Core | Integrated Simulation / Competency Practice | D04-201 to D04-205; co-requisite D04-301, D04-302 |
+
+### Semester 3 Progression Logic
+
+Semester 3 shifts from planned operations to real-time and performance-sensitive operations. Students learn how traffic controllers and operations teams conceptually regulate services, how disruption propagates through a network, and how operational decisions affect safety, capacity, passenger outcomes and freight commitments.
+
+`D04-303` provides the safety-management and human-factors framework required to evaluate operational decisions. `D04-304` and `D04-305` deepen the commercial-service perspective for freight and passenger markets respectively.
+
+`D04-306` is an integrated simulation module. Students should work through timetable conflicts, yard movements, rolling-stock constraints, delay recovery, passenger-information decisions and freight-service priorities in a controlled environment without implying real-world authorization to issue operational instructions.
+
+---
+
+## 20.5 Year 2 — Semester 4: Network Performance, Interoperability & Transport Leadership
+
+**Semester Objective:** Integrate operational planning with network capacity, performance analytics, cross-border interoperability, commercial management, sustainability and real-world railway transport projects.
+
+| Code | Subject | Classification | Orientation | Prerequisite |
+|---|---|---|---|---|
+| D04-401 | Advanced Network Capacity, Timetable & Operations Planning | Specialization Core | Theory + Optimization / Simulation | D04-202, D04-301, D04-306 |
+| D04-402 | Railway Performance Management, KPIs, Delay Analysis & Operations Analytics | Core / Specialization | Data Analysis + Case Study + Dashboard Exercises | D04-102, D04-105, D04-301 |
+| D04-403 | International Rail Operations, Interoperability & Cross-Border Freight | Specialization Core | Theory + Case Study + Documentation Exercises | D04-204, D04-301, D04-304 |
+| D04-404 | Railway Commercial Management, Procurement & Service Contracts | Management Core | Theory + Commercial Case Study | D04-103, D04-206 |
+| D04-405 | Sustainable Transport, Energy Efficiency & Digital Railway Operations | Core / Specialization | Theory + Data / Planning Project | D04-105, D04-301, D04-402 |
+| D04-406 | Industry Practicum & Railway Operations/Transport Management Capstone | Practical / Capstone | Industry + Project + Presentation + Competency Assessment | Completion of Semesters 1–3; co-requisite D04-401 to D04-405 |
+
+### Semester 4 Progression Logic
+
+The final semester elevates students from individual operating scenarios to network and business performance. `D04-401` develops advanced capacity and timetable reasoning, while `D04-402` formalizes KPI and delay-analysis methods. `D04-403` introduces interoperability and cross-border freight processes, including the importance of standardized operational and telematics information exchange.
+
+`D04-404` develops the commercial and procurement literacy needed by transport managers. `D04-405` links sustainability with energy-conscious operations, digital information flows and performance improvement.
+
+`D04-406` requires students to solve a realistic railway-operations or transport-management problem using documented assumptions, data analysis, safety considerations, stakeholder impacts, operational planning and a defensible management recommendation.
+
+---
+
+## 20.6 PAK-D04 Subject Inventory
+
+PAK-D04 contains **24 semester subjects/modules**:
+
+- Semester 1: 6 subjects
+- Semester 2: 6 subjects
+- Semester 3: 6 subjects
+- Semester 4: 6 subjects
+
+Contact hours, credits/ECTS-equivalent workload, detailed learning outcomes and assessment weightings remain intentionally unassigned until the dedicated workload and credit-mapping phase.
+
+---
+
+## 20.7 Shared-Module Strategy
+
+PAK-D04 may reuse selected master content from technical diploma programmes where learning outcomes are equivalent, but only at the depth required by operations students.
+
+Potential shared or adapted module families include:
+
+- railway systems fundamentals;
+- rolling-stock and infrastructure awareness;
+- signalling and train-control fundamentals;
+- railway safety culture and human factors;
+- technical communication and documentation;
+- basic digital and data-literacy concepts;
+- quality and performance principles.
+
+D04 requires independent treatment for:
+
+- train operations and traffic management;
+- timetable planning and capacity;
+- passenger-service operations;
+- freight and intermodal logistics;
+- stations, yards and terminals;
+- control-centre decision-making;
+- disruption and incident management;
+- transport economics and commercial management;
+- passenger demand, revenue and customer experience;
+- cross-border operations;
+- operations analytics and transport performance.
+
+**Control rule:** a technical-awareness module used in D04 must not claim engineering-maintenance competency, while an operations module must not claim safety-critical operating authorization merely because students completed simulations or theoretical assessments.
+
+---
+
+## 20.8 Subject Dependency Spine
+
+Operations foundation progression:
+
+`D04-101 Railway Systems`
++ `D04-104 Operations Safety & Human Factors`
++ `D04-106 Technical Railway Fundamentals`
+→ `D04-201 Train Operations & Traffic Management`
++ `D04-202 Timetable & Capacity Fundamentals`
++ `D04-205 Stations, Yards & Terminals`
+→ `D04-301 Control Centre & Traffic Regulation`
++ `D04-302 Disruption Management`
++ `D04-306 Operations Simulation`
+→ `D04-401 Advanced Capacity & Operations Planning`
++ `D04-402 Performance Analytics`
+→ `D04-406 Capstone`.
+
+Freight progression:
+
+`D04-103 Transport Economics`
+→ `D04-204 Freight Rail Operations`
++ `D04-205 Yards & Terminals`
++ `D04-206 Costing & Commercial Processes`
+→ `D04-304 Freight Logistics & Terminal Planning`
+→ `D04-403 Cross-Border Freight & Interoperability`
+→ `D04-406 Capstone`.
+
+Passenger progression:
+
+`D04-103 Transport Economics`
+→ `D04-203 Passenger Railway Operations`
++ `D04-206 Commercial Fundamentals`
+→ `D04-305 Passenger Demand, Revenue & Customer Experience`
+→ `D04-402 Performance Management`
++ `D04-405 Sustainable/Digital Operations`
+→ `D04-406 Capstone`.
+
+---
+
+## 20.9 Technical & Regulatory Reference Baseline for Future Chapter Development
+
+Chapter development for PAK-D04 must verify current requirements against authoritative sources appropriate to the topic and operating context. Reference families include:
+
+- Directive (EU) 2016/797 on interoperability of the rail system within the European Union, using the current applicable version during content production;
+- Directive (EU) 2016/798 on railway safety, using the current applicable version during content production;
+- Commission Implementing Regulation (EU) 2019/773 concerning the TSI for the operation and traffic management subsystem (OPE TSI), including current amendments/consolidated text applicable at the time of publication;
+- the applicable EU Telematics Applications TSI and ERA technical documentation for interoperable passenger/freight information exchange, capacity management, train preparation, traffic management, ticketing and freight/intermodal processes;
+- applicable infrastructure-manager and railway-undertaking operating rules, network statements, safety-management procedures and operational instructions where legitimately available for training use;
+- relevant Polish railway law, national rules and competent-authority requirements where applicable;
+- applicable passenger-rights, dangerous-goods, commercial, working-time, procurement, data-protection and accessibility requirements where a chapter addresses those topics;
+- recognized transport economics, railway capacity, timetable planning, logistics, operations research, human factors and safety-management references.
+
+**Control rule:** railway operating rules, movement authorities, degraded-mode procedures, emergency instructions, safety-critical phrases, speed restrictions, braking assumptions, signalling indications and dispatching practices must never be generalized from illustrative teaching material. Any chapter teaching such content must clearly identify the governing jurisdiction, infrastructure manager, railway undertaking, approved rulebook or authoritative source.
+
+---
+
+## 20.10 Safety-Critical Operations Content Controls
+
+Future D04 textbooks, simulations and practical manuals must classify operational content into the following categories:
+
+1. **General railway operations education** — concepts that may be taught generically, such as capacity, service patterns, delay propagation, terminal flows and performance measures.
+2. **Simulation-only safety-critical scenarios** — signalling, dispatching, degraded operations, shunting coordination and emergency response exercises that develop reasoning without granting operational authority.
+3. **Rulebook-dependent content** — material that must be tied to a named infrastructure manager, railway undertaking, jurisdiction or approved operational rulebook before being used as procedural training.
+4. **Authorization-dependent competence** — duties that require formal employer assessment, certification, licensing or authorization and therefore cannot be awarded solely through the PAK-D04 academic diploma.
+
+All simulation material must distinguish pedagogical assumptions from real operational rules and include instructor-controlled scenario boundaries.
+
+---
+
+## 20.11 PAK-D04 Chapter-Decomposition Readiness
+
+PAK-D04 is ready for subject-wise chapter design after portfolio-level subject architecture is completed, or earlier if selected as a pilot programme.
+
+For each of the 24 modules, the chapter stage must define:
+
+- subject purpose and scope;
+- chapter titles and sequence;
+- quantitative and data-analysis depth;
+- operational system diagrams and process maps;
+- passenger/freight application points;
+- theory/case-study/simulation split;
+- timetable, capacity and logistics exercises where applicable;
+- operational scenarios and decision exercises;
+- datasets and dashboard exercises where applicable;
+- learning-outcome placeholders;
+- assessment linkage placeholders;
+- reference and regulatory families;
+- rulebook-dependency flags;
+- safety-critical content classification.
 
 No full textbook prose should be generated before that subject's chapter architecture has been approved or frozen.
