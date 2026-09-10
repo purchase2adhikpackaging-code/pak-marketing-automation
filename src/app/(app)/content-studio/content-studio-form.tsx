@@ -3,6 +3,7 @@
 import Link from "next/link";
 import React, { useMemo, useState, useTransition } from "react";
 
+import type { AppRole } from "@/modules/auth/roles";
 import type { ScriptArtifact } from "@/modules/content-studio/artifacts/types";
 import { generateContentAction } from "./actions";
 import { KnowledgeSelector, type SelectableKnowledgeRecord } from "./knowledge-selector";
@@ -11,6 +12,7 @@ import { MultilingualContentPanel } from "./multilingual-content-panel";
 type OrganizationOption = {
   id: string;
   label: string;
+  role: AppRole;
   knowledgeRecords: SelectableKnowledgeRecord[];
 };
 
@@ -57,12 +59,13 @@ export function ContentStudioForm({ organizations }: { organizations: Organizati
   const [workspace, setWorkspace] = useState<GeneratedWorkspace | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const knowledgeRecords = useMemo(
-    () => organizations.find((organization) => organization.id === organizationId)?.knowledgeRecords ?? [],
+  const selectedOrganization = useMemo(
+    () => organizations.find((organization) => organization.id === organizationId) ?? organizations[0],
     [organizations, organizationId],
   );
+  const knowledgeRecords = selectedOrganization?.knowledgeRecords ?? [];
 
-  if (organizations.length === 0) {
+  if (!selectedOrganization) {
     return (
       <div className="mt-8 rounded-2xl border border-amber-900/50 bg-amber-950/20 p-5 text-sm leading-6 text-amber-100">
         <p>No organization with Content Studio generation permission is available for this account.</p>
@@ -115,6 +118,13 @@ export function ContentStudioForm({ organizations }: { organizations: Organizati
 
   return (
     <div className="mt-8">
+      <div className="mb-5 rounded-xl border border-slate-800 bg-slate-950/40 px-4 py-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Current generation context</p>
+        <p className="mt-1 text-sm font-medium text-slate-200">
+          {selectedOrganization.label} · {selectedOrganization.role}
+        </p>
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-6 shadow-sm">
           <div className="space-y-5">
@@ -124,6 +134,8 @@ export function ContentStudioForm({ organizations }: { organizations: Organizati
                 value={organizationId}
                 onChange={(event) => {
                   setSelectedKnowledgeIds([]);
+                  setResult({});
+                  setWorkspace(null);
                   setOrganizationId(event.target.value);
                 }}
                 className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none focus:border-slate-500"
@@ -193,6 +205,13 @@ export function ContentStudioForm({ organizations }: { organizations: Organizati
             >
               {isPending ? "Generating…" : "Generate source script"}
             </button>
+
+            <div aria-live="polite" className="min-h-6 text-sm text-slate-400">
+              {isPending ? <p>Generating source script…</p> : null}
+              {!isPending && result.script ? (
+                <p>Canonical source generated. Translation actions are available below.</p>
+              ) : null}
+            </div>
           </div>
         </section>
 
