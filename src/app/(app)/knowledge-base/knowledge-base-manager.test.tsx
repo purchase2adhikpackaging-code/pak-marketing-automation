@@ -121,6 +121,60 @@ describe("KnowledgeBaseManager", () => {
     expect(screen.getByText("Read-only approved knowledge")).toBeTruthy();
   });
 
+  it("allows a manager to activate a draft record", async () => {
+    const draft = record({ status: "DRAFT" });
+    vi.mocked(updateKnowledgeAction).mockResolvedValue({
+      ok: true,
+      record: record({ status: "ACTIVE", revision: 5 }),
+    });
+    renderManager("EDITOR", [draft]);
+
+    fireEvent.click(screen.getByRole("button", { name: "Activate Workshop safety standard" }));
+
+    await waitFor(() => {
+      expect(updateKnowledgeAction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: draft.id,
+          organizationId,
+          expectedRevision: 4,
+          status: "ACTIVE",
+        }),
+      );
+    });
+  });
+
+  it("edits source type, label, and reference with the current revision", async () => {
+    vi.mocked(updateKnowledgeAction).mockResolvedValue({
+      ok: true,
+      record: record({
+        sourceType: "URL",
+        sourceLabel: "PAK Portal",
+        sourceReference: "https://pak.example/source",
+        revision: 5,
+      }),
+    });
+    renderManager("EDITOR");
+
+    fireEvent.click(screen.getByRole("button", { name: "Edit Workshop safety standard" }));
+    fireEvent.change(screen.getByLabelText("Edit source type"), { target: { value: "URL" } });
+    fireEvent.change(screen.getByLabelText("Edit source label"), { target: { value: "PAK Portal" } });
+    fireEvent.change(screen.getByLabelText("Edit source reference"), {
+      target: { value: "https://pak.example/source" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save Workshop safety standard" }));
+
+    await waitFor(() => {
+      expect(updateKnowledgeAction).toHaveBeenCalledWith(
+        expect.objectContaining({
+          expectedRevision: 4,
+          sourceType: "URL",
+          sourceLabel: "PAK Portal",
+          sourceReference: "https://pak.example/source",
+        }),
+      );
+    });
+  });
+
   it("submits the current revision when editing an existing record", async () => {
     vi.mocked(updateKnowledgeAction).mockResolvedValue({
       ok: true,
