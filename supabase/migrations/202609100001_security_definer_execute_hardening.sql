@@ -22,5 +22,5 @@ begin
     revoke all on function public.rls_auto_enable() from anon;
     revoke all on function public.rls_auto_enable() from authenticated;
   end if;
-end
+end;
 $$;
