@@ -112,7 +112,7 @@ describe("ContentStudioForm Knowledge grounding", () => {
     render(<ContentStudioForm organizations={organizations} />);
     fireEvent.change(screen.getByRole("textbox", { name: "Topic" }), { target: { value: "Workshop safety training" } });
     fireEvent.click(screen.getByRole("button", { name: "Generate source script" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("Content generation is temporarily unavailable.");
+    expect((await screen.findByRole("alert")).textContent).toContain("Content generation is temporarily unavailable.");
     expect(screen.getByRole("link", { name: /Open Settings/i }).getAttribute("href")).toBe("/settings");
   });
 
