@@ -1,40 +1,38 @@
 import "server-only";
 
-import OpenAI from "openai";
-
 import { AppError } from "@/lib/errors/app-error";
-import { createIntegrationVaultService } from "@/modules/integrations/service";
-import type { IntegrationCredentialResolver } from "@/modules/integrations/types";
+import { invokeContentGeneration } from "@/modules/integrations/edge-client";
 import type { TextGenerationProvider } from "./provider";
 import type { TextGenerationRequest, TextGenerationResult } from "./types";
 
 export interface OpenAIResponsesTransport {
   create(input: {
-    model: string;
+    model?: string;
     instructions: string;
     input: string;
-  }): Promise<{ output_text?: string | null }>;
+  }): Promise<{ output_text?: string | null; model?: string | null }>;
 }
 
 type OpenAITextGenerationProviderOptions = {
   transport?: OpenAIResponsesTransport;
   model?: string;
   organizationId?: string;
-  credentialResolver?: IntegrationCredentialResolver;
-  transportFactory?: (apiKey: string) => OpenAIResponsesTransport;
+  edgeTransportFactory?: (organizationId: string) => OpenAIResponsesTransport;
 };
 
-type OpenAIProviderConfig = {
-  defaultModel?: string;
+type EdgeGenerationResponse = {
+  output_text?: string | null;
+  model?: string | null;
 };
 
-function createOpenAITransport(apiKey: string): OpenAIResponsesTransport {
-  const client = new OpenAI({ apiKey });
+function createEdgeTransport(organizationId: string): OpenAIResponsesTransport {
   return {
-    create: async (input) => {
-      const response = await client.responses.create(input);
-      return { output_text: response.output_text };
-    },
+    create: (input) => invokeContentGeneration<EdgeGenerationResponse>({
+      organizationId,
+      ...(input.model ? { model: input.model } : {}),
+      instructions: input.instructions,
+      input: input.input,
+    }),
   };
 }
 
@@ -43,18 +41,16 @@ export class OpenAITextGenerationProvider implements TextGenerationProvider {
   private readonly directTransport: OpenAIResponsesTransport | undefined;
   private readonly modelOverride: string | undefined;
   private readonly organizationId: string | undefined;
-  private readonly credentialResolver: IntegrationCredentialResolver | undefined;
-  private readonly transportFactory: (apiKey: string) => OpenAIResponsesTransport;
+  private readonly edgeTransportFactory: (organizationId: string) => OpenAIResponsesTransport;
 
   constructor(options: OpenAITextGenerationProviderOptions = {}) {
     this.directTransport = options.transport;
     this.modelOverride = options.model;
     this.organizationId = options.organizationId;
-    this.credentialResolver = options.credentialResolver;
-    this.transportFactory = options.transportFactory ?? createOpenAITransport;
+    this.edgeTransportFactory = options.edgeTransportFactory ?? createEdgeTransport;
   }
 
-  private async resolveRuntime(): Promise<{ transport: OpenAIResponsesTransport; model: string }> {
+  private resolveRuntime(): { transport: OpenAIResponsesTransport; model?: string } {
     if (this.directTransport) {
       return {
         transport: this.directTransport,
@@ -66,28 +62,21 @@ export class OpenAITextGenerationProvider implements TextGenerationProvider {
       throw new AppError("INTERNAL_ERROR", "OpenAI organization context is unavailable.");
     }
 
-    const resolver = this.credentialResolver ?? createIntegrationVaultService();
-    const [apiKey, config] = await Promise.all([
-      resolver.getSecret(this.organizationId, "OPENAI", "API_KEY"),
-      resolver.getProviderConfig<OpenAIProviderConfig>(this.organizationId, "OPENAI"),
-    ]);
-    const configuredModel = config.defaultModel?.trim();
-
     return {
-      transport: this.transportFactory(apiKey),
-      model: this.modelOverride ?? configuredModel ?? "gpt-5.6-luna",
+      transport: this.edgeTransportFactory(this.organizationId),
+      ...(this.modelOverride ? { model: this.modelOverride } : {}),
     };
   }
 
   async validateConfiguration(): Promise<void> {
-    await this.resolveRuntime();
+    this.resolveRuntime();
   }
 
   async generate(request: TextGenerationRequest): Promise<TextGenerationResult> {
     try {
-      const runtime = await this.resolveRuntime();
+      const runtime = this.resolveRuntime();
       const response = await runtime.transport.create({
-        model: runtime.model,
+        ...(runtime.model ? { model: runtime.model } : {}),
         instructions: request.systemInstructions,
         input: [
           `Target language: ${request.language}`,
@@ -106,7 +95,7 @@ export class OpenAITextGenerationProvider implements TextGenerationProvider {
       return {
         text,
         provider: this.name,
-        model: runtime.model,
+        model: response.model?.trim() || runtime.model || "gpt-5.6-luna",
       };
     } catch (error) {
       if (error instanceof AppError && error.code === "PROVIDER_ERROR") {
