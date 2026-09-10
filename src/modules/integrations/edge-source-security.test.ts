@@ -26,4 +26,18 @@ describe("integration-vault Edge security boundary", () => {
     expect(safeConnectionBody).not.toContain("decrypted_secret");
     expect(safeConnectionBody).not.toContain("apiKey");
   });
+
+  it("uses one transactional RPC for config mutation plus its audit event", () => {
+    expect(vaultSource).toContain('admin.rpc("update_integration_connection_config")');
+    const branch = vaultSource.match(/if \(input\.action === "update_config"\)[\s\S]*?\n  }\n\n  if \(input\.action === "set_disabled"\)/)?.[0] ?? "";
+    expect(branch).not.toContain('.from("integration_connections").update');
+    expect(branch).not.toContain('.from("integration_audit_events").insert');
+  });
+
+  it("uses one transactional RPC for enable-disable mutation plus its audit event", () => {
+    expect(vaultSource).toContain('admin.rpc("set_integration_connection_disabled")');
+    const branch = vaultSource.match(/if \(input\.action === "set_disabled"\)[\s\S]*?\n  }\n\n  if \(input\.provider !== "OPENAI"\)/)?.[0] ?? "";
+    expect(branch).not.toContain('.from("integration_connections").update');
+    expect(branch).not.toContain('.from("integration_audit_events").insert');
+  });
 });
