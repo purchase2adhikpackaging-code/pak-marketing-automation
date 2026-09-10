@@ -3,10 +3,10 @@
 **Status:** Modular working index  
 **Master governance source:** `docs/academic/PAK_ACADEMIC_CURRICULUM_STUDY_MATERIAL_BLUEPRINT_PRD.md`  
 **Current master version:** `0.1.9`  
-**Migration status:** Complete for PAK-C01–C09 and PAK-D01–D05  
-**Defined Certificate module placements:** 100  
+**Migration status:** Complete for PAK-C01–C10 and PAK-D01–D05  
+**Defined Certificate module placements:** 106  
 **Preserved Diploma semester subject placements:** 120  
-**Next Controlled Target: PAK-C10**
+**Next Controlled Target: PAK-C11**
 
 ## Source-of-Truth Relationship
 
@@ -41,7 +41,7 @@ The master PRD remains the **consolidated governance and audit authority**. The 
 | PAK-C07 | Certificate in Railway Welding & Fabrication | Certificate | 6 Months | 12 two-week modules | `certificates/C07/PAK-C07.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | Pending master sync |
 | PAK-C08 | Certificate in Railway Electrical Systems | Certificate | 6 Months | 12 two-week modules | `certificates/C08/PAK-C08.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | Pending master sync |
 | PAK-C09 | Certificate in Railway Inspection & NDT | Certificate | 6 Months | 12 two-week modules | `certificates/C09/PAK-C09.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | Pending master sync |
-| PAK-C10 | Certificate in Railway Safety & Workshop Practices | Certificate | 3 Months | Block/week structure pending | `certificates/C10/PAK-C10.md` | Catalogue Only | Pending | Not Started | Not Started | §4.1 |
+| PAK-C10 | Certificate in Railway Safety & Workshop Practices | Certificate | 3 Months | 6 two-week modules | `certificates/C10/PAK-C10.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | Pending master sync |
 | PAK-C11 | Certificate in Railway Quality Control | Certificate | 4 Months | Block/week structure pending | `certificates/C11/PAK-C11.md` | Catalogue Only | Pending | Not Started | Not Started | §4.1 |
 | PAK-C12 | Certificate in Railway Operations & Logistics | Certificate | 6 Months | Block/week structure pending | `certificates/C12/PAK-C12.md` | Catalogue Only | Pending | Not Started | Not Started | §4.1 |
 | PAK-D01 | Diploma in Railway Rolling Stock Engineering & Maintenance | Diploma | 2 Years | 4 semesters | `diplomas/D01/PAK-D01-OVERVIEW.md` + `S1.md`–`S4.md` | Subject Architecture Complete | Pending | Not Started | Not Started | §17 |
@@ -69,8 +69,8 @@ The master PRD remains the **consolidated governance and audit authority**. The 
 
 ## Completed-Architecture Baseline
 
-- Completed Certificate programmes: **9 of 12**
-- Completed Certificate module placements: **100**
+- Completed Certificate programmes: **10 of 12**
+- Completed Certificate module placements: **106**
 - Completed Diploma programmes: **5 of 5**
 - Completed Diploma semester subject placements: **120**
 - Chapter architecture: **not yet started**
@@ -78,9 +78,9 @@ The master PRD remains the **consolidated governance and audit authority**. The 
 
 ## Modular Curriculum Checkpoint
 
-- Modular programme files complete for: **PAK-C01–C09 and PAK-D01–D05**
-- Certificate programme files created: **9**
-- Certificate module placements defined: **100**
+- Modular programme files complete for: **PAK-C01–C10 and PAK-D01–D05**
+- Certificate programme files created: **10**
+- Certificate module placements defined: **106**
 - Diploma programme overview files: **5**
 - Diploma semester files: **20**
 - Diploma subject placements preserved: **120**
@@ -89,6 +89,6 @@ The master PRD remains the **consolidated governance and audit authority**. The 
 
 ## Immediate Working Target
 
-**PAK-C10 — Certificate in Railway Safety & Workshop Practices — 3 Months**
+**PAK-C11 — Certificate in Railway Quality Control — 4 Months**
 
-Before writing any textbook prose for C10 or any other programme, first complete and approve its module/subject and chapter architecture, then apply the print-ready publishing standard.
+Before writing any textbook prose for C11 or any other programme, first complete and approve its module/subject and chapter architecture, then apply the print-ready publishing standard.
