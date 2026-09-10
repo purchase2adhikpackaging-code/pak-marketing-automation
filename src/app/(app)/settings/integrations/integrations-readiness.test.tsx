@@ -52,9 +52,20 @@ describe("Integration Settings production readiness", () => {
   });
 
   it("requires confirmation before removing the write-only credential", async () => {
+    const current = organizations[0]!.connections[0]!;
     vi.mocked(removeIntegrationSecretAction).mockResolvedValue({
       ok: true,
-      connection: { ...organizations[0]!.connections[0]!, status: "NOT_CONFIGURED", maskedHint: undefined },
+      connection: {
+        id: current.id,
+        organizationId: current.organizationId,
+        provider: current.provider,
+        displayName: current.displayName,
+        status: "NOT_CONFIGURED",
+        config: current.config,
+        secretVersion: current.secretVersion,
+        createdAt: current.createdAt,
+        updatedAt: current.updatedAt,
+      },
     });
 
     render(<IntegrationsManager organizations={organizations} />);
