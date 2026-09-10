@@ -1,7 +1,8 @@
 import "server-only";
 
 import { AppError } from "@/lib/errors/app-error";
-import { getPublicEnv, type PublicEnv } from "@/lib/env/public";
+import { getPublicEnv } from "@/lib/env/public";
+import type { PublicEnv } from "@/lib/env/schema";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export type EdgeInvokeDependencies = {
