@@ -16,7 +16,7 @@ export type TextProviderFactoryOptions = {
 export function createTextGenerationProvider(
   options: TextProviderFactoryOptions = {},
 ): TextGenerationProvider {
-  const providerName = options.provider ?? getServerEnv().AI_TEXT_PROVIDER;
+  const providerName = options.provider ?? (options.organizationId ? "openai" : getServerEnv().AI_TEXT_PROVIDER);
 
   if (providerName === "fake") {
     return new FakeTextGenerationProvider();
