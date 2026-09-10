@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React, { useMemo, useState, useTransition } from "react";
 
 import { can } from "@/modules/auth/authorization";
@@ -48,7 +49,9 @@ export function KnowledgeBaseManager({ organizations }: { organizations: Knowled
   const [createForm, setCreateForm] = useState<DraftForm>(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<DraftForm>(EMPTY_FORM);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const selectedOrganization = useMemo(
@@ -64,11 +67,16 @@ export function KnowledgeBaseManager({ organizations }: { organizations: Knowled
     );
   }
 
-  const organization: KnowledgeOrganizationWorkspace = selectedOrganization;
+  const organization = selectedOrganization;
   const canManage = can(organization.role, "knowledge:manage");
   const canDelete = can(organization.role, "knowledge:delete");
   const sourceRecords = recordsByOrganization[organization.id] ?? [];
   const visibleRecords = canManage ? sourceRecords : sourceRecords.filter((record) => record.status === "ACTIVE");
+
+  function beginOperation() {
+    setError(null);
+    setSuccess(null);
+  }
 
   function replaceRecord(next: KnowledgeRecord) {
     setRecordsByOrganization((current) => ({
@@ -80,7 +88,7 @@ export function KnowledgeBaseManager({ organizations }: { organizations: Knowled
   }
 
   function createRecord() {
-    setError(null);
+    beginOperation();
     startTransition(async () => {
       const result = await createKnowledgeAction({
         organizationId: organization.id,
@@ -99,11 +107,13 @@ export function KnowledgeBaseManager({ organizations }: { organizations: Knowled
         [organization.id]: [result.record, ...(current[organization.id] ?? [])],
       }));
       setCreateForm(EMPTY_FORM);
+      setSuccess("Knowledge record created as a draft.");
     });
   }
 
   function beginEdit(record: KnowledgeRecord) {
-    setError(null);
+    beginOperation();
+    setConfirmDeleteId(null);
     setEditingId(record.id);
     setEditForm({
       title: record.title,
@@ -114,39 +124,32 @@ export function KnowledgeBaseManager({ organizations }: { organizations: Knowled
     });
   }
 
-  function updateRecord(record: KnowledgeRecord, status = record.status) {
-    return updateKnowledgeAction({
-      id: record.id,
-      organizationId: record.organizationId,
-      expectedRevision: record.revision,
-      title: editForm.title || record.title,
-      content: editForm.content || record.content,
-      status,
-      sourceType: editingId === record.id ? editForm.sourceType : record.sourceType,
-      ...((editingId === record.id ? editForm.sourceLabel : record.sourceLabel)?.trim()
-        ? { sourceLabel: (editingId === record.id ? editForm.sourceLabel : record.sourceLabel)?.trim() }
-        : {}),
-      ...((editingId === record.id ? editForm.sourceReference : record.sourceReference)?.trim()
-        ? { sourceReference: (editingId === record.id ? editForm.sourceReference : record.sourceReference)?.trim() }
-        : {}),
-    });
-  }
-
   function saveEdit(record: KnowledgeRecord) {
-    setError(null);
+    beginOperation();
     startTransition(async () => {
-      const result = await updateRecord(record);
+      const result = await updateKnowledgeAction({
+        id: record.id,
+        organizationId: record.organizationId,
+        expectedRevision: record.revision,
+        title: editForm.title,
+        content: editForm.content,
+        status: record.status,
+        sourceType: editForm.sourceType,
+        ...(editForm.sourceLabel.trim() ? { sourceLabel: editForm.sourceLabel.trim() } : {}),
+        ...(editForm.sourceReference.trim() ? { sourceReference: editForm.sourceReference.trim() } : {}),
+      });
       if (!result.ok) {
         setError(result.error);
         return;
       }
       replaceRecord(result.record);
       setEditingId(null);
+      setSuccess("Knowledge record updated.");
     });
   }
 
   function activateRecord(record: KnowledgeRecord) {
-    setError(null);
+    beginOperation();
     startTransition(async () => {
       const result = await updateKnowledgeAction({
         id: record.id,
@@ -164,11 +167,12 @@ export function KnowledgeBaseManager({ organizations }: { organizations: Knowled
         return;
       }
       replaceRecord(result.record);
+      setSuccess("Knowledge record activated.");
     });
   }
 
   function archiveRecord(record: KnowledgeRecord) {
-    setError(null);
+    beginOperation();
     startTransition(async () => {
       const result = await archiveKnowledgeAction({
         id: record.id,
@@ -180,11 +184,12 @@ export function KnowledgeBaseManager({ organizations }: { organizations: Knowled
         return;
       }
       replaceRecord(result.record);
+      setSuccess("Knowledge record archived.");
     });
   }
 
   function removeRecord(record: KnowledgeRecord) {
-    setError(null);
+    beginOperation();
     startTransition(async () => {
       const result = await deleteKnowledgeAction({ id: record.id, organizationId: record.organizationId });
       if (!result.ok) {
@@ -197,11 +202,21 @@ export function KnowledgeBaseManager({ organizations }: { organizations: Knowled
           (candidate) => candidate.id !== record.id,
         ),
       }));
+      setConfirmDeleteId(null);
+      setSuccess("Knowledge record deleted.");
     });
   }
 
   return (
     <div className="mt-8 space-y-6">
+      <section className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Organization context</p>
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <span className="font-semibold text-white">{organization.label}</span>
+          <span className="rounded-full border border-slate-700 px-2.5 py-1 text-xs text-slate-300">{organization.role}</span>
+        </div>
+      </section>
+
       {organizations.length > 1 ? (
         <label className="block max-w-md space-y-2">
           <span className="text-sm font-medium text-slate-200">Organization</span>
@@ -210,7 +225,8 @@ export function KnowledgeBaseManager({ organizations }: { organizations: Knowled
             onChange={(event) => {
               setSelectedOrganizationId(event.target.value);
               setEditingId(null);
-              setError(null);
+              setConfirmDeleteId(null);
+              beginOperation();
             }}
             className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white"
             disabled={isPending}
@@ -231,7 +247,13 @@ export function KnowledgeBaseManager({ organizations }: { organizations: Knowled
         </div>
       ) : null}
 
+      {isPending ? (
+        <div role="status" className="rounded-xl border border-slate-800 bg-slate-900/60 p-3 text-sm text-slate-300">
+          Saving Knowledge Base changes…
+        </div>
+      ) : null}
       {error ? <div role="alert" className="rounded-xl border border-red-900/60 bg-red-950/30 p-4 text-sm text-red-200">{error}</div> : null}
+      {success ? <div role="status" className="rounded-xl border border-emerald-900/60 bg-emerald-950/30 p-4 text-sm text-emerald-200">{success}</div> : null}
 
       {canManage ? (
         <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-6">
@@ -249,30 +271,30 @@ export function KnowledgeBaseManager({ organizations }: { organizations: Knowled
 
       <section className="space-y-4">
         <div><h3 className="text-lg font-semibold text-white">Knowledge records</h3><p className="mt-1 text-sm text-slate-500">{visibleRecords.length} record{visibleRecords.length === 1 ? "" : "s"}</p></div>
-        {visibleRecords.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-800 p-6 text-sm text-slate-500">No Knowledge Base records are available for this organization.</div> : null}
+        {visibleRecords.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-800 p-6 text-sm text-slate-500">
+            <p>No Knowledge Base records are available for this organization.</p>
+            <Link href="/content-studio" className="mt-3 inline-flex min-h-10 items-center font-semibold text-slate-200 underline underline-offset-4">Open Content Studio</Link>
+          </div>
+        ) : null}
         {visibleRecords.map((record) => {
           const editing = editingId === record.id;
+          const confirmingDelete = confirmDeleteId === record.id;
           return (
             <article key={record.id} className="rounded-2xl border border-slate-800 bg-slate-950/60 p-6">
               <div className="flex flex-wrap items-start justify-between gap-4">
-                <div><h4 className="text-base font-semibold text-white">{record.title}</h4><div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400"><span>{record.status}</span><span>Revision {record.revision}</span><span>Updated {formatUpdated(record.updatedAt)}</span></div></div>
+                <div><h4 className="text-base font-semibold text-white">{record.title}</h4><div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400"><span>{record.status}</span><span>Revision {record.revision}</span><span>Updated {formatUpdated(record.updatedAt)}</span></div><div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-500"><span>{record.sourceType}</span>{record.sourceLabel ? <span>{record.sourceLabel}</span> : null}{record.sourceReference ? <span>{record.sourceReference}</span> : null}</div></div>
                 {canManage ? <div className="flex flex-wrap gap-2">
                   <button type="button" aria-label={`Edit ${record.title}`} onClick={() => beginEdit(record)} disabled={isPending} className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200">Edit</button>
                   {record.status !== "ACTIVE" ? <button type="button" aria-label={`Activate ${record.title}`} onClick={() => activateRecord(record)} disabled={isPending} className="rounded-lg border border-emerald-800 px-3 py-2 text-xs font-semibold text-emerald-200">Activate</button> : null}
                   {record.status !== "ARCHIVED" ? <button type="button" aria-label={`Archive ${record.title}`} onClick={() => archiveRecord(record)} disabled={isPending} className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200">Archive</button> : null}
-                  {canDelete ? <button type="button" aria-label={`Delete ${record.title}`} onClick={() => removeRecord(record)} disabled={isPending} className="rounded-lg border border-red-900/70 px-3 py-2 text-xs font-semibold text-red-200">Delete</button> : null}
+                  {canDelete && !confirmingDelete ? <button type="button" aria-label={`Delete ${record.title}`} onClick={() => { beginOperation(); setConfirmDeleteId(record.id); }} disabled={isPending} className="rounded-lg border border-red-900/70 px-3 py-2 text-xs font-semibold text-red-200">Delete</button> : null}
                 </div> : null}
               </div>
-              {editing ? <div className="mt-5 space-y-4 border-t border-slate-800 pt-5">
-                <label className="block space-y-2"><span className="text-sm text-slate-300">Edit title</span><input aria-label="Edit title" value={editForm.title} onChange={(event) => setEditForm((current) => ({ ...current, title: event.target.value }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" /></label>
-                <label className="block space-y-2"><span className="text-sm text-slate-300">Edit content</span><textarea aria-label="Edit content" value={editForm.content} onChange={(event) => setEditForm((current) => ({ ...current, content: event.target.value }))} rows={6} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" /></label>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <label className="space-y-2"><span className="text-sm text-slate-300">Edit source type</span><select aria-label="Edit source type" value={editForm.sourceType} onChange={(event) => setEditForm((current) => ({ ...current, sourceType: event.target.value as KnowledgeSourceType }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white"><option value="MANUAL">Manual</option><option value="DOCUMENT">Document</option><option value="URL">URL</option></select></label>
-                  <label className="space-y-2"><span className="text-sm text-slate-300">Edit source label</span><input aria-label="Edit source label" value={editForm.sourceLabel} onChange={(event) => setEditForm((current) => ({ ...current, sourceLabel: event.target.value }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" /></label>
-                  <label className="space-y-2 md:col-span-2"><span className="text-sm text-slate-300">Edit source reference</span><input aria-label="Edit source reference" value={editForm.sourceReference} onChange={(event) => setEditForm((current) => ({ ...current, sourceReference: event.target.value }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" /></label>
-                </div>
-                <div className="flex gap-2"><button type="button" aria-label={`Save ${record.title}`} onClick={() => saveEdit(record)} disabled={isPending} className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-950">Save</button><button type="button" onClick={() => setEditingId(null)} disabled={isPending} className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300">Cancel</button></div>
-              </div> : <div className="mt-5 space-y-3 text-sm leading-6 text-slate-300"><p className="whitespace-pre-wrap">{record.content}</p><div className="text-xs text-slate-500"><span>{record.sourceType}</span>{record.sourceLabel ? <span className="ml-3">{record.sourceLabel}</span> : null}{record.sourceReference ? <span className="ml-3">{record.sourceReference}</span> : null}</div></div>}
+
+              {confirmingDelete ? <div className="mt-4 rounded-xl border border-red-900/60 bg-red-950/20 p-4"><p className="text-sm text-red-100">Delete this Knowledge Base record permanently?</p><div className="mt-3 flex flex-wrap gap-2"><button type="button" aria-label={`Confirm delete ${record.title}`} onClick={() => removeRecord(record)} disabled={isPending} className="rounded-lg bg-red-100 px-3 py-2 text-xs font-semibold text-red-950">Confirm delete</button><button type="button" onClick={() => setConfirmDeleteId(null)} disabled={isPending} className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200">Cancel</button></div></div> : null}
+
+              {editing ? <div className="mt-5 space-y-4 border-t border-slate-800 pt-5"><label className="block space-y-2"><span className="text-sm text-slate-300">Edit title</span><input aria-label="Edit title" value={editForm.title} onChange={(event) => setEditForm((current) => ({ ...current, title: event.target.value }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" /></label><label className="block space-y-2"><span className="text-sm text-slate-300">Edit content</span><textarea aria-label="Edit content" value={editForm.content} onChange={(event) => setEditForm((current) => ({ ...current, content: event.target.value }))} rows={6} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" /></label><div className="grid gap-4 md:grid-cols-2"><label className="space-y-2"><span className="text-sm text-slate-300">Edit source type</span><select aria-label="Edit source type" value={editForm.sourceType} onChange={(event) => setEditForm((current) => ({ ...current, sourceType: event.target.value as KnowledgeSourceType }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white"><option value="MANUAL">Manual</option><option value="DOCUMENT">Document</option><option value="URL">URL</option></select></label><label className="space-y-2"><span className="text-sm text-slate-300">Edit source label</span><input aria-label="Edit source label" value={editForm.sourceLabel} onChange={(event) => setEditForm((current) => ({ ...current, sourceLabel: event.target.value }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" /></label><label className="space-y-2 md:col-span-2"><span className="text-sm text-slate-300">Edit source reference</span><input aria-label="Edit source reference" value={editForm.sourceReference} onChange={(event) => setEditForm((current) => ({ ...current, sourceReference: event.target.value }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" /></label></div><div className="flex flex-wrap gap-2"><button type="button" aria-label={`Save ${record.title}`} onClick={() => saveEdit(record)} disabled={isPending || editForm.title.trim().length < 3 || editForm.content.trim().length === 0} className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-950">Save</button><button type="button" onClick={() => setEditingId(null)} className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200">Cancel</button></div></div> : <p className="mt-5 whitespace-pre-wrap text-sm leading-7 text-slate-300">{record.content}</p>}
             </article>
           );
         })}
