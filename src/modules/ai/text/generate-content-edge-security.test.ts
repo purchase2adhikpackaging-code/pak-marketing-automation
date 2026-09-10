@@ -28,6 +28,20 @@ describe("generate-content Edge cost guardrails", () => {
     expect(source).toMatch(/max_output_tokens:\s*MAX_OUTPUT_TOKENS/);
   });
 
+  it("enforces a database-backed quota before resolving the provider secret", () => {
+    expect(source).toContain("RATE_LIMIT_WINDOW_SECONDS");
+    expect(source).toContain("RATE_LIMIT_REQUESTS");
+    expect(source).toContain('admin.rpc("consume_generation_quota", {');
+    expect(source).toContain('error: "GENERATION_RATE_LIMITED"');
+
+    const quotaCall = source.indexOf('admin.rpc("consume_generation_quota", {');
+    const secretRead = source.indexOf('admin.rpc("read_integration_vault_secret", {');
+    const providerCall = source.indexOf('fetch("https://api.openai.com/v1/responses"');
+    expect(quotaCall).toBeGreaterThan(-1);
+    expect(secretRead).toBeGreaterThan(quotaCall);
+    expect(providerCall).toBeGreaterThan(secretRead);
+  });
+
   it("does not expose the provider API key in responses", () => {
     const successResponse = source.match(/return json\(200, \{[\s\S]*?\n  \}\);/)?.[0] ?? "";
     expect(successResponse).not.toContain("apiKey");
