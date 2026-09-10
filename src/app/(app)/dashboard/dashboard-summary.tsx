@@ -1,3 +1,4 @@
+import React from "react";
 import Link from "next/link";
 
 import type { AppRole } from "@/modules/auth/roles";
@@ -21,13 +22,7 @@ function MetricCard({ label, value, detail }: { label: string; value: number | s
   );
 }
 
-export function DashboardSummary({
-  workspace,
-  error,
-}: {
-  workspace: DashboardWorkspace | null;
-  error?: string;
-}) {
+export function DashboardSummary({ workspace, error }: { workspace: DashboardWorkspace | null; error?: string }) {
   if (!workspace) {
     return (
       <div role="alert" className="mt-8 rounded-2xl border border-amber-900/50 bg-amber-950/20 p-5 text-sm leading-6 text-amber-100">
@@ -36,14 +31,13 @@ export function DashboardSummary({
     );
   }
 
-  const openAiLabel =
-    workspace.openAI.status === "CONFIGURED"
-      ? "Configured"
-      : workspace.openAI.status === "INVALID"
-        ? "Invalid"
-        : workspace.openAI.status === "DISABLED"
-          ? "Disabled"
-          : "Not configured";
+  const openAiLabel = workspace.openAI.status === "CONFIGURED"
+    ? "Configured"
+    : workspace.openAI.status === "INVALID"
+      ? "Invalid"
+      : workspace.openAI.status === "DISABLED"
+        ? "Disabled"
+        : "Not configured";
 
   return (
     <div className="mt-8 space-y-6">
@@ -59,31 +53,25 @@ export function DashboardSummary({
         <MetricCard
           label="Content items"
           value={workspace.content.total}
-          detail={
-            workspace.content.total === 0
-              ? "No content has been generated yet. Start in Content Studio when your source material is ready."
-              : `${workspace.content.generated} generated · ${workspace.content.failed} failed`
-          }
+          detail={workspace.content.total === 0
+            ? "No content has been generated yet. Start in Content Studio when your source material is ready."
+            : `${workspace.content.generated} generated · ${workspace.content.failed} failed`}
         />
         <MetricCard
           label="Knowledge records"
           value={workspace.knowledge.total}
-          detail={
-            workspace.knowledge.total === 0
-              ? "No Knowledge Base records are available yet. Add approved source material before grounded generation."
-              : `${workspace.knowledge.active} ACTIVE and selectable for grounded generation`
-          }
+          detail={workspace.knowledge.total === 0
+            ? "No Knowledge Base records are available yet. Add approved source material before grounded generation."
+            : `${workspace.knowledge.active} ACTIVE and selectable for grounded generation`}
         />
         <MetricCard
           label="OpenAI integration"
           value={openAiLabel}
-          detail={
-            workspace.openAI.status === "CONFIGURED"
-              ? workspace.openAI.lastVerifiedAt
-                ? `Last verified ${new Date(workspace.openAI.lastVerifiedAt).toLocaleString("en-GB")}`
-                : "Configured. Run a connection test in Settings when verification is required."
-              : "OpenAI is not configured for active generation. Review Integration Settings."
-          }
+          detail={workspace.openAI.status === "CONFIGURED"
+            ? workspace.openAI.lastVerifiedAt
+              ? `Last verified ${new Date(workspace.openAI.lastVerifiedAt).toLocaleString("en-GB")}`
+              : "Configured. Run a connection test in Settings when verification is required."
+            : "OpenAI is not configured for active generation. Review Integration Settings."}
         />
       </section>
 
