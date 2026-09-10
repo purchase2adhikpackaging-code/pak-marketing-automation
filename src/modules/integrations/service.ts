@@ -1,18 +1,15 @@
 import "server-only";
 
 import { AppError } from "@/lib/errors/app-error";
-import { getServerEnv } from "@/lib/env/server";
 import {
   decryptSecret,
   encryptSecret,
   INTEGRATION_SECRET_ENCRYPTION_VERSION,
   parseVaultEncryptionKey,
 } from "./crypto";
-import {
-  SupabaseIntegrationMetadataStore,
-  SupabaseIntegrationSecretStore,
-  type IntegrationMetadataStore,
-  type IntegrationSecretStore,
+import type {
+  IntegrationMetadataStore,
+  IntegrationSecretStore,
 } from "./repository";
 import type {
   IntegrationConnection,
@@ -32,6 +29,12 @@ function maskedHint(value: string): string {
   return `••••${suffix}`;
 }
 
+/**
+ * Legacy in-process vault service retained only as an injectable domain service for
+ * focused tests and migration compatibility. Production Settings and provider
+ * execution are routed through authenticated Supabase Edge Functions and must not
+ * construct this service from Vercel-held secrets.
+ */
 export class IntegrationVaultService implements IntegrationCredentialResolver {
   constructor(
     private readonly metadata: IntegrationMetadataStore,
@@ -192,17 +195,4 @@ export class IntegrationVaultService implements IntegrationCredentialResolver {
       throw new AppError("INTERNAL_ERROR", "Integration credential could not be decrypted.");
     }
   }
-}
-
-export function createIntegrationVaultService(): IntegrationVaultService {
-  const env = getServerEnv();
-  if (!env.INTEGRATION_VAULT_ENCRYPTION_KEY) {
-    throw new AppError("INTERNAL_ERROR", "Integration Vault is not configured on this deployment.");
-  }
-
-  return new IntegrationVaultService(
-    new SupabaseIntegrationMetadataStore(),
-    new SupabaseIntegrationSecretStore(),
-    env.INTEGRATION_VAULT_ENCRYPTION_KEY,
-  );
 }
