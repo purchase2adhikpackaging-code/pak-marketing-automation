@@ -4,6 +4,8 @@ import { AppError } from "@/lib/errors/app-error";
 import type { KnowledgeRepository } from "./repository";
 import type { KnowledgeRecord, KnowledgeSourceType } from "./types";
 
+const MAX_GROUNDING_CONTEXT_CHARACTERS = 12000;
+
 export type ResolvedKnowledgeSource = {
   record: KnowledgeRecord;
   snapshot: {
@@ -77,8 +79,16 @@ export async function resolveKnowledgeGrounding(
     sections.push(`[Additional user-provided context]\n${additionalContext}`);
   }
 
+  const knowledgeContext = sections.length > 0 ? sections.join("\n\n") : undefined;
+  if (knowledgeContext && knowledgeContext.length > MAX_GROUNDING_CONTEXT_CHARACTERS) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "Selected knowledge exceeds the maximum grounding context size. Reduce the selected sources or their content.",
+    );
+  }
+
   return {
-    ...(sections.length > 0 ? { knowledgeContext: sections.join("\n\n") } : {}),
+    ...(knowledgeContext !== undefined ? { knowledgeContext } : {}),
     sources,
   };
 }
