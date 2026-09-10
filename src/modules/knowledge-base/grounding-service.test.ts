@@ -84,6 +84,15 @@ describe("resolveKnowledgeGrounding", () => {
     );
   });
 
+  it("rejects combined grounding context larger than the generation budget", async () => {
+    await expect(
+      resolveKnowledgeGrounding(
+        { organizationId: orgId, knowledgeRecordIds: [firstId] },
+        { getByIds: async () => [record(firstId, { content: "x".repeat(12000) })] },
+      ),
+    ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
+  });
+
   it("captures exact generation-time snapshot values", async () => {
     const source = record(firstId, {
       sourceType: "DOCUMENT",
