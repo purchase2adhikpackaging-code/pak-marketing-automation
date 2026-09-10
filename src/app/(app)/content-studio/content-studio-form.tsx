@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React, { useMemo, useState, useTransition } from "react";
 
 import type { ScriptArtifact } from "@/modules/content-studio/artifacts/types";
@@ -25,11 +26,24 @@ type GeneratedWorkspace = {
   artifact: ScriptArtifact;
 };
 
+type GenerationResult = {
+  script?: string;
+  error?: string;
+  provider?: string;
+  providerModel?: string;
+};
+
 const LANGUAGE_OPTIONS = [
   { value: "EN", label: "English" },
   { value: "PL", label: "Polish" },
   { value: "HI", label: "Hindi" },
 ] as const;
+
+function providerLabel(provider?: string, model?: string): string | null {
+  if (!provider && !model) return null;
+  const providerName = provider?.toLowerCase() === "openai" ? "OpenAI" : provider;
+  return [providerName, model].filter(Boolean).join(" · ");
+}
 
 export function ContentStudioForm({ organizations }: { organizations: OrganizationOption[] }) {
   const [organizationId, setOrganizationId] = useState(organizations[0]?.id ?? "");
@@ -39,7 +53,7 @@ export function ContentStudioForm({ organizations }: { organizations: Organizati
     knowledgeContext: "",
     language: "EN",
   });
-  const [result, setResult] = useState<{ script?: string; error?: string }>({});
+  const [result, setResult] = useState<GenerationResult>({});
   const [workspace, setWorkspace] = useState<GeneratedWorkspace | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -47,6 +61,22 @@ export function ContentStudioForm({ organizations }: { organizations: Organizati
     () => organizations.find((organization) => organization.id === organizationId)?.knowledgeRecords ?? [],
     [organizations, organizationId],
   );
+
+  if (organizations.length === 0) {
+    return (
+      <div className="mt-8 rounded-2xl border border-amber-900/50 bg-amber-950/20 p-5 text-sm leading-6 text-amber-100">
+        <p>No organization with Content Studio generation permission is available for this account.</p>
+        <div className="mt-3 flex flex-wrap gap-4">
+          <Link href="/knowledge-base" className="font-semibold underline underline-offset-4">
+            Open Knowledge Base
+          </Link>
+          <Link href="/settings" className="font-semibold underline underline-offset-4">
+            Open Settings
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   function submit() {
     setResult({});
@@ -67,7 +97,11 @@ export function ContentStudioForm({ organizations }: { organizations: Organizati
         return;
       }
 
-      setResult({ script: response.item.generatedScript ?? "" });
+      setResult({
+        script: response.item.generatedScript ?? "",
+        ...(response.item.provider ? { provider: response.item.provider } : {}),
+        ...(response.item.providerModel ? { providerModel: response.item.providerModel } : {}),
+      });
       setWorkspace({
         organizationId: response.item.organizationId,
         contentItemId: response.item.id,
@@ -77,6 +111,7 @@ export function ContentStudioForm({ organizations }: { organizations: Organizati
   }
 
   const canSubmit = organizationId.length > 0 && form.topic.trim().length >= 3 && !isPending;
+  const generatedBy = providerLabel(result.provider, result.providerModel);
 
   return (
     <div className="mt-8">
@@ -92,9 +127,8 @@ export function ContentStudioForm({ organizations }: { organizations: Organizati
                   setOrganizationId(event.target.value);
                 }}
                 className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none focus:border-slate-500"
-                disabled={organizations.length === 0 || isPending}
+                disabled={isPending}
               >
-                {organizations.length === 0 ? <option value="">No eligible organization</option> : null}
                 {organizations.map((organization) => (
                   <option key={organization.id} value={organization.id}>
                     {organization.label}
@@ -163,17 +197,22 @@ export function ContentStudioForm({ organizations }: { organizations: Organizati
         </section>
 
         <section className="min-h-[28rem] rounded-2xl border border-slate-800 bg-slate-950/60 p-6 shadow-sm" aria-live="polite">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Canonical output</p>
               <h3 className="mt-2 text-lg font-semibold text-white">Source script</h3>
+              {generatedBy ? <p className="mt-2 text-xs text-slate-400">{generatedBy}</p> : null}
             </div>
             {result.script ? <span className="rounded-full border border-slate-700 px-2.5 py-1 text-xs text-slate-400">Generated</span> : null}
           </div>
 
           {result.error ? (
-            <div className="mt-6 rounded-xl border border-red-900/60 bg-red-950/30 p-4 text-sm leading-6 text-red-200">
-              {result.error}
+            <div role="alert" className="mt-6 rounded-xl border border-red-900/60 bg-red-950/30 p-4 text-sm leading-6 text-red-200">
+              <p>{result.error}</p>
+              <div className="mt-3 flex flex-wrap gap-4">
+                <Link href="/settings" className="font-semibold underline underline-offset-4">Open Settings</Link>
+                <Link href="/knowledge-base" className="font-semibold underline underline-offset-4">Open Knowledge Base</Link>
+              </div>
             </div>
           ) : result.script ? (
             <div className="mt-6 whitespace-pre-wrap text-sm leading-7 text-slate-200">{result.script}</div>
