@@ -54,7 +54,9 @@ as $$
 $$;
 
 revoke all on function public.is_org_member(uuid) from public;
+revoke all on function public.is_org_member(uuid) from anon;
 revoke all on function public.has_org_role(uuid, text[]) from public;
+revoke all on function public.has_org_role(uuid, text[]) from anon;
 grant execute on function public.is_org_member(uuid) to authenticated;
 grant execute on function public.has_org_role(uuid, text[]) to authenticated;
 
