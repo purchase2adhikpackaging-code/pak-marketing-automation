@@ -10,6 +10,10 @@ type RequestBody = {
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const ALLOWED_MODELS = new Set(["gpt-5.6-luna", "gpt-5.6-terra"]);
+const MAX_INSTRUCTIONS_CHARS = 12_000;
+const MAX_INPUT_CHARS = 60_000;
+const MAX_OUTPUT_TOKENS = 4_000;
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
@@ -56,7 +60,16 @@ Deno.serve(async (req: Request) => {
     return json(400, { error: "INVALID_REQUEST" });
   }
 
-  if (!body.organizationId || !UUID_RE.test(body.organizationId) || typeof body.instructions !== "string" || !body.instructions.trim() || typeof body.input !== "string" || !body.input.trim()) {
+  if (
+    !body.organizationId ||
+    !UUID_RE.test(body.organizationId) ||
+    typeof body.instructions !== "string" ||
+    !body.instructions.trim() ||
+    body.instructions.length > MAX_INSTRUCTIONS_CHARS ||
+    typeof body.input !== "string" ||
+    !body.input.trim() ||
+    body.input.length > MAX_INPUT_CHARS
+  ) {
     return json(400, { error: "INVALID_REQUEST" });
   }
 
@@ -80,17 +93,18 @@ Deno.serve(async (req: Request) => {
   if (connection.status === "DISABLED") return json(409, { error: "OPENAI_DISABLED" });
   if (connection.status === "INVALID") return json(409, { error: "OPENAI_INVALID" });
 
+  const config = connection.config && typeof connection.config === "object" ? connection.config as Record<string, unknown> : {};
+  const configuredModel = typeof config.defaultModel === "string" && config.defaultModel.trim() ? config.defaultModel.trim() : null;
+  const requestedModel = typeof body.model === "string" && body.model.trim() ? body.model.trim() : null;
+  const model = requestedModel ?? configuredModel ?? "gpt-5.6-luna";
+  if (!ALLOWED_MODELS.has(model)) return json(400, { error: "MODEL_NOT_ALLOWED" });
+
   const { data: apiKey, error: secretError } = await admin.rpc("read_integration_vault_secret", {
     _organization_id: body.organizationId,
     _provider: "OPENAI",
     _secret_name: "API_KEY",
   });
   if (secretError || typeof apiKey !== "string" || !apiKey) return json(409, { error: "OPENAI_NOT_CONFIGURED" });
-
-  const config = connection.config && typeof connection.config === "object" ? connection.config as Record<string, unknown> : {};
-  const configuredModel = typeof config.defaultModel === "string" && config.defaultModel.trim() ? config.defaultModel.trim() : null;
-  const requestedModel = typeof body.model === "string" && body.model.trim() ? body.model.trim() : null;
-  const model = requestedModel ?? configuredModel ?? "gpt-5.6-luna";
 
   let providerResponse: Response;
   try {
@@ -104,6 +118,7 @@ Deno.serve(async (req: Request) => {
         model,
         instructions: body.instructions,
         input: body.input,
+        max_output_tokens: MAX_OUTPUT_TOKENS,
       }),
     });
   } catch {
