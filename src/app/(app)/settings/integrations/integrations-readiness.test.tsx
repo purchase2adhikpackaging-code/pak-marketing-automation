@@ -2,7 +2,11 @@ import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { removeIntegrationSecretAction } from "./actions";
+import {
+  removeIntegrationSecretAction,
+  setIntegrationDisabledAction,
+  testIntegrationConnectionAction,
+} from "./actions";
 import { IntegrationsManager } from "./integrations-manager";
 
 vi.mock("./actions", () => ({
@@ -37,8 +41,16 @@ const organizations = [
   },
 ];
 
+function configuredConnection() {
+  return organizations[0]!.connections[0]!;
+}
+
 describe("Integration Settings production readiness", () => {
-  beforeEach(() => vi.mocked(removeIntegrationSecretAction).mockReset());
+  beforeEach(() => {
+    vi.mocked(removeIntegrationSecretAction).mockReset();
+    vi.mocked(setIntegrationDisabledAction).mockReset();
+    vi.mocked(testIntegrationConnectionAction).mockReset();
+  });
 
   it("constrains OpenAI model selection to the supported production allowlist", () => {
     render(<IntegrationsManager organizations={organizations} />);
@@ -52,7 +64,7 @@ describe("Integration Settings production readiness", () => {
   });
 
   it("requires confirmation before removing the write-only credential", async () => {
-    const current = organizations[0]!.connections[0]!;
+    const current = configuredConnection();
     vi.mocked(removeIntegrationSecretAction).mockResolvedValue({
       ok: true,
       connection: {
@@ -74,5 +86,41 @@ describe("Integration Settings production readiness", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Confirm remove OpenAI API key" }));
     await waitFor(() => expect(removeIntegrationSecretAction).toHaveBeenCalledTimes(1));
+  });
+
+  it("requires confirmation before disabling OpenAI for the organization", async () => {
+    const current = configuredConnection();
+    vi.mocked(setIntegrationDisabledAction).mockResolvedValue({
+      ok: true,
+      connection: { ...current, status: "DISABLED" },
+    });
+
+    render(<IntegrationsManager organizations={organizations} />);
+    fireEvent.click(screen.getByRole("button", { name: "Disable" }));
+    expect(setIntegrationDisabledAction).not.toHaveBeenCalled();
+    expect(screen.getByText(/Content generation will be unavailable until OpenAI is enabled again/i)).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Confirm disable OpenAI" }));
+    await waitFor(() => {
+      expect(setIntegrationDisabledAction).toHaveBeenCalledWith({
+        organizationId,
+        provider: "OPENAI",
+        disabled: true,
+      });
+    });
+  });
+
+  it("announces the specific integration operation while it is pending", async () => {
+    let resolveAction!: (value: { ok: true; connection: ReturnType<typeof configuredConnection> }) => void;
+    vi.mocked(testIntegrationConnectionAction).mockImplementation(
+      () => new Promise((resolve) => { resolveAction = resolve; }),
+    );
+
+    render(<IntegrationsManager organizations={organizations} />);
+    fireEvent.click(screen.getByRole("button", { name: "Test connection" }));
+
+    expect(await screen.findByText("Testing connection…")).toBeTruthy();
+    resolveAction({ ok: true, connection: configuredConnection() });
+    await waitFor(() => expect(screen.queryByText("Testing connection…")).toBeNull());
   });
 });
