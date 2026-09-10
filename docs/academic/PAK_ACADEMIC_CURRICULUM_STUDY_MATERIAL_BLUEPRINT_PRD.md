@@ -3,7 +3,7 @@
 # Academic Curriculum & Study Material Blueprint
 
 **Product Requirements Document (PRD)**  
-**Version:** 0.1  
+**Version:** 0.1.1  
 **Status:** Living Master Blueprint  
 **Baseline Date:** 10 September 2026  
 **Language:** English  
@@ -220,8 +220,9 @@ This PRD defines curriculum architecture only. It does not itself confer degree-
 
 | Version | Scope | Status |
 |---|---|---|
-| v0.1 | Master programme catalogue, qualification architecture and governing rules | **CURRENT** |
-| v0.2 | Complete year/semester-wise subject architecture for all programmes | NEXT |
+| v0.1 | Master programme catalogue, qualification architecture and governing rules | COMPLETE |
+| v0.1.1 | PAK-D01 year/semester-wise subject architecture | **CURRENT** |
+| v0.2 | Complete year/semester-wise subject architecture for all programmes | IN PROGRESS |
 | v0.3 | Complete subject-wise chapter architecture | PLANNED |
 | v0.4 | Learning outcomes, contact hours/credits, theory/practical mapping and prerequisites | PLANNED |
 | v0.5 | Assessment, examination, instructor and study-material production standards | PLANNED |
@@ -245,29 +246,13 @@ The GitHub Markdown file is the canonical working copy for subsequent curriculum
 
 ## 14. Next Controlled Work Item
 
-Develop the complete subject architecture for:
+With PAK-D01 subject architecture now defined in Section 17, the next controlled curriculum work item is:
 
-### `PAK-D01 — Diploma in Railway Rolling Stock Engineering & Maintenance`
+### `PAK-D02 — Diploma in Railway Mechanical Engineering`
 
-Required structure:
+The next revision must define the complete Year 1 / Semester 1 through Year 2 / Semester 4 subject architecture for PAK-D02 using the same controlled structure used for PAK-D01.
 
-- Year 1
-  - Semester 1
-  - Semester 2
-- Year 2
-  - Semester 3
-  - Semester 4
-
-For each semester the next revision must define:
-
-- Subject code
-- Subject title
-- Core / specialization / practical classification
-- Theory-practical orientation
-- Semester placement
-- Prerequisite relationships
-
-Once the PAK-D01 model is validated, the same controlled methodology will be applied to the remaining 33 programmes.
+Once all programme subject structures are complete, the PRD will advance to the subject-wise chapter architecture stage.
 
 ---
 
@@ -275,7 +260,8 @@ Once the PAK-D01 model is validated, the same controlled methodology will be app
 
 | Version | Date | Change | Status |
 |---|---|---|---|
-| 0.1 | 10 Sep 2026 | Initial master programme catalogue and study-material governance baseline | Active |
+| 0.1 | 10 Sep 2026 | Initial master programme catalogue and study-material governance baseline | Superseded |
+| 0.1.1 | 10 Sep 2026 | Added complete four-semester subject architecture for PAK-D01 | Active |
 
 ---
 
@@ -284,3 +270,190 @@ Once the PAK-D01 model is validated, the same controlled methodology will be app
 **Canonical file:** `docs/academic/PAK_ACADEMIC_CURRICULUM_STUDY_MATERIAL_BLUEPRINT_PRD.md`
 
 All future curriculum design in this workstream must update this file so that programme lists, semester structures, subject lists, chapter structures and subsequent blueprint decisions remain synchronized in one governed source of truth.
+
+---
+
+# 17. PAK-D01 — Diploma in Railway Rolling Stock Engineering & Maintenance
+
+## 17.1 Programme Identity
+
+**Programme Code:** `PAK-D01`  
+**Programme Title:** Diploma in Railway Rolling Stock Engineering & Maintenance  
+**Duration:** 2 Academic Years  
+**Academic Structure:** 4 Semesters  
+**Primary Language:** English  
+**Orientation:** Applied engineering, workshop practice, inspection, maintenance and rolling-stock compliance  
+**Curriculum Status:** Subject Architecture v1 — Chapter decomposition pending
+
+### Programme Purpose
+
+PAK-D01 is designed to develop technicians and junior engineering professionals capable of understanding, inspecting, maintaining, diagnosing and documenting railway rolling-stock systems with particular strength in freight wagons, bogies, wheelsets, braking systems and maintenance workshop practice.
+
+The programme progresses from engineering and railway fundamentals in Semester 1, through rolling-stock subsystem engineering in Semester 2, to maintenance diagnostics and repair in Semester 3, and finally to advanced maintenance, ECM/fleet management, compliance, digital diagnostics and industry application in Semester 4.
+
+### Curriculum Design Principles
+
+1. **Foundation before specialization:** Mathematics, physics, materials, drawings, metrology and railway fundamentals precede subsystem engineering.
+2. **System before maintenance:** Students first understand how rolling-stock systems are constructed and operate before learning inspection, repair and overhaul.
+3. **Workshop integration:** Practical workshop competency is developed progressively instead of being isolated in a single final placement.
+4. **Safety-critical thinking:** Brakes, wheelsets, structural repairs and other safety-relevant systems receive dedicated technical and assessment treatment.
+5. **European railway context:** Later-semester material will introduce EU interoperability, freight-wagon TSI concepts, railway safety obligations and Entity in Charge of Maintenance (ECM) principles.
+6. **Documentation and traceability:** Maintenance records, quality controls, release-to-service concepts and technical traceability are treated as professional competencies.
+7. **Digital readiness:** Condition monitoring, sensors, diagnostics and predictive-maintenance concepts are included before graduation.
+
+---
+
+## 17.2 Year 1 — Semester 1: Engineering & Railway Foundations
+
+**Semester Objective:** Establish the engineering, technical, workshop and safety foundation required for subsequent rolling-stock specialization.
+
+| Code | Subject | Classification | Orientation | Prerequisite |
+|---|---|---|---|---|
+| D01-101 | Railway Systems & Rolling Stock Fundamentals | Core | Theory + Demonstration | None |
+| D01-102 | Applied Engineering Mathematics & Physics for Railways | Core | Theory + Problem Solving | None |
+| D01-103 | Engineering Drawing, CAD & Technical Documentation | Core | Theory + Computer Lab | None |
+| D01-104 | Engineering Materials, Manufacturing Processes & Corrosion Control | Core | Theory + Workshop Demonstration | None |
+| D01-105 | Workshop Practice, Tools, Metrology & Fastening Systems | Practical Core | Workshop-Dominant | None |
+| D01-106 | Railway Safety, Occupational Health & Safety and Technical Communication | Core | Theory + Practical Exercises | None |
+
+### Semester 1 Progression Logic
+
+- `D01-101` creates the railway-system vocabulary and rolling-stock context used throughout the diploma.
+- `D01-102` supports calculations later required for vehicle dynamics, braking and engineering analysis.
+- `D01-103` develops the ability to read, create and interpret engineering drawings and maintenance documentation.
+- `D01-104` provides materials and manufacturing knowledge required for structures, wheelsets, bogies and repairs.
+- `D01-105` establishes safe use of tools, dimensional measurement and workshop practice.
+- `D01-106` embeds safety behaviour and professional technical communication from the start of the programme.
+
+---
+
+## 17.3 Year 1 — Semester 2: Rolling Stock Systems & Components
+
+**Semester Objective:** Build detailed knowledge of rolling-stock construction and the major mechanical, pneumatic and electrical subsystems found in freight and general railway vehicles.
+
+| Code | Subject | Classification | Orientation | Prerequisite |
+|---|---|---|---|---|
+| D01-201 | Rolling Stock Construction & Vehicle Dynamics I | Specialization Core | Theory + Laboratory | D01-101, D01-102 |
+| D01-202 | Freight Wagon Engineering & Classification | Specialization Core | Theory + Practical Identification | D01-101 |
+| D01-203 | Bogie, Suspension & Running Gear Technology | Specialization Core | Theory + Workshop | D01-101, D01-104, D01-105 |
+| D01-204 | Wheelsets, Axles, Bearings & Axlebox Technology | Specialization Core | Theory + Workshop | D01-104, D01-105 |
+| D01-205 | Railway Braking Systems I — Pneumatic & Mechanical Fundamentals | Specialization Core | Theory + Laboratory | D01-101, D01-102 |
+| D01-206 | Rolling Stock Electrical & Pneumatic Fundamentals | Core / Specialization | Theory + Laboratory | D01-101, D01-102 |
+
+### Semester 2 Progression Logic
+
+Semester 2 moves from vehicle-level architecture to safety- and performance-critical subsystems. Students learn how vehicle structures, bogies, running gear, wheelsets, bearings, brakes and supporting electrical/pneumatic systems interact as one rolling-stock system.
+
+`D01-202` provides the programme's principal freight-wagon specialization and prepares students for later inspection, maintenance, compliance and workshop modules.
+
+---
+
+## 17.4 Year 2 — Semester 3: Maintenance, Inspection, Diagnostics & Repair
+
+**Semester Objective:** Convert subsystem knowledge into maintenance competence through inspection, diagnostics, reliability analysis, NDT, structural repair and supervised workshop application.
+
+| Code | Subject | Classification | Orientation | Prerequisite |
+|---|---|---|---|---|
+| D01-301 | Locomotive & Traction Systems Fundamentals | Specialization | Theory + Laboratory | D01-201, D01-206 |
+| D01-302 | Railway Braking Systems II — Control, Testing & Diagnostics | Specialization Core | Theory + Laboratory + Workshop | D01-205, D01-206 |
+| D01-303 | Rolling Stock Maintenance Engineering, Reliability & Failure Analysis | Core / Specialization | Theory + Case Study + Practical | D01-201 to D01-205 |
+| D01-304 | Inspection, Non-Destructive Testing & Condition Monitoring of Rolling Stock | Specialization Core | Laboratory + Workshop | D01-104, D01-105, D01-204 |
+| D01-305 | Railway Welding, Structural Repair & Fabrication Practice | Practical Specialization | Workshop-Dominant | D01-104, D01-105 |
+| D01-306 | Workshop Practicum I — Freight Wagon, Bogie & Wheelset Inspection | Practical Core | Workshop / Competency Practice | D01-202, D01-203, D01-204, D01-205; co-requisite D01-304 |
+
+### Semester 3 Progression Logic
+
+This semester introduces the transition from component knowledge to professional maintenance work. Students learn to diagnose faults, inspect components, interpret degradation, apply NDT principles, understand reliability/failure mechanisms and carry out controlled repair practice.
+
+`D01-306` acts as the integration module for freight wagon, bogie and wheelset inspection and will later contain formal practical competency checkpoints.
+
+---
+
+## 17.5 Year 2 — Semester 4: Advanced Maintenance, Compliance & Industry Application
+
+**Semester Objective:** Integrate technical maintenance capability with fleet/ECM processes, quality systems, regulatory awareness, digital diagnostics and real-world industry/project application.
+
+| Code | Subject | Classification | Orientation | Prerequisite |
+|---|---|---|---|---|
+| D01-401 | Advanced Rolling Stock Maintenance, Overhaul & Troubleshooting | Specialization Core | Theory + Workshop | D01-303, D01-306 |
+| D01-402 | ECM, Fleet Maintenance & Railway Asset Management | Core / Specialization | Theory + Case Study | D01-303 |
+| D01-403 | Railway Quality Assurance, Traceability & Maintenance Documentation | Core | Theory + Practical Documentation | D01-303, D01-304 |
+| D01-404 | EU Railway Interoperability, Freight Wagon TSI & Rolling Stock Compliance | Core / Specialization | Theory + Compliance Case Study | D01-202, D01-303 |
+| D01-405 | Digital Diagnostics, Sensors & Predictive Maintenance | Specialization | Laboratory + Project | D01-206, D01-303, D01-304 |
+| D01-406 | Industry Practicum & Capstone Project | Practical / Capstone | Industry + Project + Competency Assessment | Completion of Semesters 1–3; co-requisite D01-401 to D01-405 |
+
+### Semester 4 Progression Logic
+
+The final semester moves beyond individual repairs to the controlled maintenance system around a railway vehicle. Students are introduced to maintenance planning, fleet and asset management, ECM concepts, maintenance records, quality assurance, traceability, interoperability and compliance.
+
+Digital diagnostics and predictive-maintenance concepts prepare graduates for modern data-supported workshop and fleet-maintenance environments.
+
+`D01-406` serves as the final integration point where students demonstrate that they can apply technical knowledge, safe work practices, inspection methodology, maintenance reasoning and technical documentation to a realistic rolling-stock engineering problem.
+
+---
+
+## 17.6 PAK-D01 Subject Inventory
+
+PAK-D01 currently contains **24 semester subjects/modules**:
+
+- Semester 1: 6 subjects
+- Semester 2: 6 subjects
+- Semester 3: 6 subjects
+- Semester 4: 6 subjects
+
+This subject count is now the curriculum baseline for chapter architecture. Contact hours, credits, detailed learning outcomes and assessment weightings remain intentionally unassigned until the dedicated workload and credit-mapping phase.
+
+---
+
+## 17.7 Subject Dependency Spine
+
+The principal technical progression is:
+
+`D01-101 Railway Fundamentals`
+→ `D01-201 Rolling Stock Construction`
+→ subsystem modules (`D01-202` to `D01-206`)
+→ maintenance/diagnostics modules (`D01-302` to `D01-306`)
+→ advanced maintenance/ECM/compliance (`D01-401` to `D01-405`)
+→ `D01-406 Industry Practicum & Capstone Project`
+
+Supporting engineering progression:
+
+`D01-102 Mathematics & Physics` + `D01-104 Materials` + `D01-105 Workshop & Metrology`
+→ component engineering and inspection
+→ reliability, NDT and repairs
+→ overhaul, diagnostics and capstone application.
+
+---
+
+## 17.8 Regulatory & Technical Reference Baseline for Future Chapter Development
+
+The chapter-development stage for PAK-D01 must verify applicable requirements against current official sources. Initial reference families include:
+
+- Directive (EU) 2016/797 on interoperability of the rail system within the European Union, as amended/consolidated.
+- Directive (EU) 2016/798 on railway safety, as amended/consolidated.
+- Commission Regulation (EU) No 321/2013 concerning the TSI relating to rolling stock — freight wagons (WAG TSI), using the current consolidated version during content production.
+- Commission Implementing Regulation (EU) 2019/779 concerning certification of Entities in Charge of Maintenance (ECM), including maintenance functions, safety-critical components, maintenance information exchange, release to service and return to operation concepts.
+- Applicable ERA technical documents, EN/ISO standards, recognized railway technical practices and Polish requirements where relevant to the specific subject/chapter.
+
+**Control rule:** regulatory references listed in the PRD are curriculum anchors, not substitutes for legal or standards review. Before publication of any safety-critical or compliance chapter, the latest applicable version must be checked and recorded in that chapter's reference metadata.
+
+---
+
+## 17.9 PAK-D01 Chapter-Decomposition Readiness
+
+PAK-D01 is ready for the next curriculum layer once programme-level subject mapping across the full portfolio is complete, or earlier if PAK elects to pilot textbook production using D01.
+
+The chapter stage must create for each of the 24 subjects:
+
+- subject purpose;
+- chapter list;
+- chapter sequence;
+- chapter-to-prerequisite mapping;
+- theory/practical designation;
+- planned diagrams and technical illustrations;
+- workshop exercises where applicable;
+- learning-outcome placeholders;
+- assessment linkage placeholders;
+- regulatory/technical reference families.
+
+No textbook prose should be generated before that subject's chapter architecture is approved or frozen.
