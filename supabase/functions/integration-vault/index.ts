@@ -190,30 +190,15 @@ Deno.serve(async (req: Request) => {
     headers: { authorization: `Bearer ${apiKey}` },
   });
   const ok = providerResponse.ok;
-  const now = new Date().toISOString();
-  const { data: connectionRow } = await admin
-    .from("integration_connections")
-    .update({
-      status: ok ? "CONFIGURED" : "INVALID",
-      last_verified_at: now,
-      last_error_code: ok ? null : "AUTH_INVALID",
-      updated_by: user.id,
-      updated_at: now,
-    })
-    .eq("organization_id", input.organizationId)
-    .eq("provider", "OPENAI")
-    .select("id")
-    .maybeSingle();
-
-  if (connectionRow) {
-    await admin.from("integration_audit_events").insert({
-      organization_id: input.organizationId,
-      connection_id: connectionRow.id,
-      actor_user_id: user.id,
-      event_type: ok ? "TEST_SUCCEEDED" : "TEST_FAILED",
-      metadata: ok ? {} : { error_code: "AUTH_INVALID" },
-    });
-  }
+  const { data: connectionId, error: resultError } = await admin.rpc("record_integration_test_result", {
+    _organization_id: input.organizationId,
+    _provider: "OPENAI",
+    _actor_user_id: user.id,
+    _succeeded: ok,
+    _error_code: ok ? null : "AUTH_INVALID",
+  });
+  if (resultError) return json(500, { error: "TEST_FAILED" });
+  if (typeof connectionId !== "string" || !connectionId) return json(404, { error: "NOT_CONFIGURED" });
 
   if (!ok) return json(422, { error: "AUTH_INVALID" });
   const connection = await getConnection();
