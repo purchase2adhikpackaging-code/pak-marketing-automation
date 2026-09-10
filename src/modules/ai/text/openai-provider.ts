@@ -40,10 +40,10 @@ function createOpenAITransport(apiKey: string): OpenAIResponsesTransport {
 
 export class OpenAITextGenerationProvider implements TextGenerationProvider {
   readonly name = "openai";
-  private readonly directTransport?: OpenAIResponsesTransport;
-  private readonly modelOverride?: string;
-  private readonly organizationId?: string;
-  private readonly credentialResolver?: IntegrationCredentialResolver;
+  private readonly directTransport: OpenAIResponsesTransport | undefined;
+  private readonly modelOverride: string | undefined;
+  private readonly organizationId: string | undefined;
+  private readonly credentialResolver: IntegrationCredentialResolver | undefined;
   private readonly transportFactory: (apiKey: string) => OpenAIResponsesTransport;
 
   constructor(options: OpenAITextGenerationProviderOptions = {}) {
@@ -71,10 +71,11 @@ export class OpenAITextGenerationProvider implements TextGenerationProvider {
       resolver.getSecret(this.organizationId, "OPENAI", "API_KEY"),
       resolver.getProviderConfig<OpenAIProviderConfig>(this.organizationId, "OPENAI"),
     ]);
+    const configuredModel = config.defaultModel?.trim();
 
     return {
       transport: this.transportFactory(apiKey),
-      model: this.modelOverride ?? config.defaultModel?.trim() || "gpt-5.6-luna",
+      model: this.modelOverride ?? configuredModel ?? "gpt-5.6-luna",
     };
   }
 
