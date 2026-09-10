@@ -152,43 +152,27 @@ Deno.serve(async (req: Request) => {
   }
 
   if (input.action === "update_config") {
-    const { data, error } = await admin
-      .from("integration_connections")
-      .update({ config: input.config, updated_by: user.id, updated_at: new Date().toISOString() })
-      .eq("organization_id", input.organizationId)
-      .eq("provider", input.provider)
-      .select("id")
-      .maybeSingle();
-    if (error || !data) return json(404, { error: "NOT_CONFIGURED" });
-    await admin.from("integration_audit_events").insert({
-      organization_id: input.organizationId,
-      connection_id: data.id,
-      actor_user_id: user.id,
-      event_type: "UPDATED",
-      metadata: { fields: ["config"] },
+    const { data: connectionId, error } = await admin.rpc("update_integration_connection_config", {
+      _organization_id: input.organizationId,
+      _provider: input.provider,
+      _actor_user_id: user.id,
+      _config: input.config,
     });
+    if (error) return json(500, { error: "UPDATE_FAILED" });
+    if (typeof connectionId !== "string" || !connectionId) return json(404, { error: "NOT_CONFIGURED" });
     const connection = await getConnection();
     return connection ? json(200, { connection }) : json(500, { error: "UPDATE_FAILED" });
   }
 
   if (input.action === "set_disabled") {
-    const { data: current, error: currentError } = await admin
-      .from("integration_connections")
-      .select("id,secret_version")
-      .eq("organization_id", input.organizationId)
-      .eq("provider", input.provider)
-      .maybeSingle();
-    if (currentError || !current) return json(404, { error: "NOT_CONFIGURED" });
-    const status = input.disabled ? "DISABLED" : Number(current.secret_version) > 0 ? "CONFIGURED" : "NOT_CONFIGURED";
-    const { error } = await admin.from("integration_connections").update({ status, updated_by: user.id, updated_at: new Date().toISOString() }).eq("id", current.id);
-    if (error) return json(500, { error: "UPDATE_FAILED" });
-    await admin.from("integration_audit_events").insert({
-      organization_id: input.organizationId,
-      connection_id: current.id,
-      actor_user_id: user.id,
-      event_type: input.disabled ? "DISABLED" : "ENABLED",
-      metadata: {},
+    const { data: connectionId, error } = await admin.rpc("set_integration_connection_disabled", {
+      _organization_id: input.organizationId,
+      _provider: input.provider,
+      _actor_user_id: user.id,
+      _disabled: input.disabled,
     });
+    if (error) return json(500, { error: "UPDATE_FAILED" });
+    if (typeof connectionId !== "string" || !connectionId) return json(404, { error: "NOT_CONFIGURED" });
     const connection = await getConnection();
     return connection ? json(200, { connection }) : json(500, { error: "UPDATE_FAILED" });
   }
