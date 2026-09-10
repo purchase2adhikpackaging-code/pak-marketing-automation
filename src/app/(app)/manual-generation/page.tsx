@@ -1,5 +1,6 @@
-import { ModulePage } from "@/components/app-shell/module-page";
+import { B3_MODULE_READINESS } from "@/components/app-shell/module-readiness";
+import { ModuleReadinessPage } from "@/components/app-shell/module-readiness-page";
 
 export default function ManualGenerationPage() {
-  return <ModulePage title="Manual Generation" description="Launch controlled one-off generation workflows outside recurring scheduler automation." />;
+  return <ModuleReadinessPage config={B3_MODULE_READINESS["/manual-generation"]} />;
 }
