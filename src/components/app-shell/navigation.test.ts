@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { APP_NAVIGATION } from "./navigation";
+import { APP_NAVIGATION, isNavigationItemActive } from "./navigation";
 
 const expectedLabels = [
   "Dashboard",
@@ -28,5 +28,12 @@ describe("APP_NAVIGATION", () => {
     for (const item of APP_NAVIGATION) {
       expect(item.href.startsWith("/")).toBe(true);
     }
+  });
+
+  it("matches exact routes and nested child routes without prefix collisions", () => {
+    expect(isNavigationItemActive("/content-studio", "/content-studio")).toBe(true);
+    expect(isNavigationItemActive("/settings/integrations", "/settings")).toBe(true);
+    expect(isNavigationItemActive("/content-studio-old", "/content-studio")).toBe(false);
+    expect(isNavigationItemActive("/dashboard", "/settings")).toBe(false);
   });
 });

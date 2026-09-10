@@ -19,3 +19,8 @@ export const APP_NAVIGATION: readonly AppNavigationItem[] = [
   { label: "Analytics", href: "/analytics" },
   { label: "Settings", href: "/settings" },
 ] as const;
+
+export function isNavigationItemActive(pathname: string, href: string): boolean {
+  if (pathname === href) return true;
+  return href !== "/" && pathname.startsWith(`${href}/`);
+}
