@@ -55,6 +55,6 @@ describe("Knowledge Base production readiness", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Confirm delete Approved safety standard" }));
     await waitFor(() => expect(deleteKnowledgeAction).toHaveBeenCalledTimes(1));
-    expect(await screen.findByRole("status")).toHaveTextContent(/deleted/i);
+    expect((await screen.findByRole("status")).textContent).toMatch(/deleted/i);
   });
 });
