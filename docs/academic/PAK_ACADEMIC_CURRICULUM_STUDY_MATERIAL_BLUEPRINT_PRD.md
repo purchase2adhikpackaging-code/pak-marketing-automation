@@ -3,7 +3,7 @@
 # Academic Curriculum & Study Material Blueprint
 
 **Product Requirements Document (PRD)**  
-**Version:** 0.1.1  
+**Version:** 0.1.2  
 **Status:** Living Master Blueprint  
 **Baseline Date:** 10 September 2026  
 **Language:** English  
@@ -221,7 +221,8 @@ This PRD defines curriculum architecture only. It does not itself confer degree-
 | Version | Scope | Status |
 |---|---|---|
 | v0.1 | Master programme catalogue, qualification architecture and governing rules | COMPLETE |
-| v0.1.1 | PAK-D01 year/semester-wise subject architecture | **CURRENT** |
+| v0.1.1 | PAK-D01 year/semester-wise subject architecture | COMPLETE |
+| v0.1.2 | PAK-D02 year/semester-wise subject architecture | **CURRENT** |
 | v0.2 | Complete year/semester-wise subject architecture for all programmes | IN PROGRESS |
 | v0.3 | Complete subject-wise chapter architecture | PLANNED |
 | v0.4 | Learning outcomes, contact hours/credits, theory/practical mapping and prerequisites | PLANNED |
@@ -246,11 +247,11 @@ The GitHub Markdown file is the canonical working copy for subsequent curriculum
 
 ## 14. Next Controlled Work Item
 
-With PAK-D01 subject architecture now defined in Section 17, the next controlled curriculum work item is:
+With PAK-D01 and PAK-D02 subject architectures now defined in Sections 17 and 18, the next controlled curriculum work item is:
 
-### `PAK-D02 — Diploma in Railway Mechanical Engineering`
+### `PAK-D03 — Diploma in Railway Electrical & Control Systems`
 
-The next revision must define the complete Year 1 / Semester 1 through Year 2 / Semester 4 subject architecture for PAK-D02 using the same controlled structure used for PAK-D01.
+The next revision must define the complete Year 1 / Semester 1 through Year 2 / Semester 4 subject architecture for PAK-D03 using the same controlled structure used for PAK-D01 and PAK-D02.
 
 Once all programme subject structures are complete, the PRD will advance to the subject-wise chapter architecture stage.
 
@@ -261,7 +262,8 @@ Once all programme subject structures are complete, the PRD will advance to the 
 | Version | Date | Change | Status |
 |---|---|---|---|
 | 0.1 | 10 Sep 2026 | Initial master programme catalogue and study-material governance baseline | Superseded |
-| 0.1.1 | 10 Sep 2026 | Added complete four-semester subject architecture for PAK-D01 | Active |
+| 0.1.1 | 10 Sep 2026 | Added complete four-semester subject architecture for PAK-D01 | Superseded |
+| 0.1.2 | 10 Sep 2026 | Added complete four-semester subject architecture for PAK-D02 | Active |
 
 ---
 
@@ -457,3 +459,227 @@ The chapter stage must create for each of the 24 subjects:
 - regulatory/technical reference families.
 
 No textbook prose should be generated before that subject's chapter architecture is approved or frozen.
+
+---
+
+# 18. PAK-D02 — Diploma in Railway Mechanical Engineering
+
+## 18.1 Programme Identity
+
+**Programme Code:** `PAK-D02`  
+**Programme Title:** Diploma in Railway Mechanical Engineering  
+**Duration:** 2 Academic Years  
+**Academic Structure:** 4 Semesters  
+**Primary Language:** English  
+**Orientation:** Mechanical engineering fundamentals applied to railway vehicles, workshops, manufacturing, inspection, maintenance and overhaul  
+**Curriculum Status:** Subject Architecture v1 — Chapter decomposition pending
+
+### Programme Purpose
+
+PAK-D02 is designed to develop railway-focused mechanical technicians and junior engineering professionals with a broader mechanical engineering base than the rolling-stock-specialist D01 programme. Graduates should be able to interpret mechanical drawings, analyze forces and machine elements, understand materials and manufacturing processes, work with fluid and thermal systems, perform measurements and inspections, support railway mechanical maintenance, diagnose failures, and participate in workshop overhaul and engineering improvement activities.
+
+The curriculum progresses from engineering mechanics, mathematics, materials, CAD and workshop foundations in Semester 1; through strength of materials, machine systems, thermofluids, manufacturing and railway mechanical applications in Semester 2; into machine design, maintenance, tribology, inspection, failure analysis and workshop integration in Semester 3; and finally into advanced overhaul, reliability, digital manufacturing, maintenance planning and industry application in Semester 4.
+
+### Curriculum Design Principles
+
+1. **Mechanical depth with railway context:** Core mechanical engineering concepts are taught to a diploma level and continuously related to railway vehicles, depots and workshops.
+2. **Shared-core efficiency:** Common content with D01 may use master modules where learning outcomes are equivalent, avoiding unnecessary duplicate books.
+3. **Design-to-maintenance continuity:** Students learn how components are specified, manufactured, assembled, loaded, worn, inspected, repaired and ultimately replaced.
+4. **Measurement before judgement:** Metrology, tolerances, fits, instrumentation and inspection underpin maintenance and quality decisions.
+5. **Workshop competence:** Machining, fitting, welding, assembly, disassembly and safe workshop practices are integrated progressively.
+6. **Failure-oriented engineering:** Tribology, fatigue, fracture, corrosion, thermal effects, misalignment, vibration and wear are treated as practical diagnostic themes.
+7. **Modern mechanical practice:** CAD/CAM, reverse engineering, condition monitoring, reliability and data-supported maintenance are introduced before graduation.
+
+---
+
+## 18.2 Year 1 — Semester 1: Mechanical Engineering & Railway Foundations
+
+**Semester Objective:** Establish the mathematical, mechanical, materials, drawing, workshop and railway-system foundations required for applied mechanical specialization.
+
+| Code | Subject | Classification | Orientation | Prerequisite |
+|---|---|---|---|---|
+| D02-101 | Applied Engineering Mathematics & Engineering Mechanics I | Core | Theory + Problem Solving | None |
+| D02-102 | Engineering Physics, Heat & Energy Fundamentals | Core | Theory + Laboratory | None |
+| D02-103 | Engineering Drawing, CAD, Geometric Dimensioning & Technical Documentation | Core | Theory + CAD Lab | None |
+| D02-104 | Materials Science, Metallurgy & Corrosion for Railway Engineering | Core | Theory + Laboratory / Demonstration | None |
+| D02-105 | Workshop Technology, Metrology, Fitting & Machine Tools I | Practical Core | Workshop-Dominant | None |
+| D02-106 | Railway Systems Fundamentals, Safety & Technical Communication | Core | Theory + Demonstration + Practical Exercises | None |
+
+### Semester 1 Progression Logic
+
+- `D02-101` establishes force, equilibrium, motion and calculation skills required for mechanics, structures and machine design.
+- `D02-102` introduces physical principles of energy, heat and mechanical systems that later support thermal and traction-related subjects.
+- `D02-103` builds technical drawing, CAD and dimensional-communication competence.
+- `D02-104` provides the material behaviour and metallurgy foundation needed for manufacturing, wear, fracture and repair decisions.
+- `D02-105` develops practical competence in measurement, fitting, hand tools and machine-tool awareness.
+- `D02-106` ensures mechanical engineering is taught within the operating, safety and professional context of the railway industry.
+
+---
+
+## 18.3 Year 1 — Semester 2: Mechanical Systems, Manufacturing & Railway Applications
+
+**Semester Objective:** Develop core mechanical engineering knowledge in structures, machines, thermofluids and manufacturing while applying it to railway components and vehicle mechanical systems.
+
+| Code | Subject | Classification | Orientation | Prerequisite |
+|---|---|---|---|---|
+| D02-201 | Strength of Materials & Railway Structural Mechanics | Core / Specialization | Theory + Laboratory + Problem Solving | D02-101, D02-104 |
+| D02-202 | Theory of Machines, Mechanisms & Machine Elements | Core / Specialization | Theory + Laboratory | D02-101, D02-103 |
+| D02-203 | Fluid Mechanics, Pneumatics & Hydraulics | Core / Specialization | Theory + Laboratory | D02-101, D02-102 |
+| D02-204 | Manufacturing Processes, Welding & Fabrication Technology | Core / Specialization | Theory + Workshop | D02-104, D02-105 |
+| D02-205 | Railway Vehicle Mechanical Systems I — Structures, Couplers, Bogies & Running Gear | Specialization Core | Theory + Workshop / Component Study | D02-106, D02-201; co-requisite D02-202 |
+| D02-206 | Mechanical Measurements, Instrumentation, Fits, Tolerances & Quality Control | Core | Theory + Metrology Lab | D02-103, D02-105 |
+
+### Semester 2 Progression Logic
+
+Semester 2 turns basic engineering knowledge into component-level mechanical understanding. Students study stress and deformation, mechanisms and machine elements, fluid power, manufacturing processes, welding and dimensional quality.
+
+`D02-205` provides the first concentrated railway mechanical application layer by connecting structural mechanics and machine elements to underframes, couplers, bogies, suspension interfaces and running gear.
+
+`D02-206` establishes the measurement and tolerance discipline required for subsequent inspection, maintenance and overhaul modules.
+
+---
+
+## 18.4 Year 2 — Semester 3: Machine Design, Maintenance, Inspection & Failure Analysis
+
+**Semester Objective:** Develop the ability to evaluate mechanical components in service, recognize degradation and failure mechanisms, support maintenance decisions and perform controlled workshop operations.
+
+| Code | Subject | Classification | Orientation | Prerequisite |
+|---|---|---|---|---|
+| D02-301 | Thermal Engineering & Diesel/Traction Mechanical Fundamentals | Core / Specialization | Theory + Laboratory | D02-102, D02-203 |
+| D02-302 | Railway Vehicle Mechanical Systems II — Wheelsets, Bearings, Suspension & Braking Mechanics | Specialization Core | Theory + Workshop | D02-202, D02-205, D02-206 |
+| D02-303 | Maintenance Engineering, Tribology, Lubrication & Wear | Core / Specialization | Theory + Laboratory + Case Study | D02-202, D02-204, D02-206 |
+| D02-304 | Machine Design, Fatigue, Fracture & Mechanical Failure Analysis | Core / Specialization | Theory + Design Exercises + Case Study | D02-201, D02-202, D02-104 |
+| D02-305 | Mechanical Inspection, NDT, Vibration & Condition Monitoring | Specialization Core | Laboratory + Workshop | D02-104, D02-206, D02-303 |
+| D02-306 | Mechanical Workshop Practicum I — Machining, Welding, Assembly & Component Inspection | Practical Core | Workshop / Competency Practice | D02-204, D02-206; co-requisite D02-303, D02-305 |
+
+### Semester 3 Progression Logic
+
+Semester 3 shifts the student from understanding machines to evaluating machines in service. `D02-303` and `D02-304` explain why components wear or fail; `D02-305` explains how deterioration is detected; and `D02-306` integrates measurement, machining, fabrication, assembly and inspection in a controlled practical environment.
+
+`D02-302` ensures that advanced mechanical subjects remain tied to safety-relevant railway components such as wheelsets, bearings, suspension and braking mechanisms.
+
+---
+
+## 18.5 Year 2 — Semester 4: Advanced Mechanical Maintenance & Industry Application
+
+**Semester Objective:** Integrate mechanical engineering knowledge with overhaul, reliability, digital manufacturing, quality, maintenance planning and real-world railway workshop application.
+
+| Code | Subject | Classification | Orientation | Prerequisite |
+|---|---|---|---|---|
+| D02-401 | Advanced Railway Mechanical Maintenance, Overhaul & Troubleshooting | Specialization Core | Theory + Workshop | D02-302, D02-303, D02-305, D02-306 |
+| D02-402 | Reliability, Maintainability & Railway Mechanical Asset Management | Core / Specialization | Theory + Case Study | D02-303, D02-304 |
+| D02-403 | Railway Mechanical Quality, Tolerances, Repair Documentation & Traceability | Core / Specialization | Theory + Practical Documentation | D02-206, D02-305 |
+| D02-404 | Applied CAD/CAM, Reverse Engineering & Digital Manufacturing | Specialization | CAD/CAM Lab + Project | D02-103, D02-202, D02-204 |
+| D02-405 | Maintenance Planning, Industrial Safety & Sustainable Mechanical Engineering | Core | Theory + Planning Exercises + Case Study | D02-106, D02-303, D02-306 |
+| D02-406 | Industry Practicum & Mechanical Engineering Capstone Project | Practical / Capstone | Industry + Project + Competency Assessment | Completion of Semesters 1–3; co-requisite D02-401 to D02-405 |
+
+### Semester 4 Progression Logic
+
+The final semester requires students to treat railway mechanical work as a controlled engineering process rather than an isolated repair task. They combine troubleshooting, overhaul, reliability, quality, tolerances, repair documentation, planning, safety and digital engineering methods.
+
+`D02-404` introduces practical CAD/CAM and reverse-engineering workflows that may be used for fixture development, non-safety-critical replacement-part analysis, workshop planning and manufacturing education. Any future teaching involving safety-critical railway parts must explicitly distinguish educational reverse engineering from authorized design approval and certified production requirements.
+
+`D02-406` is the programme integration point and should require a documented railway mechanical problem, engineering analysis, practical or design output, safety consideration, inspection/quality evidence and final technical presentation.
+
+---
+
+## 18.6 PAK-D02 Subject Inventory
+
+PAK-D02 contains **24 semester subjects/modules**:
+
+- Semester 1: 6 subjects
+- Semester 2: 6 subjects
+- Semester 3: 6 subjects
+- Semester 4: 6 subjects
+
+Contact hours, credits/ECTS-equivalent workload, detailed learning outcomes and assessment weightings remain intentionally unassigned until the dedicated workload and credit-mapping phase.
+
+---
+
+## 18.7 PAK-D01 / PAK-D02 Shared-Module Strategy
+
+PAK-D02 must not automatically create new books where a D01 module already provides the same learning outcomes at the same academic depth.
+
+Potential shared or partially shared master-module families include:
+
+- railway systems fundamentals;
+- engineering drawing and technical documentation;
+- materials and corrosion;
+- workshop safety and metrology;
+- welding/fabrication fundamentals;
+- NDT and inspection fundamentals;
+- maintenance engineering fundamentals;
+- quality, traceability and maintenance documentation.
+
+However, D02 requires **deeper mechanical-engineering treatment** in mechanics, strength of materials, machine elements, thermofluids, machine design, tribology, vibration, manufacturing and CAD/CAM. Those learning outcomes must not be diluted merely to maximize module reuse.
+
+**Control rule:** reuse is permitted only when learning outcomes, level, prerequisite knowledge and assessment standard are substantially equivalent. Otherwise a separate level- or programme-specific module version is required.
+
+---
+
+## 18.8 Subject Dependency Spine
+
+Principal mechanical progression:
+
+`D02-101 Engineering Mathematics & Mechanics I`
++ `D02-103 Drawing/CAD`
++ `D02-104 Materials`
++ `D02-105 Workshop/Metrology`
+→ `D02-201 Strength of Materials`
++ `D02-202 Theory of Machines`
++ `D02-204 Manufacturing`
++ `D02-206 Measurements & Tolerances`
+→ `D02-303 Maintenance & Tribology`
++ `D02-304 Machine Design & Failure Analysis`
++ `D02-305 Inspection & Condition Monitoring`
+→ `D02-401 Advanced Maintenance & Overhaul`
++ `D02-402 Reliability & Asset Management`
++ `D02-404 CAD/CAM & Digital Manufacturing`
+→ `D02-406 Industry Practicum & Capstone Project`.
+
+Railway-application progression:
+
+`D02-106 Railway Systems Fundamentals`
+→ `D02-205 Railway Vehicle Mechanical Systems I`
+→ `D02-302 Railway Vehicle Mechanical Systems II`
+→ `D02-401 Advanced Railway Mechanical Maintenance`
+→ `D02-406 Capstone`.
+
+---
+
+## 18.9 Technical & Regulatory Reference Baseline for Future Chapter Development
+
+The chapter-development stage for PAK-D02 must use current authoritative engineering and railway sources appropriate to each subject. Reference families may include:
+
+- applicable EU railway interoperability and railway-safety legislation where mechanical work interfaces with regulated railway subsystems;
+- applicable TSIs for rolling-stock contexts covered by a chapter;
+- current ERA technical guidance and relevant national/Polish railway requirements;
+- applicable EN and ISO standards for engineering drawings, dimensional tolerancing, welding, materials, inspection, NDT, quality, machinery safety and maintenance where relevant;
+- recognized mechanical-engineering references covering mechanics, materials, thermodynamics, fluid mechanics, machine design, tribology, vibration, manufacturing and maintenance engineering;
+- authorized manufacturer maintenance manuals and technical instructions where legitimately available for training use.
+
+**Control rule:** no generic academic formula, workshop practice or mechanical rule should be presented as a railway acceptance criterion unless an applicable railway standard, approved maintenance specification, drawing, manufacturer instruction or authorized engineering requirement establishes that criterion.
+
+---
+
+## 18.10 PAK-D02 Chapter-Decomposition Readiness
+
+PAK-D02 is ready for subject-wise chapter design after portfolio-level subject architecture is completed, or earlier if selected as a pilot programme.
+
+For each of the 24 modules, the chapter stage must define:
+
+- subject purpose and scope;
+- chapter titles and sequence;
+- mathematical depth and prerequisite assumptions;
+- railway application points;
+- theory/laboratory/workshop split;
+- diagrams, engineering drawings and worked examples;
+- calculations and design exercises;
+- laboratory or workshop exercises;
+- inspection and measurement exercises where applicable;
+- learning-outcome placeholders;
+- assessment linkage placeholders;
+- reference and standards families;
+- safety-critical content flags.
+
+No full textbook prose should be generated before that subject's chapter architecture has been approved or frozen.
