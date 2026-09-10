@@ -12,3 +12,15 @@ grant execute on function public.has_org_role(uuid, text[]) to authenticated;
 revoke all on function public.claim_next_job(text, integer, text[]) from public;
 revoke all on function public.claim_next_job(text, integer, text[]) from anon;
 revoke all on function public.claim_next_job(text, integer, text[]) from authenticated;
+
+-- Supabase's automatic public-schema RLS event-trigger helper runs through the
+-- event trigger itself; browser roles do not need direct RPC execution rights.
+do $$
+begin
+  if to_regprocedure('public.rls_auto_enable()') is not null then
+    revoke all on function public.rls_auto_enable() from public;
+    revoke all on function public.rls_auto_enable() from anon;
+    revoke all on function public.rls_auto_enable() from authenticated;
+  end if;
+end
+$$;
