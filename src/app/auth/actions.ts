@@ -19,7 +19,10 @@ async function ensureFirstOwnerIfNeeded(): Promise<void> {
   if (error) return;
   if ((memberships ?? []).length > 0) return;
 
-  await supabase.rpc("bootstrap_first_owner");
+  const { data: bootstrapAvailable } = await supabase.rpc("is_pak_bootstrap_available");
+  if (bootstrapAvailable === true) {
+    await supabase.rpc("bootstrap_first_owner");
+  }
 }
 
 export async function signInAction(formData: FormData): Promise<void> {
@@ -45,8 +48,8 @@ export async function signUpFirstOwnerAction(formData: FormData): Promise<void> 
   }
 
   const supabase = await createServerSupabaseClient();
-  const { data: existingOrgs } = await supabase.from("organizations").select("id").limit(1);
-  if ((existingOrgs ?? []).length > 0) {
+  const { data: bootstrapAvailable, error: availabilityError } = await supabase.rpc("is_pak_bootstrap_available");
+  if (availabilityError || bootstrapAvailable !== true) {
     redirect("/login");
   }
 
