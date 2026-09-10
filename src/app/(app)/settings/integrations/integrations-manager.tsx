@@ -22,8 +22,8 @@ export type IntegrationOrganizationWorkspace = {
 };
 
 type Message = { type: "success" | "error"; text: string } | null;
-
 type OpenAIModel = (typeof OPENAI_ALLOWED_MODELS)[number];
+type PendingOperation = "save-key" | "remove-key" | "save-model" | "test" | "toggle" | null;
 
 function statusLabel(status: SafeIntegrationConnection["status"] | undefined): string {
   switch (status) {
@@ -45,6 +45,23 @@ function safeConfiguredModel(connection: SafeIntegrationConnection | undefined):
     : "gpt-5.6-luna";
 }
 
+function pendingLabel(operation: PendingOperation, enabling: boolean): string | null {
+  switch (operation) {
+    case "save-key":
+      return "Saving API key…";
+    case "remove-key":
+      return "Removing API key…";
+    case "save-model":
+      return "Saving model configuration…";
+    case "test":
+      return "Testing connection…";
+    case "toggle":
+      return enabling ? "Enabling OpenAI…" : "Disabling OpenAI…";
+    default:
+      return null;
+  }
+}
+
 export function IntegrationsManager({ organizations }: { organizations: IntegrationOrganizationWorkspace[] }) {
   const [selectedOrganizationId, setSelectedOrganizationId] = useState(organizations[0]?.id ?? "");
   const [connectionsByOrg, setConnectionsByOrg] = useState<Record<string, SafeIntegrationConnection[]>>(
@@ -53,7 +70,9 @@ export function IntegrationsManager({ organizations }: { organizations: Integrat
   const [apiKey, setApiKey] = useState("");
   const [model, setModel] = useState<OpenAIModel>("gpt-5.6-luna");
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const [confirmDisable, setConfirmDisable] = useState(false);
   const [message, setMessage] = useState<Message>(null);
+  const [pendingOperation, setPendingOperation] = useState<PendingOperation>(null);
   const [isPending, startTransition] = useTransition();
 
   const organization = organizations.find((item) => item.id === selectedOrganizationId) ?? organizations[0];
@@ -61,10 +80,12 @@ export function IntegrationsManager({ organizations }: { organizations: Integrat
   const openAiConnection = connections.find((connection) => connection.provider === "OPENAI");
   const canManage = organization ? can(organization.role, "settings:manage") : false;
   const configuredModel = safeConfiguredModel(openAiConnection);
+  const enabling = openAiConnection?.status === "DISABLED";
 
   useEffect(() => {
     setModel(configuredModel);
     setConfirmRemove(false);
+    setConfirmDisable(false);
   }, [configuredModel, selectedOrganizationId]);
 
   function replaceConnection(next: SafeIntegrationConnection) {
@@ -76,17 +97,23 @@ export function IntegrationsManager({ organizations }: { organizations: Integrat
   }
 
   function run(
+    operation: Exclude<PendingOperation, null>,
     action: () => Promise<{ ok: true; connection: SafeIntegrationConnection } | { ok: false; error: string }>,
     success: string,
   ) {
     setMessage(null);
+    setPendingOperation(operation);
     startTransition(async () => {
-      const result = await action();
-      if (result.ok) {
-        replaceConnection(result.connection);
-        setMessage({ type: "success", text: success });
-      } else {
-        setMessage({ type: "error", text: result.error });
+      try {
+        const result = await action();
+        if (result.ok) {
+          replaceConnection(result.connection);
+          setMessage({ type: "success", text: success });
+        } else {
+          setMessage({ type: "error", text: result.error });
+        }
+      } finally {
+        setPendingOperation(null);
       }
     });
   }
@@ -95,6 +122,7 @@ export function IntegrationsManager({ organizations }: { organizations: Integrat
     event.preventDefault();
     if (!organization || !apiKey.trim()) return;
     run(
+      "save-key",
       () => saveIntegrationSecretAction({
         organizationId: organization.id,
         provider: "OPENAI",
@@ -109,6 +137,7 @@ export function IntegrationsManager({ organizations }: { organizations: Integrat
   function removeKey() {
     if (!organization) return;
     run(
+      "remove-key",
       () => removeIntegrationSecretAction({
         organizationId: organization.id,
         provider: "OPENAI",
@@ -119,6 +148,16 @@ export function IntegrationsManager({ organizations }: { organizations: Integrat
     setConfirmRemove(false);
   }
 
+  function setOpenAiDisabled(disabled: boolean) {
+    if (!organization) return;
+    run(
+      "toggle",
+      () => setIntegrationDisabledAction({ organizationId: organization.id, provider: "OPENAI", disabled }),
+      disabled ? "OpenAI disabled." : "OpenAI enabled.",
+    );
+    setConfirmDisable(false);
+  }
+
   if (!organization) {
     return (
       <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-950/60 p-6 text-sm text-slate-400">
@@ -127,6 +166,8 @@ export function IntegrationsManager({ organizations }: { organizations: Integrat
       </div>
     );
   }
+
+  const currentPendingLabel = pendingLabel(pendingOperation, enabling);
 
   return (
     <div className="mt-8 space-y-6">
@@ -150,6 +191,7 @@ export function IntegrationsManager({ organizations }: { organizations: Integrat
               setApiKey("");
               setMessage(null);
               setConfirmRemove(false);
+              setConfirmDisable(false);
             }}
           >
             {organizations.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
@@ -157,7 +199,11 @@ export function IntegrationsManager({ organizations }: { organizations: Integrat
         </label>
       ) : null}
 
-      {isPending ? <div role="status" className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm text-slate-300">Updating integration settings…</div> : null}
+      {currentPendingLabel ? (
+        <div role="status" aria-live="polite" className="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3 text-sm text-slate-300">
+          {currentPendingLabel}
+        </div>
+      ) : null}
       {message ? (
         <div
           role={message.type === "error" ? "alert" : "status"}
@@ -201,7 +247,9 @@ export function IntegrationsManager({ organizations }: { organizations: Integrat
               />
               <div className="flex flex-wrap gap-2">
                 <button type="submit" disabled={isPending || !apiKey.trim()} className="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50">Save API key</button>
-                {openAiConnection && !confirmRemove ? <button type="button" disabled={isPending} onClick={() => { setMessage(null); setConfirmRemove(true); }} className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 disabled:opacity-50">Remove key</button> : null}
+                {openAiConnection && !confirmRemove ? (
+                  <button type="button" disabled={isPending} onClick={() => { setMessage(null); setConfirmRemove(true); setConfirmDisable(false); }} className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 disabled:opacity-50">Remove key</button>
+                ) : null}
               </div>
               {confirmRemove ? (
                 <div className="rounded-xl border border-red-900/60 bg-red-950/20 p-3">
@@ -233,6 +281,7 @@ export function IntegrationsManager({ organizations }: { organizations: Integrat
                   type="button"
                   disabled={isPending || !openAiConnection}
                   onClick={() => run(
+                    "save-model",
                     () => updateIntegrationConfigAction({ organizationId: organization.id, provider: "OPENAI", config: { ...openAiConnection?.config, defaultModel: model } }),
                     "OpenAI model configuration saved.",
                   )}
@@ -242,21 +291,43 @@ export function IntegrationsManager({ organizations }: { organizations: Integrat
                   type="button"
                   disabled={isPending || !openAiConnection || openAiConnection.status === "NOT_CONFIGURED"}
                   onClick={() => run(
+                    "test",
                     () => testIntegrationConnectionAction({ organizationId: organization.id, provider: "OPENAI" }),
                     "OpenAI connection verified.",
                   )}
                   className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 disabled:opacity-50"
                 >Test connection</button>
-                {openAiConnection ? <button
-                  type="button"
-                  disabled={isPending}
-                  onClick={() => run(
-                    () => setIntegrationDisabledAction({ organizationId: organization.id, provider: "OPENAI", disabled: openAiConnection.status !== "DISABLED" }),
-                    openAiConnection.status === "DISABLED" ? "OpenAI enabled." : "OpenAI disabled.",
-                  )}
-                  className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 disabled:opacity-50"
-                >{openAiConnection.status === "DISABLED" ? "Enable" : "Disable"}</button> : null}
+                {openAiConnection && openAiConnection.status === "DISABLED" ? (
+                  <button
+                    type="button"
+                    disabled={isPending}
+                    onClick={() => setOpenAiDisabled(false)}
+                    className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 disabled:opacity-50"
+                  >Enable</button>
+                ) : openAiConnection && !confirmDisable ? (
+                  <button
+                    type="button"
+                    disabled={isPending}
+                    onClick={() => { setMessage(null); setConfirmDisable(true); setConfirmRemove(false); }}
+                    className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 disabled:opacity-50"
+                  >Disable</button>
+                ) : null}
               </div>
+              {confirmDisable ? (
+                <div className="rounded-xl border border-amber-900/60 bg-amber-950/20 p-3">
+                  <p className="text-sm text-amber-100">Disable OpenAI for this organization? Content generation will be unavailable until OpenAI is enabled again.</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      aria-label="Confirm disable OpenAI"
+                      onClick={() => setOpenAiDisabled(true)}
+                      disabled={isPending}
+                      className="rounded-lg bg-amber-100 px-3 py-2 text-xs font-semibold text-amber-950"
+                    >Confirm disable</button>
+                    <button type="button" onClick={() => setConfirmDisable(false)} disabled={isPending} className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200">Cancel</button>
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
         ) : <p className="mt-6 rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-3 text-sm text-slate-400">Owner or Admin access is required to manage integration credentials.</p>}
