@@ -17,6 +17,7 @@ type RequestBody = {
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SECRET_NAME_RE = /^[A-Z][A-Z0-9_]{1,63}$/;
+const SENSITIVE_CONFIG_KEY_RE = /(api.?key|secret|token|password|credential|private.?key)/i;
 const PROVIDERS = new Set<Provider>(["OPENAI", "META", "LTX"]);
 
 function json(status: number, body: Record<string, unknown>) {
@@ -25,6 +26,18 @@ function json(status: number, body: Record<string, unknown>) {
 
 function maskedHint(secret: string) {
   return `••••${secret.slice(-4)}`;
+}
+
+function containsSensitiveConfigKey(value: unknown, depth = 0): boolean {
+  if (!value || typeof value !== "object") return false;
+  if (depth > 8) return true;
+
+  for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
+    if (SENSITIVE_CONFIG_KEY_RE.test(key)) return true;
+    if (containsSensitiveConfigKey(nested, depth + 1)) return true;
+  }
+
+  return false;
 }
 
 function safeConnection(row: Record<string, unknown>) {
@@ -51,7 +64,10 @@ function parseBody(input: RequestBody): { ok: true; value: Required<Pick<Request
   if (!input.provider || !PROVIDERS.has(input.provider)) return { ok: false };
   if (["save", "remove"].includes(input.action) && (!input.secretName || !SECRET_NAME_RE.test(input.secretName))) return { ok: false };
   if (input.action === "save" && (typeof input.secretValue !== "string" || input.secretValue.trim().length < 8)) return { ok: false };
-  if (input.action === "update_config" && (!input.config || typeof input.config !== "object" || Array.isArray(input.config))) return { ok: false };
+  if (
+    input.action === "update_config" &&
+    (!input.config || typeof input.config !== "object" || Array.isArray(input.config) || containsSensitiveConfigKey(input.config))
+  ) return { ok: false };
   if (input.action === "set_disabled" && typeof input.disabled !== "boolean") return { ok: false };
   return { ok: true, value: input as Required<Pick<RequestBody, "action" | "organizationId" | "provider">> & RequestBody };
 }
