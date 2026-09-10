@@ -22,4 +22,22 @@ describe("OpenAI integration model configuration", () => {
       }).success,
     ).toBe(false);
   });
+
+  it("rejects secret-bearing configuration keys before the Edge Vault boundary", () => {
+    expect(
+      updateIntegrationConfigSchema.safeParse({
+        organizationId,
+        provider: "OPENAI",
+        config: { apiKey: "sk-must-not-be-config" },
+      }).success,
+    ).toBe(false);
+
+    expect(
+      updateIntegrationConfigSchema.safeParse({
+        organizationId,
+        provider: "OPENAI",
+        config: { runtime: { private_key: "must-not-be-config" } },
+      }).success,
+    ).toBe(false);
+  });
 });
