@@ -39,9 +39,9 @@ describe("IntegrationsManager", () => {
       />,
     );
 
-    expect(screen.getByText("Configured")).toBeInTheDocument();
-    expect(screen.getByText("••••abcd")).toBeInTheDocument();
-    expect(screen.getByLabelText("OpenAI API key")).toHaveValue("");
+    expect(screen.getByText("Configured")).not.toBeNull();
+    expect(screen.getByText("••••abcd")).not.toBeNull();
+    expect((screen.getByLabelText("OpenAI API key") as HTMLInputElement).value).toBe("");
     expect(document.body.textContent).not.toContain("sk-");
   });
 
@@ -59,7 +59,7 @@ describe("IntegrationsManager", () => {
       />,
     );
 
-    expect(screen.queryByRole("button", { name: "Save API key" })).not.toBeInTheDocument();
-    expect(screen.getByText(/Owner or Admin access is required/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Save API key" })).toBeNull();
+    expect(screen.getByText(/Owner or Admin access is required/i)).not.toBeNull();
   });
 });
