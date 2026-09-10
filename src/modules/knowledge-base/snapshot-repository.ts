@@ -40,8 +40,10 @@ type SupabaseClient = {
   ): PromiseLike<{ error: { message?: string } | null }>;
 };
 
+type SupabaseClientSource = SupabaseClient | Promise<SupabaseClient>;
+
 export class SupabaseKnowledgeSnapshotPersistence implements KnowledgeSnapshotPersistence {
-  constructor(private readonly supabase: SupabaseClient) {}
+  constructor(private readonly supabaseSource: SupabaseClientSource) {}
 
   async insertIgnoringConflicts(inputs: KnowledgeSnapshotInput[]): Promise<void> {
     if (inputs.length === 0) return;
@@ -61,7 +63,8 @@ export class SupabaseKnowledgeSnapshotPersistence implements KnowledgeSnapshotPe
       source_reference_snapshot: input.sourceReferenceSnapshot ?? null,
     }));
 
-    const { error } = await this.supabase.rpc("persist_content_knowledge_snapshots", {
+    const supabase = await this.supabaseSource;
+    const { error } = await supabase.rpc("persist_content_knowledge_snapshots", {
       _organization_id: organizationId,
       _content_item_id: contentItemId,
       _snapshots: snapshots,
