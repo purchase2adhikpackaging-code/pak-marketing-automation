@@ -94,7 +94,7 @@ export default async function DashboardPage() {
       <p className="mt-4 max-w-3xl text-base leading-7 text-slate-400">
         Operational status for the workflows that are implemented today: content generation, approved knowledge, and OpenAI integration readiness.
       </p>
-      <DashboardSummary workspace={workspace} error={error} />
+      <DashboardSummary workspace={workspace} {...(error ? { error } : {})} />
     </section>
   );
 }
