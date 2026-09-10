@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   KnowledgeSnapshotStore,
+  SupabaseKnowledgeSnapshotPersistence,
   type KnowledgeSnapshotInput,
   type KnowledgeSnapshotPersistence,
 } from "./snapshot-repository";
@@ -90,6 +91,44 @@ describe("KnowledgeSnapshotStore", () => {
     await repository.insertMany([retryWithChangedText]);
 
     expect(persistence.rows.get(`${contentItemId}:${original.knowledgeRecordId}`)).toEqual(original);
+  });
+
+  it("routes production persistence through the guarded Supabase RPC", async () => {
+    const rpc = vi.fn().mockResolvedValue({ error: null });
+    const persistence = new SupabaseKnowledgeSnapshotPersistence({ rpc });
+    const input = snapshot();
+
+    await persistence.insertIgnoringConflicts([input]);
+
+    expect(rpc).toHaveBeenCalledWith("persist_content_knowledge_snapshots", {
+      _organization_id: orgId,
+      _content_item_id: contentItemId,
+      _snapshots: [
+        {
+          knowledge_record_id: input.knowledgeRecordId,
+          knowledge_revision: input.knowledgeRevision,
+          title_snapshot: input.titleSnapshot,
+          content_snapshot: input.contentSnapshot,
+          source_type_snapshot: input.sourceTypeSnapshot,
+          source_label_snapshot: input.sourceLabelSnapshot,
+          source_reference_snapshot: input.sourceReferenceSnapshot,
+        },
+      ],
+    });
+  });
+
+  it("rejects mixed organization or content-item batches before RPC invocation", async () => {
+    const rpc = vi.fn().mockResolvedValue({ error: null });
+    const persistence = new SupabaseKnowledgeSnapshotPersistence({ rpc });
+
+    await expect(
+      persistence.insertIgnoringConflicts([
+        snapshot(),
+        snapshot({ contentItemId: "55555555-5555-4555-8555-555555555555" }),
+      ]),
+    ).rejects.toThrow("same organization and content item");
+
+    expect(rpc).not.toHaveBeenCalled();
   });
 
   it("exposes insertion only, with no snapshot update or overwrite method", () => {
