@@ -4,9 +4,16 @@ import { redirect } from "next/navigation";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
+const INTERNAL_LOGIN_DOMAIN = "pak.local";
+
 function value(formData: FormData, name: string): string {
   const raw = formData.get(name);
   return typeof raw === "string" ? raw.trim() : "";
+}
+
+function loginIdentifierToEmail(identifier: string): string {
+  const normalized = identifier.trim().toLowerCase();
+  return normalized.includes("@") ? normalized : `${normalized}@${INTERNAL_LOGIN_DOMAIN}`;
 }
 
 async function ensureFirstOwnerIfNeeded(): Promise<void> {
@@ -26,13 +33,14 @@ async function ensureFirstOwnerIfNeeded(): Promise<void> {
 }
 
 export async function signInAction(formData: FormData): Promise<void> {
-  const email = value(formData, "email");
+  const identifier = value(formData, "identifier");
   const password = value(formData, "password");
+  const email = loginIdentifierToEmail(identifier);
   const supabase = await createServerSupabaseClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    redirect(`/login?error=${encodeURIComponent("Invalid email or password.")}`);
+    redirect(`/login?error=${encodeURIComponent("Invalid login ID or password.")}`);
   }
 
   await ensureFirstOwnerIfNeeded();
