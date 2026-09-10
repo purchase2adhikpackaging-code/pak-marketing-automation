@@ -3,7 +3,7 @@
 # Academic Curriculum & Study Material Blueprint
 
 **Product Requirements Document (PRD)**  
-**Version:** 0.1.8  
+**Version:** 0.1.9  
 **Status:** Living Master Blueprint  
 **Baseline Date:** 10 September 2026  
 **Language:** English  
@@ -235,7 +235,8 @@ This PRD defines curriculum architecture only. It does not itself confer degree-
 | v0.1.5 | PAK-D05 year/semester-wise subject architecture; Diploma portfolio subject mapping complete | COMPLETE |
 | v0.1.6 | PAK-C01 12-week Railway Fundamentals certificate module architecture | COMPLETE |
 | v0.1.7 | PAK-C02 6-month Railway Vehicle Maintenance certificate module architecture | COMPLETE |
-| v0.1.8 | Global print-ready academic publishing standard + PAK-C03 Freight Wagon Maintenance certificate module architecture | **CURRENT** |
+| v0.1.8 | Global print-ready academic publishing standard + PAK-C03 Freight Wagon Maintenance certificate module architecture | COMPLETE |
+| v0.1.9 | PAK-C04 6-month Locomotive Maintenance certificate module architecture | **CURRENT** |
 | v0.2 | Complete programme/module and year/semester-wise subject architecture for all programmes | IN PROGRESS |
 | v0.3 | Complete subject-wise chapter architecture | PLANNED |
 | v0.4 | Learning outcomes, contact hours/credits, theory/practical mapping and prerequisites | PLANNED |
@@ -260,13 +261,13 @@ The GitHub Markdown file is the canonical working copy for subsequent curriculum
 
 ## 14. Next Controlled Work Item
 
-With PAK-D01 through PAK-D05 and PAK-C01 through PAK-C03 now mapped at subject/module level, the next controlled curriculum work item is:
+With PAK-D01 through PAK-D05 and PAK-C01 through PAK-C04 now mapped at subject/module level, the next controlled curriculum work item is:
 
-### `PAK-C04 — Certificate in Locomotive Maintenance`
+### `PAK-C05 — Certificate in Wheelset & Bogie Technology`
 
-The next revision must define the complete 6-month module/block architecture for PAK-C04, including locomotive architecture, traction/mechanical/electrical auxiliaries, inspection, diagnostics, planned maintenance, workshop practice, quality/documentation, safety boundaries and final applied assessment.
+The next revision must define the complete 4-month module/block architecture for PAK-C05, including wheelset construction, wheels/axles/bearings/axleboxes, bogie frames, suspension, running gear, measurement and inspection, common defects, maintenance practice, safety-critical boundaries, traceability and final applied assessment.
 
-All future curriculum development and textbook production must also comply with the global print-ready publishing standard introduced in Section 26.
+All future curriculum development and textbook production must comply with Section 26 — Global Print-Ready Academic Publishing & Book Production Standard.
 
 ---
 
@@ -282,7 +283,8 @@ All future curriculum development and textbook production must also comply with 
 | 0.1.5 | 10 Sep 2026 | Added complete four-semester subject architecture for PAK-D05 and completed Diploma-level subject mapping | Superseded |
 | 0.1.6 | 10 Sep 2026 | Added complete 12-week module architecture for PAK-C01 and generalized academic-period governance for certificate programmes | Superseded |
 | 0.1.7 | 10 Sep 2026 | Added complete 24-week / 12-module architecture for PAK-C02 Railway Vehicle Maintenance | Superseded |
-| 0.1.8 | 10 Sep 2026 | Added global print-ready textbook/workbook/journal publishing standard and complete 24-week / 12-module architecture for PAK-C03 Freight Wagon Maintenance | Active |
+| 0.1.8 | 10 Sep 2026 | Added global print-ready textbook/workbook/journal publishing standard and complete 24-week / 12-module architecture for PAK-C03 Freight Wagon Maintenance | Superseded |
+| 0.1.9 | 10 Sep 2026 | Added complete 24-week / 12-module architecture for PAK-C04 Locomotive Maintenance with print-publication and technical-visual requirements | Active |
 
 ---
 
@@ -2733,3 +2735,341 @@ Subject/module architecture completed so far:
 In addition, **Section 26 now governs print-ready publication architecture across the entire PAK portfolio**. Every future curriculum section and every future chapter-development task must account for textbook PDFs, practical manuals, workbooks/journals, front/back matter, technical visuals and print-production requirements as applicable.
 
 **Next controlled curriculum target: `PAK-C04 — Certificate in Locomotive Maintenance`.**
+
+---
+
+# 29. PAK-C04 — Certificate in Locomotive Maintenance
+
+## 29.1 Programme Identity
+
+**Programme Code:** `PAK-C04`  
+**Programme Title:** Certificate in Locomotive Maintenance  
+**Duration:** 6 Months / 24 Weeks  
+**Academic Structure:** 12 sequential modules, normally delivered in two-week blocks  
+**Primary Language:** English  
+**Orientation:** Practical locomotive maintenance foundations covering running gear, traction architecture, diesel/mechanical and electrical systems, braking, auxiliaries, control/diagnostics, planned maintenance, quality, compliance and supervised workshop competence  
+**Curriculum Status:** Module Architecture v1 — Chapter decomposition pending
+
+### Programme Purpose
+
+PAK-C04 develops entry-to-intermediate maintenance knowledge and supervised practical competence for personnel working with locomotives or preparing to enter locomotive depots, workshops, fleet-maintenance organizations and technical support environments.
+
+The programme treats the locomotive as an integrated traction platform. Learners progress from locomotive types, architecture, workshop safety and technical documentation into running gear, traction powertrain fundamentals, diesel/mechanical support systems, electrical machines and high-voltage awareness, braking/pneumatics, auxiliaries, train-control/TCMS interfaces, diagnostics, condition monitoring, planned maintenance and maintenance-quality systems.
+
+The course may use diesel-electric and electric locomotives as the principal reference architectures while introducing hybrid, battery or other emerging traction systems where useful. Actual maintenance instructions, isolation procedures, test limits, software parameters, torque values, fluid specifications, brake criteria and release requirements must always come from approved documentation applicable to the specific locomotive/system.
+
+Completion of PAK-C04 does **not** by itself authorize independent locomotive release, high-voltage isolation, live electrical work, safety-critical software/configuration changes, brake acceptance, wheelset release, certified NDT, engine/traction-system sign-off, train-protection intervention or any other statutory/employer competence requiring separate qualification or authorization.
+
+### Curriculum Design Principles
+
+1. **Whole-locomotive architecture first:** learners understand the energy, mechanical, pneumatic and control paths before working on individual subsystems.
+2. **Traction-type awareness:** diesel-electric and electric locomotive architectures are differentiated clearly, with hybrid/battery technologies added where relevant.
+3. **Safety before intervention:** high voltage, stored pneumatic energy, rotating machinery, hot surfaces, fuel/fire hazards, batteries, lifting and underframe work receive explicit controls.
+4. **Inspect and diagnose before replacement:** maintenance reasoning begins with symptoms, records, inspection and measurement rather than uncontrolled parts replacement.
+5. **Practical-heavy delivery:** component identification, safe inspection, approved servicing tasks, diagnostic exercises, measurement and maintenance records are central.
+6. **Approved technical data governs work:** illustrative textbook values must never be treated as universal locomotive maintenance limits.
+7. **Control-system discipline:** TCMS, data buses, fault logs and train-protection interfaces are taught at maintenance-awareness level without implying software or signalling authorization.
+8. **Traceability and maintenance quality:** work orders, component identity, parts/materials, measurements, defect reports, verification and release boundaries form part of technical competence.
+9. **Publication-ready design:** every module must later map its required diagrams, schematics, cutaways, annotated photographs, maintenance flows and workbook/journal pages under Section 26.
+
+---
+
+## 29.2 Twenty-Four-Week / Twelve-Module Architecture
+
+| Weeks | Code | Module | Classification | Orientation | Prerequisite |
+|---|---|---|---|---|---|
+| 1–2 | C04-101 | Locomotive Types, Architecture, Safety & Maintenance Documentation | Foundation Core | Theory + Locomotive/System Identification + Workshop Induction | None |
+| 3–4 | C04-102 | Locomotive Bogies, Suspension, Wheelsets & Running Gear Maintenance | Safety-Critical Mechanical Core | Theory + Inspection + Metrology + Controlled Workshop Practice | C04-101 |
+| 5–6 | C04-103 | Traction Powertrain Fundamentals — Electric, Diesel-Electric & Hybrid Architectures | Traction Foundation | Theory + System Diagrams + Component Demonstration | C04-101 |
+| 7–8 | C04-104 | Diesel Engine & Mechanical Support Systems — Fuel, Lubrication, Cooling, Intake & Exhaust | Mechanical Specialization | Theory + Safe Component Inspection + Servicing Demonstration | C04-101, C04-103 |
+| 9–10 | C04-105 | Electrical Machines, Traction Converters, Motors & High-Voltage System Awareness | Electrical / Safety-Critical Core | Theory + De-energized Demonstration + Simulation | C04-101, C04-103 |
+| 11–12 | C04-106 | Locomotive Pneumatic & Braking Systems — Inspection, Maintenance & Test Awareness | Safety-Critical Core | Theory + Pneumatic Trainer + Controlled Inspection | C04-101, C04-102 |
+| 13–14 | C04-107 | Auxiliary Electrical Systems, Batteries, Compressors, HVAC & Control Supply | Cross-System Maintenance Core | Theory + De-energized / Controlled Practical | C04-101, C04-103, C04-105 |
+| 15–16 | C04-108 | Locomotive Control, TCMS, Diagnostics & Train-Protection Interface Awareness | Control / Diagnostic Core | Theory + Simulator / Diagnostic Demonstration | C04-103, C04-105, C04-107 |
+| 17–18 | C04-109 | Inspection, Metrology, Condition Monitoring & Structured Fault Diagnosis | Inspection / Diagnostic Core | Theory + Measurement + Diagnostic Case Practice | C04-102, C04-104 to C04-108 |
+| 19–20 | C04-110 | Planned Maintenance, Servicing, Controlled Component Replacement & Workshop Practice | Practical Maintenance Core | Workshop-Dominant + Documentation | C04-102, C04-104, C04-107, C04-109 |
+| 21–22 | C04-111 | Maintenance Quality, ECM, Traceability, LOC&PAS TSI & Compliance Awareness | Quality / Compliance Core | Theory + Records + Compliance Case Study | C04-101, C04-109, C04-110 |
+| 23–24 | C04-112 | Integrated Locomotive Maintenance Practicum & Final Competency Assessment | Integrative / Capstone | Workshop/Simulator + Inspection + Documentation + Final Assessment | Completion of C04-101 to C04-111 |
+
+---
+
+## 29.3 Module Progression Logic
+
+### Weeks 1–2 — C04-101 Locomotive Types, Architecture, Safety & Maintenance Documentation
+
+Learners identify common electric, diesel-electric and other locomotive architectures and locate the principal functional zones: cab/control systems, traction equipment, power source or collection system, bogies/running gear, braking and pneumatic equipment, auxiliary systems, cooling/ventilation and onboard diagnostic/control equipment.
+
+Workshop induction covers safe access, PPE, isolation-awareness, stored-energy hazards, fire/fuel risks, batteries, lifting/jacking awareness, housekeeping, tool discipline and maintenance documentation. Students begin using work orders, defect reports, component identification and controlled technical instructions from the first block.
+
+### Weeks 3–4 — C04-102 Bogies, Suspension, Wheelsets & Running Gear Maintenance
+
+Students study locomotive bogie architecture, suspension, traction links, axleboxes, wheelsets, bearings, dampers and related load paths. Controlled practical activities focus on component identification, visual inspection, measurement awareness, common degradation indicators and correct defect reporting.
+
+Wheelsets, axles, bearings and load-carrying bogie elements are safety-critical. Any dimensional limit, NDT requirement, bearing criterion or release decision must be derived from the approved locomotive/component maintenance source and handled by appropriately competent personnel.
+
+### Weeks 5–6 — C04-103 Traction Powertrain Fundamentals
+
+This module explains how energy becomes tractive effort. Learners compare electric locomotives, diesel-electric locomotives and hybrid/battery concepts through system block diagrams and energy-flow exercises.
+
+For electric locomotives the module introduces current collection, main switching/transformer or DC-link concepts, converters/inverters and traction motors at system level. For diesel-electric locomotives it introduces prime mover, alternator/generator, power conversion and traction motors. The emphasis is architecture and interfaces rather than authorized intervention.
+
+### Weeks 7–8 — C04-104 Diesel Engine & Mechanical Support Systems
+
+Where diesel or diesel-electric locomotives are within the training scope, students learn four-stroke diesel-engine fundamentals and the purpose of fuel, lubrication, cooling, intake/charge-air and exhaust systems. Governors/control interfaces, filters, pumps, heat exchangers and common condition indicators are introduced at certificate depth.
+
+Practical activity should use shut-down, cooled, isolated training assets or purpose-built components. Fuel, hot surfaces, pressurized fluids, rotating machinery and fire hazards must be addressed explicitly. Engine settings, timing, injection parameters and acceptance limits remain manufacturer-/maintenance-instruction-specific.
+
+### Weeks 9–10 — C04-105 Electrical Machines, Traction Converters, Motors & High-Voltage Awareness
+
+Learners identify transformers where applicable, alternators/generators, traction motors, converters/inverters, switchgear, contactors, protection devices, cables and high-voltage equipment zones. They study basic electrical energy flow and common maintenance observations such as contamination, overheating indicators, insulation concerns, loose connections and cooling requirements.
+
+High-voltage work is primarily theory, simulation and de-energized demonstration unless a separately governed facility, isolation system and competent instructor framework exists. Completion of this module must never be represented as high-voltage authorization.
+
+### Weeks 11–12 — C04-106 Locomotive Pneumatic & Braking Systems
+
+Students learn the locomotive compressed-air chain: compressor, air treatment/storage, pneumatic distribution, brake-control interfaces and principal brake equipment. Mechanical brake components and the relationship between locomotive and train braking are introduced at maintenance level.
+
+Controlled pneumatic trainers, de-pressurized components and approved inspection exercises may be used. Stored-air energy, unintended movement and brake safety require strict practical controls. Brake-test methods and acceptance values are asset-/operator-/rule-specific and must be sourced from approved current documentation.
+
+### Weeks 13–14 — C04-107 Auxiliary Electrical Systems, Batteries, Compressors, HVAC & Control Supply
+
+This block covers the support systems required for reliable locomotive operation: low-voltage/control supplies, batteries and charging, lighting, cab auxiliaries, cooling fans/pumps, compressors, HVAC and other auxiliary loads according to locomotive design.
+
+Learners practice safe component identification, de-energized inspection, basic documentation and condition checks. High-current battery systems and modern energy-storage technologies require specific hazard controls and must not be generalized across locomotive types.
+
+### Weeks 15–16 — C04-108 Locomotive Control, TCMS, Diagnostics & Train-Protection Interface Awareness
+
+Students are introduced to locomotive control architecture, driver-command inputs, control units, sensors, vehicle networks/data buses, TCMS concepts, event/fault logs and diagnostic interfaces. Train-protection/control-command equipment is included only to explain the locomotive-maintenance interface.
+
+Training should emphasize reading symptoms and diagnostic information without uncontrolled software changes. Parameter programming, safety-related configuration, firmware/software modification, train-protection testing and commissioning require separate approved competence and procedures.
+
+### Weeks 17–18 — C04-109 Inspection, Metrology, Condition Monitoring & Structured Fault Diagnosis
+
+Learners combine visual inspection, dimensional measurement, temperature/vibration/condition indicators and diagnostic data into a structured troubleshooting process: verify symptom, review history, identify hazards, inspect, measure, compare with approved data, narrow possible causes, perform permitted tests, record evidence and escalate where required.
+
+Condition-monitoring concepts may include vibration, temperature, electrical signatures, oil/fluid indicators, bearing condition and logged diagnostic trends at an introductory applied level. Formal NDT or specialist diagnostic certification is outside the default certificate scope.
+
+### Weeks 19–20 — C04-110 Planned Maintenance, Servicing, Controlled Component Replacement & Workshop Practice
+
+This is the principal integrated workshop block. Learners follow approved task instructions to perform selected training activities such as inspection, cleaning, lubrication, filter/service-element replacement, fastening checks, permitted component removal/reinstallation, basic low-risk measurements and post-task verification.
+
+The objective is disciplined maintenance execution, not unsupervised overhaul. Students must demonstrate correct asset identification, task preparation, tools, parts/material traceability, housekeeping, completion checks and maintenance records.
+
+### Weeks 21–22 — C04-111 Maintenance Quality, ECM, Traceability, LOC&PAS TSI & Compliance Awareness
+
+Students learn the controlled system around locomotive maintenance: maintenance instructions, competence management, tooling/calibration, component and material traceability, defects/nonconformities, verification, maintenance records, release-to-service and return-to-operation boundaries.
+
+The module introduces Entity in Charge of Maintenance (ECM) principles and the EU rolling-stock — locomotives and passenger rolling stock TSI (LOC&PAS TSI) at an appropriate awareness level. Current consolidated legal/technical requirements must be re-verified when books are written and before any publication revision is released.
+
+### Weeks 23–24 — C04-112 Integrated Locomotive Maintenance Practicum & Final Competency Assessment
+
+The final block integrates locomotive-system knowledge and maintenance process discipline. Using a locomotive, training rig, simulator or representative components, learners receive a controlled task package, conduct pre-task safety review, identify systems, perform assigned inspection/measurement/servicing tasks, interpret selected diagnostic evidence, document findings, complete permitted maintenance and explain escalation/release boundaries.
+
+Assessment must evaluate safe process, correct system identification, diagnostic reasoning, measurement quality, maintenance documentation, traceability and recognition of authorization limits—not speed or memorization alone.
+
+---
+
+## 29.4 PAK-C04 Module Inventory
+
+PAK-C04 contains **12 modules over 24 weeks**:
+
+- 1 locomotive foundation/safety/documentation module;
+- 1 bogie/running-gear/wheelset module;
+- 3 traction/power-system modules covering architecture, diesel mechanical systems and electrical traction equipment;
+- 2 brake/auxiliary-system modules;
+- 1 control/TCMS/diagnostic-interface module;
+- 1 inspection/condition-monitoring/fault-diagnosis module;
+- 1 planned-maintenance/workshop module;
+- 1 ECM/quality/compliance module;
+- 1 integrated practicum/final competency module.
+
+Exact contact hours, workshop/simulator hours, guided-learning hours and independent-study hours remain intentionally unassigned until the workload-mapping phase.
+
+---
+
+## 29.5 Practical Competency Baseline
+
+Subject to facility capability, locomotive type, approved training assets and instructor authorization, C04 practical learning should progressively include:
+
+1. locomotive type, system and major-component identification;
+2. reading controlled work orders, schematics and maintenance documentation;
+3. workshop safety, access control and pre-task hazard review;
+4. locomotive visual walk-around inspection;
+5. bogie, suspension, running-gear and wheelset inspection awareness;
+6. supervised dimensional measurement and recording;
+7. diesel-engine support-system component identification and safe inspection where applicable;
+8. traction electrical/electronic equipment identification on de-energized assets;
+9. batteries and auxiliary-system inspection under appropriate controls;
+10. pneumatic/brake-component identification and safe trainer/component exercises;
+11. TCMS/fault-log/diagnostic-code interpretation using simulators or approved training systems;
+12. condition-monitoring and structured fault-finding scenarios;
+13. selected lubrication, cleaning, filter/service-element and simple servicing activities within approved scope;
+14. permitted component removal/reassembly on training assemblies;
+15. maintenance defect, measurement, parts and traceability records;
+16. post-task verification and escalation;
+17. final integrated locomotive-maintenance scenario.
+
+**Practical competency is always bounded by the exact locomotive/training asset, controlled maintenance instruction, workshop risk assessment, instructor competence and employer/legal authorization framework.**
+
+---
+
+## 29.6 Safety-Critical & Specialist Boundaries
+
+Future C04 textbooks, manuals, workbooks and journals must explicitly flag and control:
+
+- high-voltage traction equipment and power electronics;
+- pantographs/current-collection equipment and roof access;
+- grounding/earthing and electrical isolation;
+- diesel-engine rotating machinery and hot surfaces;
+- fuel systems and fire risk;
+- batteries, high-current DC and energy-storage systems;
+- compressed air and stored pneumatic energy;
+- lifting, jacking, underframe and bogie work;
+- wheelset, axle, bearing and axlebox integrity;
+- braking systems and brake tests;
+- traction motors, converters and insulation testing;
+- safety-related software, parameterization and TCMS configuration;
+- train-protection and control-command interfaces;
+- formal NDT used for acceptance;
+- calibrated measurements used as release criteria;
+- release to service and return to operation.
+
+PAK may teach underlying engineering and maintenance principles and may use supervised practical exercises on appropriate training assets. The certificate itself must not be marketed as authority for independent high-voltage isolation, brake acceptance, wheelset release, software changes, train-protection intervention, formal NDT sign-off or locomotive release.
+
+---
+
+## 29.7 Shared-Module & Pathway Strategy
+
+C04 may reuse or adapt selected C01, C02, D01 and D03 master content where learning outcomes and level match, including:
+
+- general railway and rolling-stock fundamentals;
+- workshop safety and technical documentation;
+- bogie, wheelset and braking fundamentals;
+- basic maintenance methods and metrology;
+- low-voltage electrical and auxiliary fundamentals;
+- fault-finding methodology;
+- maintenance quality, traceability and ECM awareness.
+
+C04 requires independent locomotive-specific depth for:
+
+- locomotive architecture and traction chain;
+- diesel-electric versus electric locomotive systems;
+- diesel engine and support-system maintenance;
+- traction converters/inverters and traction motors;
+- high-voltage equipment awareness;
+- locomotive compressed-air and braking interfaces;
+- locomotive auxiliaries;
+- TCMS, onboard diagnostics and train-protection interfaces;
+- locomotive maintenance case studies.
+
+Possible progression includes PAK-C05, PAK-C06, PAK-C08, PAK-C09, PAK-D01 and PAK-D03. Recognition of prior learning must depend on mapped learning outcomes and assessment evidence, not title similarity alone.
+
+---
+
+## 29.8 Technical & Regulatory Reference Baseline for Future Chapter Development
+
+Future C04 chapter and book development must verify current authoritative sources appropriate to the locomotive type and maintenance activity, including where applicable:
+
+- Directive (EU) 2016/797 on rail-system interoperability, using the current applicable/consolidated text;
+- Directive (EU) 2016/798 on railway safety, using the current applicable/consolidated text;
+- **Commission Regulation (EU) No 1302/2014** concerning the TSI for the rolling-stock — locomotives and passenger rolling stock subsystem (LOC&PAS TSI), using the current consolidated edition and subsequent applicable amendments at the time of writing/publication;
+- **Commission Implementing Regulation (EU) 2019/779** concerning the system of certification of Entities in Charge of Maintenance, where applicable to the maintenance organization and vehicle context;
+- current ERA guidance and technical documents;
+- applicable energy, control-command/signalling and other TSIs where a locomotive-maintenance chapter interfaces with those subsystems;
+- approved locomotive manufacturer/keeper/ECM maintenance manuals, schematics, diagnostic instructions, drawings and work instructions where legitimately available for training use;
+- applicable EN/IEC/ISO standards for railway electrical equipment, traction systems, EMC, rotating machines, batteries, pneumatics, braking, wheelsets, metrology, maintenance, NDT, quality and occupational safety according to chapter scope;
+- relevant Polish railway, electrical and workplace-safety requirements.
+
+**Control rule:** PAK educational material may explain principles and provide illustrative exercises, but locomotive-specific isolation steps, voltages, insulation criteria, software parameters, engine settings, fluid specifications, torques, brake values, wear limits, NDT acceptance criteria and release requirements must be traceable to the governing approved source for the exact asset/process.
+
+The regulatory/reference register for every future C04 publication must record the edition or consolidated version actually checked. Regulatory references must be revalidated before print release or revision rather than assumed timeless.
+
+---
+
+## 29.9 Assessment Architecture Placeholder
+
+The eventual C04 assessment system should include:
+
+- module knowledge checks;
+- locomotive/system/component identification;
+- schematic/block-diagram interpretation;
+- workshop-safety and hazard-control observations;
+- bogie/running-gear/wheelset inspection exercises;
+- diesel/mechanical system case tasks where applicable;
+- electrical/high-voltage hazard-awareness assessment;
+- pneumatic/brake-system component exercises;
+- metrology and measurement practicals;
+- TCMS/fault-log diagnostic interpretation;
+- structured fault-diagnosis case studies;
+- maintenance-documentation and traceability tasks;
+- final theory assessment;
+- final integrated workshop/simulator practical;
+- oral questioning on escalation, isolation and release boundaries.
+
+Unsafe work, bypassing an isolation or stored-energy control, use of unsupported technical values, uncontrolled software changes, falsified/incomplete measurements or missing maintenance traceability must be treated as serious assessment failures.
+
+---
+
+## 29.10 PAK-C04 Chapter-Decomposition & Publication Readiness
+
+For each of the 12 C04 modules, chapter design must define:
+
+- module purpose and scope;
+- chapter titles and sequence;
+- locomotive/system terminology;
+- required theory depth;
+- workshop/simulator/practical allocation;
+- tools, instruments and training-equipment requirements;
+- controlled practical exercises;
+- maintenance and diagnostic case studies;
+- workbook and practical-journal activities;
+- learning-outcome placeholders;
+- assessment links;
+- regulatory/technical source families;
+- safety-critical flags;
+- authorization/certification boundaries;
+- required publication outputs under Section 26.
+
+### Mandatory C04 Technical Visual Plan
+
+At chapter-design stage, the publication plan must explicitly allocate appropriate print-ready visuals, including where relevant:
+
+1. locomotive general-arrangement and major-system layout diagrams;
+2. traction-chain / energy-flow block diagrams for electric and diesel-electric architectures;
+3. bogie, suspension, wheelset, axlebox and inspection-zone drawings;
+4. diesel-engine cutaway/exploded educational illustrations;
+5. fuel, lubrication, cooling, intake/charge-air and exhaust flow diagrams;
+6. transformer/converter/inverter/traction-motor block diagrams and component illustrations;
+7. conceptual high-voltage zone and safety/isolation diagrams clearly labelled **Illustrative / Training Use Only** unless based on approved controlled documentation;
+8. brake and pneumatic schematics;
+9. battery, low-voltage and auxiliary-power system diagrams;
+10. compressor, cooling, HVAC and auxiliary-system schematics;
+11. TCMS, data-bus, control and diagnostic information-flow diagrams;
+12. train-protection/control-command interface diagrams at awareness level;
+13. diagnostic decision trees and fault-isolation flowcharts;
+14. maintenance process flows and servicing sequences where educationally appropriate;
+15. annotated photographs/graphics showing common defects and condition indicators;
+16. measurement-point and inspection-location diagrams;
+17. maintenance-documentation examples, matrices and traceability flows.
+
+All visuals must comply with Section 26: figure numbering and captions, print legibility, vector preference for technical diagrams, appropriate resolution for raster images, source/licence records, grayscale robustness and clear distinction between educational illustrations and approved maintenance instructions.
+
+No full C04 textbook, module book, workbook, practical manual or journal should enter production until this chapter/publication architecture and its visual requirements are approved.
+
+---
+
+# 30. Portfolio Architecture Checkpoint v0.1.9
+
+Subject/module architecture completed so far:
+
+| Portfolio Level | Programmes Completed | Curriculum Placements Defined |
+|---|---:|---:|
+| Certificate | 4 of 12 | 48 module placements |
+| Diploma | 5 of 5 | 120 semester subject placements |
+| Bachelor's-level | 0 of 5 | Pending |
+| Postgraduate Diploma | 0 of 6 | Pending |
+| Master's-level | 0 of 6 | Pending |
+
+**Section 26 remains mandatory across every completed and future programme:** course material must be publication-aware, print-ready, visually complete and capable of producing the required textbook/module PDFs, practical manuals, workbooks, journals/logbooks, instructor guides and assessment publications.
+
+**Next controlled curriculum target: `PAK-C05 — Certificate in Wheelset & Bogie Technology` (4 months).**
