@@ -5,6 +5,7 @@ on:
     branches:
       - docs/curriculum-c04-append
     paths:
+      - .github/workflows/tmp-c04-prd-append.yml
       - docs/academic/.c04_append_payload.md
 
 permissions:
@@ -21,8 +22,9 @@ jobs:
           fetch-depth: 0
 
       - name: Update canonical academic PRD
-        shell: python
+        shell: bash
         run: |
+          python3 <<'PY'
           from pathlib import Path
 
           prd_path = Path('docs/academic/PAK_ACADEMIC_CURRICULUM_STUDY_MATERIAL_BLUEPRINT_PRD.md')
@@ -34,7 +36,6 @@ jobs:
 
           if '# 29. PAK-C04 — Certificate in Locomotive Maintenance' in text:
               raise SystemExit('C04 section already exists; refusing duplicate append')
-
           if '**Version:** 0.1.8' not in text:
               raise SystemExit('Expected PRD version 0.1.8 not found')
           text = text.replace('**Version:** 0.1.8', '**Version:** 0.1.9', 1)
@@ -67,11 +68,12 @@ All future curriculum development and textbook production must comply with Secti
 
           text = text.rstrip() + '\n\n---\n\n' + payload
           prd_path.write_text(text, encoding='utf-8')
-
           payload_path.unlink()
           workflow_path.unlink()
+          PY
 
       - name: Commit branch result
+        shell: bash
         run: |
           git config user.name "PAK Curriculum Automation"
           git config user.email "actions@users.noreply.github.com"
