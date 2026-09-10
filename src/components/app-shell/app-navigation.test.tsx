@@ -17,19 +17,19 @@ describe("AppNavigation", () => {
   it("marks only the current route as active", () => {
     render(<AppNavigation />);
 
-    expect(screen.getByRole("link", { name: "Content Studio" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "Settings" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", { name: "Content Studio" }).getAttribute("aria-current")).toBe("page");
+    expect(screen.getByRole("link", { name: "Settings" }).getAttribute("aria-current")).toBeNull();
   });
 
   it("uses an accessible collapsed mobile disclosure", () => {
     render(<AppNavigation />);
 
     const openButton = screen.getByRole("button", { name: "Open navigation" });
-    expect(openButton).toHaveAttribute("aria-expanded", "false");
+    expect(openButton.getAttribute("aria-expanded")).toBe("false");
 
     fireEvent.click(openButton);
 
-    expect(screen.getByRole("button", { name: "Close navigation" })).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByRole("navigation", { name: "Primary" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Close navigation" }).getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByRole("navigation", { name: "Primary" })).not.toBeNull();
   });
 });
