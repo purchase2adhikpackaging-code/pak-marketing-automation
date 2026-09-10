@@ -12,8 +12,8 @@ export default async function SetupPage({
 }) {
   const params = await searchParams;
   const supabase = await createServerSupabaseClient();
-  const { data: existingOrgs } = await supabase.from("organizations").select("id").limit(1);
-  const setupComplete = (existingOrgs ?? []).length > 0;
+  const { data: bootstrapAvailable } = await supabase.rpc("is_pak_bootstrap_available");
+  const setupComplete = bootstrapAvailable !== true;
 
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-16 text-white">
