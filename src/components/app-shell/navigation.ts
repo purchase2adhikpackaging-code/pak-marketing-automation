@@ -6,6 +6,7 @@ export type AppNavigationItem = {
 export const APP_NAVIGATION: readonly AppNavigationItem[] = [
   { label: "Dashboard", href: "/dashboard" },
   { label: "Content Studio", href: "/content-studio" },
+  { label: "Scene Planning", href: "/scene-planning" },
   { label: "AI Representative", href: "/ai-representative" },
   { label: "Campus / Locations", href: "/campus-locations" },
   { label: "Podcast", href: "/podcast" },

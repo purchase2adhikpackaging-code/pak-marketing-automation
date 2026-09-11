@@ -101,26 +101,38 @@ Exit criteria:
 - no secret appears in HTML/client state/logs;
 - staging smoke test and live RLS/security probes pass.
 
-## Phase 6 — Scene Planning foundation
+## Phase 6 — Scene Planning — IMPLEMENTED
 
 Requirements:
 - PRD-VID-001..003
 - UX-SCENE-001..003
 - TRD-VID-002/006
 
-Deliverables:
-- script-artifact-to-scene-plan model
-- scene source revision linkage
-- create/edit/reorder scenes
-- readiness calculation corrected for zero required scenes
-- scene plan UI
-- stale behavior after source revision change
+Delivered:
+- persisted Content Studio script-artifact handoff into Scene Planning
+- tenant-scoped video projects and versioned Visual Bible state
+- versioned scene/shot plan graph with exact canonical narration linkage
+- provider-neutral structured planner with strict server-side validation
+- deterministic QC for source freshness, narration coverage, timing, references, and generation requirements
+- manual scene/shot editing and reordering with QC invalidation
+- granular one-scene / one-shot replanning with human-modified protection
+- role-gated review, warning acknowledgement, approval, and copy-on-write editing
+- database RLS, parent-organization guards, lifecycle guards, approved-version immutability, and reviewer mutation constraints
+- immutable provider-neutral handoff contract for Phase 7
+- no video-provider execution, provider URLs, or provider job IDs in Phase 6
+
+Verification:
+- exact-head typecheck, lint, unit, production build, and Playwright release gate
+- live PAK Supabase migrations and RLS/function privilege probes
+- live anonymous negative visibility probe
+- Supabase security/performance advisor review with Phase 6 advisor findings hardened before release
 
 Exit criteria:
-- generated artifact can produce and edit a deterministic scene plan;
-- readiness false until all required scenes meet conditions.
+- persisted generated artifacts can create, edit, replan, QC, review, and approve deterministic scene/shot plans;
+- approved plans are immutable and source-bound;
+- only approved, current plans expose a Phase 7-ready provider-neutral handoff.
 
-## Phase 7 — Video generation provider integration
+## Phase 7 — Video generation provider integration — NEXT
 
 Requirements:
 - PRD-VID-004..007

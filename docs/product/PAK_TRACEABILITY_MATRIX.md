@@ -23,7 +23,7 @@
 | PRD-ML-001..008 Multilingual artifacts | Content Studio artifacts | content_script_artifacts | unit/E2E/schema assertions | Implemented | Phase 3 |
 | PRD-JOB-001..004 Durable jobs | Operational status | jobs | unit/state-machine + DB claim security | Foundation implemented | Expand per provider |
 | PRD-MEDIA-001..005 Media Library | Media Library | media_assets + storage | schema/RLS/E2E | Partial | Phase 8 |
-| PRD-VID-001..003 Scene planning | Scene Planning / Content Studio | video_scenes | unit/readiness/E2E | Partial foundation only | Phase 6 |
+| PRD-VID-001..003 Scene planning | Scene Planning / Content Studio | video_projects, visual_bibles, scene_plan_versions, scene_plan_scenes, scene_plan_shots, scene_plan_qc_findings | unit/QC/RBAC/RLS/E2E + live Supabase probes | Implemented | Phase 6 |
 | PRD-VID-004..007 Video provider/render | Scene Planning / Media | jobs, video_scenes, media_assets | adapter fake + live provider smoke | Missing | Phases 7–8 |
 | PRD-APR-001..005 Approval | Approval Center | approval_requests, approval_events | workflow/E2E/RLS | Missing | Phase 9 |
 | PRD-CAL-001..003 Calendar | Content Calendar | publication scheduling | E2E/timezone tests | Missing | Phase 11 |
@@ -67,6 +67,32 @@ Implementation areas:
 - `src/modules/ai/text/*`
 - `supabase/migrations/202609090006_content_items.sql`
 - `supabase/migrations/202609090007_content_script_artifacts.sql`
+
+### Scene Planning
+- PRD-VID-001..003
+- UX-SCENE-001..003
+- TRD-VID-002/006
+
+Implementation areas:
+- `src/app/(app)/scene-planning/*`
+- `src/modules/scene-planning/*`
+- Content Studio downstream `Create Scene Plan` integration
+- `supabase/migrations/202609110001_scene_planning.sql`
+- `supabase/migrations/202609110002_scene_planning_atomic_persistence.sql`
+- `supabase/migrations/202609110003_scene_plan_lifecycle_guards.sql`
+- `supabase/migrations/202609110004_scene_plan_reviewer_qc_ack.sql`
+- `supabase/migrations/202609110005_scene_plan_draft_editing.sql`
+- `supabase/migrations/202609110006_scene_plan_review_qc_guard.sql`
+- `supabase/migrations/202609110007_scene_plan_performance_hardening.sql`
+- `tests/e2e/scene-planning.spec.ts`
+
+Verified boundaries:
+- canonical narration remains authoritative and source-integrity bound;
+- OWNER/ADMIN/EDITOR may create/edit/generate/replan/QC within tenant scope;
+- OWNER/ADMIN/REVIEWER approval is server- and database-constrained;
+- anonymous users cannot read Scene Planning rows under live RLS;
+- approved plans are immutable except lifecycle staleness/supersession metadata transitions;
+- Phase 6 persists provider-neutral planning data only and performs no video-provider execution.
 
 ### Foundation tenancy/jobs/media/scenes
 - PRD-GEN-005/007

@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 const modules = [
   ["Dashboard", "/dashboard"],
   ["Content Studio", "/content-studio"],
+  ["Scene Planning", "/scene-planning"],
   ["AI Representative", "/ai-representative"],
   ["Campus / Locations", "/campus-locations"],
   ["Podcast", "/podcast"],
@@ -27,10 +28,10 @@ test("approved navigation routes render their module shells", async ({ page }) =
 });
 
 test("marks the current primary navigation destination", async ({ page }) => {
-  await page.goto("/content-studio");
+  await page.goto("/scene-planning");
 
-  await expect(page.getByRole("link", { name: "Content Studio", exact: true })).toHaveAttribute("aria-current", "page");
-  await expect(page.getByRole("link", { name: "Settings", exact: true })).not.toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("link", { name: "Scene Planning", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("link", { name: "Content Studio", exact: true })).not.toHaveAttribute("aria-current", "page");
 });
 
 test("uses a compact disclosure menu on mobile", async ({ page }) => {
@@ -44,9 +45,9 @@ test("uses a compact disclosure menu on mobile", async ({ page }) => {
 
   await toggle.click();
   await expect(page.getByRole("button", { name: "Close navigation" })).toHaveAttribute("aria-expanded", "true");
-  await expect(page.getByRole("link", { name: "Settings", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Scene Planning", exact: true })).toBeVisible();
 
-  await page.getByRole("link", { name: "Settings", exact: true }).click();
-  await expect(page).toHaveURL(/\/settings$/);
+  await page.getByRole("link", { name: "Scene Planning", exact: true }).click();
+  await expect(page).toHaveURL(/\/scene-planning$/);
   await expect(page.getByRole("button", { name: "Open navigation" })).toHaveAttribute("aria-expanded", "false");
 });
