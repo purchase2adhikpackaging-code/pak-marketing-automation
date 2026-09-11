@@ -6,7 +6,7 @@
 
 ## Governance rule
 
-No new feature slice starts without mapped PRD/TRD/UX/DB requirements and acceptance criteria. Each slice uses: design/spec where architecture changes → implementation plan → TDD → CI → runtime verification where applicable → PR review → merge.
+No new feature slice starts without mapped PRD/TRD/UX/DB requirements and acceptance criteria. Existing requirement IDs retain their original semantic meaning; new behavior receives new IDs. Each slice uses: design/spec where architecture changes → implementation plan → TDD → CI → runtime verification where applicable → PR review → merge.
 
 ## Phase 0 — Master baseline and implementation audit — IMPLEMENTED
 
@@ -89,14 +89,16 @@ Later Phase 7 extension:
 
 Current operational note:
 - provider secrets do not require a Vercel redeploy after saving;
-- Vercel hosting quota/rate-limit is treated as an external deployment constraint, not an application correctness failure.
+- external hosting quota/rate-limit is treated as an infrastructure constraint, not an application correctness failure.
 
 ## Phase 6 — Scene Planning — IMPLEMENTED
 
 Requirements:
-- PRD-VID-001..007
-- UX-SCENE requirements
-- TRD-SCENE requirements
+- PRD-VID-001..004
+- PRD-VID-008..011
+- UX-SCENE-001..011
+- TRD-SCENE-001..008
+- relevant original TRD-VID planning/readiness requirements
 
 Delivered:
 - persisted Content Studio script-artifact handoff
@@ -121,8 +123,11 @@ Verification:
 ## Phase 7 — Video generation provider integration — IMPLEMENTED
 
 Requirements:
-- PRD-VID-008..014
-- TRD-VID/JOB/MEDIA provider execution requirements
+- PRD-VID-006..007
+- PRD-VID-012..018
+- UX-VID-001..006
+- TRD-VID-004, TRD-VID-007..014
+- TRD-JOB/MEDIA provider-execution requirements
 
 Delivered:
 - LTX 2.3 Pro adapter behind provider-neutral interface
@@ -155,9 +160,12 @@ External operational acceptance:
 ## Phase 8 — Final video assembly & Media Library expansion — NEXT
 
 Requirements:
-- PRD-VID-015..017
+- PRD-VID-005
+- PRD-VID-019
 - PRD-MEDIA-001..006
-- UX-MEDIA requirements
+- TRD-VID-005..006
+- UX-SCENE-003
+- UX-MEDIA-001..004
 
 Deliverables:
 - final assembly durable job
@@ -182,7 +190,7 @@ Exit criteria:
 
 Requirements:
 - PRD-APR-001..005
-- UX-APR requirements
+- UX-APR-001..004
 
 Deliverables:
 - `approval_requests`
@@ -196,8 +204,9 @@ Deliverables:
 
 Requirements:
 - PRD-PUB-001..006
-- Meta integration requirements
-- UX-PUB requirements
+- PRD-SET-009
+- INT-META requirements
+- UX-PUB-001..003
 
 Deliverables:
 - Meta integration credential/config schema/forms using existing Vault
@@ -210,6 +219,10 @@ Deliverables:
 
 ## Phase 11 — Content Calendar
 
+Requirements:
+- PRD-CAL-001..003
+- UX-CAL-001..002
+
 Deliverables:
 - scheduled publication projection
 - timezone-safe scheduling
@@ -217,6 +230,10 @@ Deliverables:
 - calendar/list UX
 
 ## Phase 12 — Analytics
+
+Requirements:
+- PRD-AN-001..005
+- UX-AN-001..003
 
 Deliverables:
 - metric sync jobs
@@ -227,6 +244,10 @@ Deliverables:
 
 ## Phase 13 — AI Representative
 
+Requirements:
+- PRD-AIR-001..004
+- UX-AIR-001..002
+
 Deliverables:
 - approved-script selection
 - representative profile/provider abstraction
@@ -235,6 +256,10 @@ Deliverables:
 - review/publishing integration
 
 ## Phase 14 — Podcast
+
+Requirements:
+- PRD-POD-001..003
+- UX-POD-001
 
 Deliverables:
 - episode workspace
@@ -245,12 +270,20 @@ Deliverables:
 
 ## Phase 15 — Campus / Locations
 
+Requirements:
+- PRD-CAMP-001..003
+- UX-CAMP-001..002
+
 Deliverables:
 - structured campus/location records
 - approved facts
 - location-specific content templates/workflows
 
 ## Phase 16 — Student Testimonials
+
+Requirements:
+- PRD-TST-001..003
+- UX-TST-001..002
 
 Deliverables:
 - testimonial records
@@ -260,6 +293,10 @@ Deliverables:
 - adapted-content governance
 
 ## Phase 17 — Manual Generation completion
+
+Requirements:
+- PRD-MAN-001..003
+- UX-MAN-001
 
 Deliverables:
 - rich manual authoring using shared artifact/revision/approval model
