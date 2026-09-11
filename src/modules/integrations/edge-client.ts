@@ -92,7 +92,8 @@ export function invokeVideoGenerationWithDependencies<T>(
   body: VideoGenerationEdgeRequest,
   dependencies: EdgeInvokeDependencies,
 ): Promise<T> {
-  return invokeEdgeFunction<T>("video-generation", body, dependencies);
+  const functionName = body.operation === "retry" ? "video-generation-retry" : "video-generation";
+  return invokeEdgeFunction<T>(functionName, body, dependencies);
 }
 
 export function invokeVideoGeneration<T>(body: VideoGenerationEdgeRequest): Promise<T> {
