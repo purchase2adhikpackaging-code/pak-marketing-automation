@@ -4,6 +4,30 @@ import {
   type PublishingProductionTransport,
 } from "@/modules/publishing-production/repository";
 
+function jobRow(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "22222222-2222-4222-8222-222222222222",
+    organization_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    production_run_id: "11111111-1111-4111-8111-111111111111",
+    book_id: "PAK-D01-S1-D01-102-TEXTBOOK",
+    programme_code: "PAK-D01",
+    subject_code: "D01-102",
+    academic_period: "S1",
+    edition: "2026",
+    revision: "0.1.0",
+    status: "RUNNING",
+    claim_count: 7,
+    failure_attempts: 1,
+    max_failure_attempts: 3,
+    lease_owner: "worker-1",
+    lease_expires_at: "2026-09-12T00:05:00Z",
+    current_stage: "MANUSCRIPT_IN_PROGRESS",
+    created_at: "2026-09-12T00:00:00Z",
+    updated_at: "2026-09-12T00:00:00Z",
+    ...overrides,
+  };
+}
+
 function transport(): PublishingProductionTransport & { calls: Array<{ kind: string; payload: unknown }> } {
   const calls: Array<{ kind: string; payload: unknown }> = [];
   return {
@@ -40,25 +64,24 @@ function transport(): PublishingProductionTransport & { calls: Array<{ kind: str
     },
     async rpc(name, args) {
       calls.push({ kind: `rpc:${name}`, payload: args });
-      if (name === "claim_publishing_jobs") {
-        return [{
-          id: "22222222-2222-4222-8222-222222222222",
-          organization_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-          production_run_id: "11111111-1111-4111-8111-111111111111",
-          book_id: "PAK-D01-S1-D01-102-TEXTBOOK",
-          programme_code: "PAK-D01",
-          subject_code: "D01-102",
-          academic_period: "S1",
-          edition: "2026",
-          revision: "0.1.0",
-          status: "RUNNING",
-          attempt_count: 2,
-          max_attempts: 3,
-          lease_owner: "worker-1",
-          lease_expires_at: "2026-09-12T00:05:00Z",
-          created_at: "2026-09-12T00:00:00Z",
-          updated_at: "2026-09-12T00:00:00Z",
-        }];
+      if (name === "claim_publishing_jobs") return [jobRow()];
+      if (name === "yield_publishing_job") {
+        return jobRow({
+          status: "QUEUED",
+          lease_owner: null,
+          lease_expires_at: null,
+          checkpoint_root: args.p_checkpoint_root,
+          current_stage: args.p_current_stage,
+        });
+      }
+      if (name === "fail_publishing_job") {
+        return jobRow({
+          status: "QUEUED",
+          lease_owner: null,
+          lease_expires_at: null,
+          failure_attempts: 2,
+          last_error: args.p_error,
+        });
       }
       return null;
     },
@@ -117,17 +140,45 @@ describe("PublishingProductionRepository", () => {
     })).rejects.toThrow(/concurrency/i);
   });
 
-  it("claims only the requested bounded number and preserves attempt count", async () => {
+  it("preserves independent claim and failure counters", async () => {
     const client = transport();
     const repo = new PublishingProductionRepository(client);
     const jobs = await repo.claimJobs({ workerId: "worker-1", limit: 4, leaseSeconds: 300 });
     expect(jobs).toHaveLength(1);
-    expect(jobs[0]?.attemptCount).toBe(2);
+    expect(jobs[0]?.claimCount).toBe(7);
+    expect(jobs[0]?.failureAttempts).toBe(1);
     expect(client.calls.find((entry) => entry.kind === "rpc:claim_publishing_jobs")?.payload).toEqual({
       p_worker_id: "worker-1",
       p_limit: 4,
       p_lease_seconds: 300,
     });
+  });
+
+  it("yields successful checkpoint progress without consuming a failure", async () => {
+    const client = transport();
+    const repo = new PublishingProductionRepository(client);
+    const job = await repo.yieldJob({
+      jobId: "22222222-2222-4222-8222-222222222222",
+      workerId: "worker-1",
+      checkpointRoot: "publishing/org/book/checkpoints",
+      currentStage: "MANUSCRIPT_IN_PROGRESS",
+    });
+    expect(job.status).toBe("QUEUED");
+    expect(job.failureAttempts).toBe(1);
+    expect(job.claimCount).toBe(7);
+    expect(job.checkpointRoot).toContain("checkpoints");
+  });
+
+  it("maps actual failures independently from claim count", async () => {
+    const repo = new PublishingProductionRepository(transport());
+    const job = await repo.failJob(
+      "22222222-2222-4222-8222-222222222222",
+      "worker-1",
+      "provider timeout",
+    );
+    expect(job.claimCount).toBe(7);
+    expect(job.failureAttempts).toBe(2);
+    expect(job.lastError).toMatch(/provider timeout/i);
   });
 
   it("always filters run and publication reads by organization", async () => {
