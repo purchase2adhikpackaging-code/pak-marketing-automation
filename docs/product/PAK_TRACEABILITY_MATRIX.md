@@ -21,10 +21,10 @@
 | PRD-KB-001..011 Knowledge Base | Knowledge Base | knowledge_records | unit/UI/E2E + live RLS | Implemented | Phase 4 |
 | PRD-CS-001..011 Content Studio grounding | Content Studio | content_items, provenance snapshots | unit/E2E + live RLS | Implemented except real org vault credential | Phase 5 completion |
 | PRD-ML-001..008 Multilingual artifacts | Content Studio artifacts | content_script_artifacts | unit/E2E/schema assertions | Implemented | Phase 3 |
-| PRD-JOB-001..004 Durable jobs | Operational status | jobs | unit/state-machine + DB claim security | Foundation implemented | Expand per provider |
-| PRD-MEDIA-001..005 Media Library | Media Library | media_assets + storage | schema/RLS/E2E | Partial | Phase 8 |
+| PRD-JOB-001..004 Durable jobs | Operational status | jobs | unit/state-machine + DB claim security | Foundation implemented; provider execution expanded | Continuous / Phase 7 |
+| PRD-MEDIA-001..005 Media Library | Media Library | media_assets + storage | schema/RLS/E2E | Partial; generated-video import lineage implemented | Phase 8 |
 | PRD-VID-001..003 Scene planning | Scene Planning / Content Studio | video_projects, visual_bibles, scene_plan_versions, scene_plan_scenes, scene_plan_shots, scene_plan_qc_findings | unit/QC/RBAC/RLS/E2E + live Supabase probes | Implemented | Phase 6 |
-| PRD-VID-004..007 Video provider/render | Scene Planning / Media | jobs, video_scenes, media_assets | adapter fake + live provider smoke | Missing | Phases 7–8 |
+| PRD-VID-004..007 Video provider/render | Scene Planning / Settings / Media | jobs, video_generation_attempts, media_assets, generated-media storage, Integration Vault | provider/state/retry/media/security tests + exact-head CI + live Supabase/Edge probes; paid provider smoke when credential/credits exist | Release-ready; external paid LTX smoke deferred until credential/credits are supplied | Phase 7 |
 | PRD-APR-001..005 Approval | Approval Center | approval_requests, approval_events | workflow/E2E/RLS | Missing | Phase 9 |
 | PRD-CAL-001..003 Calendar | Content Calendar | publication scheduling | E2E/timezone tests | Missing | Phase 11 |
 | PRD-PUB-001..006 Publishing | Publishing | integrations, targets, attempts, jobs | provider fake + idempotency + live smoke | Missing | Phase 10 |
@@ -93,6 +93,38 @@ Verified boundaries:
 - anonymous users cannot read Scene Planning rows under live RLS;
 - approved plans are immutable except lifecycle staleness/supersession metadata transitions;
 - Phase 6 persists provider-neutral planning data only and performs no video-provider execution.
+
+### Video generation provider integration
+- PRD-VID-004..007
+- INT-VID-001..005
+- TRD-JOB/VID requirements
+
+Implementation areas:
+- `src/modules/video/providers/*`
+- `src/modules/video/generation/*`
+- `src/app/(app)/scene-planning/shot-video-generation-controls.tsx`
+- `src/app/(app)/scene-planning/video-generation-actions.ts`
+- `src/app/(app)/settings/integrations/*`
+- `supabase/functions/video-generation/*`
+- `supabase/functions/video-generation-retry/*`
+- `supabase/functions/video-generation-dispatcher/*`
+- `supabase/functions/integration-vault/*`
+- `supabase/migrations/202609110008_video_generation_attempts.sql`
+- `supabase/migrations/202609110009_video_generation_enqueue.sql`
+- `supabase/migrations/202609110010_video_generation_reconciliation.sql`
+- `supabase/migrations/202609110011_generated_video_media_import.sql`
+- `supabase/migrations/202609110012_video_generation_dispatch.sql`
+
+Verified boundaries:
+- only authenticated OWNER/ADMIN/EDITOR actors can cross the enqueue spend boundary;
+- enqueue requires approved, source-current, blocker-free plan lineage and supported shot generation parameters;
+- authenticated browser sessions cannot directly insert provider attempts or paid video-generation jobs;
+- retry, import finalization, dispatcher secret access, and unattended claiming are service-role execution boundaries only;
+- cron-to-Edge execution authenticates with a Vault-held internal dispatcher token and unauthorized dispatcher requests return `401`;
+- LTX credentials are write-only through Integration Vault and are not returned to browser state;
+- LTX credential testing uses a read-only provider lookup and does not submit a paid generation;
+- generated media is imported into private organization-scoped storage and linked to `media_assets` plus immutable attempt/job lineage;
+- paid end-to-end LTX rendering remains an explicit external operational check because no organization LTX credential/credits are currently configured; it must be executed when credentials become available rather than simulated or falsely claimed.
 
 ### Foundation tenancy/jobs/media/scenes
 - PRD-GEN-005/007

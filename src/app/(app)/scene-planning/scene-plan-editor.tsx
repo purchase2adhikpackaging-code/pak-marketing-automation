@@ -11,9 +11,19 @@ import {
   updateScenePlanShotDraftAction,
 } from "./draft-edit-actions";
 import { granularReplanScenePlanAction } from "./granular-replan-actions";
+import { ShotVideoGenerationControls } from "./shot-video-generation-controls";
 
 const EDIT_ROLES: readonly AppRole[] = ["OWNER", "ADMIN", "EDITOR"];
 const EDITABLE_STATUSES: readonly ScenePlanStatus[] = ["DRAFT", "QC_REQUIRED", "REVIEW_REQUIRED"];
+
+export type ShotVideoGenerationView = {
+  jobId: string;
+  attemptId: string;
+  state: "QUEUED" | "GENERATING" | "IMPORTING" | "COMPLETED" | "FAILED";
+  mediaAssetId?: string;
+  retryable?: boolean;
+  errorCode?: string;
+};
 
 export type ScenePlanEditorShot = {
   id: string;
@@ -26,6 +36,7 @@ export type ScenePlanEditorShot = {
   masterVisualPrompt: string;
   cameraMotion: string;
   humanModified: boolean;
+  videoGeneration?: ShotVideoGenerationView;
 };
 
 export type ScenePlanEditorScene = {
@@ -43,6 +54,7 @@ export type ScenePlanEditorProps = {
   actorRole: AppRole;
   planVersionId: string;
   status: ScenePlanStatus;
+  sourceFresh?: boolean;
   scenes: ScenePlanEditorScene[];
 };
 
@@ -71,6 +83,7 @@ export function ScenePlanEditor({
   actorRole,
   planVersionId,
   status,
+  sourceFresh = false,
   scenes,
 }: ScenePlanEditorProps) {
   const router = useRouter();
@@ -295,16 +308,7 @@ export function ScenePlanEditor({
                             <button type="submit" disabled={isPending} className="rounded-xl border border-slate-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50" aria-label={`Save Shot ${scene.ordinal}.${shot.ordinal} changes`}>Save Shot {scene.ordinal}.{shot.ordinal} changes</button>
                             {shotIndex > 0 ? <button type="button" onClick={() => moveShot(scene, shotIndex, -1)} disabled={isPending} className="rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-200 disabled:opacity-50" aria-label={`Move Shot ${scene.ordinal}.${shot.ordinal} up`}>Move up</button> : null}
                             {shotIndex < scene.shots.length - 1 ? <button type="button" onClick={() => moveShot(scene, shotIndex, 1)} disabled={isPending} className="rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-200 disabled:opacity-50" aria-label={`Move Shot ${scene.ordinal}.${shot.ordinal} down`}>Move down</button> : null}
-                            <button
-                              type="button"
-                              onClick={() => replanShot(scene, shot)}
-                              disabled={isPending || humanTargetProtected}
-                              title={humanTargetProtected ? "Enable explicit human-edit replacement for this scene before replanning this shot." : undefined}
-                              className="rounded-xl border border-slate-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-40"
-                              aria-label={`Replan Shot ${scene.ordinal}.${shot.ordinal}`}
-                            >
-                              Replan Shot {scene.ordinal}.{shot.ordinal}
-                            </button>
+                            <button type="button" onClick={() => replanShot(scene, shot)} disabled={isPending || humanTargetProtected} title={humanTargetProtected ? "Enable explicit human-edit replacement for this scene before replanning this shot." : undefined} className="rounded-xl border border-slate-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-40" aria-label={`Replan Shot ${scene.ordinal}.${shot.ordinal}`}>Replan Shot {scene.ordinal}.{shot.ordinal}</button>
                           </div>
                         </form>
                       ) : (
@@ -313,6 +317,16 @@ export function ScenePlanEditor({
                           <div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Generation Specification</p><p className="mt-2 text-sm leading-6 text-slate-200">{shot.masterVisualPrompt}</p></div>
                         </div>
                       )}
+
+                      <ShotVideoGenerationControls
+                        organizationId={organizationId}
+                        actorRole={actorRole}
+                        planVersionId={planVersionId}
+                        planStatus={status}
+                        sourceFresh={sourceFresh}
+                        sceneOrdinal={scene.ordinal}
+                        shot={shot}
+                      />
                     </article>
                   );
                 })}

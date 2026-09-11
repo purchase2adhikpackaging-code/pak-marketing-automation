@@ -5,6 +5,7 @@ import type { AppRole } from "@/modules/auth/roles";
 import type { ScenePlanStatus } from "@/modules/scene-planning/schema";
 import { SupabaseScenePlanningRepository } from "@/modules/scene-planning/repository";
 import type { ScenePlanningWorkspaceProps } from "./scene-planning-workspace";
+import type { ShotVideoGenerationView } from "./scene-plan-editor";
 
 type ProjectRow = {
   id: string;
@@ -65,6 +66,17 @@ type ShotRow = {
   human_modified: boolean;
 };
 
+type GenerationAttemptRow = {
+  id: string;
+  job_id: string;
+  shot_id: string;
+  attempt_number: number;
+  state: "QUEUED" | "SUBMITTING" | "SUBMITTED" | "PROCESSING" | "IMPORT_PENDING" | "COMPLETED" | "FAILED" | "CANCELLED" | "SUBMISSION_UNKNOWN";
+  media_asset_id: string | null;
+  retryable: boolean | null;
+  error_code: string | null;
+};
+
 type AssembleInput = {
   organizationId: string;
   actorRole: AppRole;
@@ -75,6 +87,7 @@ type AssembleInput = {
   findings: FindingRow[];
   scenes: SceneRow[];
   shots: ShotRow[];
+  generationAttempts?: GenerationAttemptRow[];
 };
 
 export function descriptionsFromJsonEntries(value: unknown): string[] {
@@ -99,6 +112,28 @@ function stringList(value: unknown): string[] {
   return value.filter((item): item is string => typeof item === "string" && item.trim().length > 0).map((item) => item.trim());
 }
 
+function generationView(attempt: GenerationAttemptRow): ShotVideoGenerationView {
+  const state: ShotVideoGenerationView["state"] =
+    attempt.state === "QUEUED"
+      ? "QUEUED"
+      : ["SUBMITTING", "SUBMITTED", "PROCESSING"].includes(attempt.state)
+        ? "GENERATING"
+        : attempt.state === "IMPORT_PENDING"
+          ? "IMPORTING"
+          : attempt.state === "COMPLETED"
+            ? "COMPLETED"
+            : "FAILED";
+
+  return {
+    jobId: attempt.job_id,
+    attemptId: attempt.id,
+    state,
+    ...(attempt.media_asset_id ? { mediaAssetId: attempt.media_asset_id } : {}),
+    ...(attempt.retryable !== null ? { retryable: attempt.retryable } : {}),
+    ...(attempt.error_code ? { errorCode: attempt.error_code } : {}),
+  };
+}
+
 export function assembleScenePlanningWorkspace(input: AssembleInput): ScenePlanningWorkspaceProps {
   const findings = input.findings.map((finding) => ({
     id: finding.id,
@@ -107,6 +142,14 @@ export function assembleScenePlanningWorkspace(input: AssembleInput): ScenePlann
     message: finding.message,
     acknowledged: finding.acknowledged_at !== null,
   }));
+
+  const latestAttemptByShot = new Map<string, GenerationAttemptRow>();
+  for (const attempt of input.generationAttempts ?? []) {
+    const current = latestAttemptByShot.get(attempt.shot_id);
+    if (!current || attempt.attempt_number > current.attempt_number) {
+      latestAttemptByShot.set(attempt.shot_id, attempt);
+    }
+  }
 
   const sortedScenes = [...input.scenes]
     .sort((a, b) => a.ordinal - b.ordinal)
@@ -120,18 +163,22 @@ export function assembleScenePlanningWorkspace(input: AssembleInput): ScenePlann
       shots: input.shots
         .filter((shot) => shot.scene_id === scene.id)
         .sort((a, b) => a.ordinal - b.ordinal)
-        .map((shot) => ({
-          id: shot.id,
-          ordinal: shot.ordinal,
-          durationSeconds: Number(shot.duration_seconds),
-          narrationText: shot.narration_text,
-          narrationStartChar: shot.narration_start_char,
-          narrationEndChar: shot.narration_end_char,
-          creativeDirection: shot.creative_direction,
-          masterVisualPrompt: shot.master_visual_prompt,
-          cameraMotion: shot.camera_motion,
-          humanModified: shot.human_modified,
-        })),
+        .map((shot) => {
+          const attempt = latestAttemptByShot.get(shot.id);
+          return {
+            id: shot.id,
+            ordinal: shot.ordinal,
+            durationSeconds: Number(shot.duration_seconds),
+            narrationText: shot.narration_text,
+            narrationStartChar: shot.narration_start_char,
+            narrationEndChar: shot.narration_end_char,
+            creativeDirection: shot.creative_direction,
+            masterVisualPrompt: shot.master_visual_prompt,
+            cameraMotion: shot.camera_motion,
+            humanModified: shot.human_modified,
+            ...(attempt ? { videoGeneration: generationView(attempt) } : {}),
+          };
+        }),
     }));
 
   const plan = input.plan
@@ -236,9 +283,10 @@ export async function loadScenePlanningWorkspaceData(
   let findings: FindingRow[] = [];
   let scenes: SceneRow[] = [];
   let shots: ShotRow[] = [];
+  let generationAttempts: GenerationAttemptRow[] = [];
 
   if (planData) {
-    const [findingResult, sceneResult] = await Promise.all([
+    const [findingResult, sceneResult, generationResult] = await Promise.all([
       supabase
         .from("scene_plan_qc_findings")
         .select("id,severity,code,message,acknowledged_at")
@@ -251,10 +299,17 @@ export async function loadScenePlanningWorkspaceData(
         .eq("organization_id", organizationId)
         .eq("scene_plan_version_id", planData.id)
         .order("ordinal", { ascending: true }),
+      supabase
+        .from("video_generation_attempts")
+        .select("id,job_id,shot_id,attempt_number,state,media_asset_id,retryable,error_code")
+        .eq("organization_id", organizationId)
+        .eq("plan_version_id", planData.id)
+        .order("attempt_number", { ascending: false }),
     ]);
-    if (findingResult.error || sceneResult.error) return null;
+    if (findingResult.error || sceneResult.error || generationResult.error) return null;
     findings = (findingResult.data ?? []) as FindingRow[];
     scenes = (sceneResult.data ?? []) as SceneRow[];
+    generationAttempts = (generationResult.data ?? []) as GenerationAttemptRow[];
 
     const sceneIds = scenes.map((scene) => scene.id);
     if (sceneIds.length > 0) {
@@ -305,5 +360,6 @@ export async function loadScenePlanningWorkspaceData(
     findings,
     scenes,
     shots,
+    generationAttempts,
   });
 }

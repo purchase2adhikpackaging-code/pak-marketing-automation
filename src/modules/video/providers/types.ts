@@ -3,10 +3,13 @@ export type VideoGenerationState = "QUEUED" | "PROCESSING" | "COMPLETED" | "FAIL
 export type VideoGenerationRequest = {
   organizationId: string;
   sceneId: string;
+  shotId: string;
   prompt: string;
   durationSeconds: number;
-  aspectRatio: "16:9" | "9:16" | "1:1";
+  aspectRatio: "16:9" | "9:16" | "1:1" | "4:5";
   continuity: Record<string, unknown>;
+  cameraMotion?: string;
+  generateAudio: boolean;
   idempotencyKey: string;
 };
 

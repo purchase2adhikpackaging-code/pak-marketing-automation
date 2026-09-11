@@ -1,17 +1,27 @@
 import { describe, expect, it } from "vitest";
 import { FakeVideoProvider } from "./fake-provider";
+import type { VideoGenerationRequest } from "./types";
 
-const request = {
+const request: VideoGenerationRequest = {
   organizationId: "org-1",
   sceneId: "scene-1",
+  shotId: "shot-1",
   prompt: "Train maintenance workshop",
   durationSeconds: 8,
-  aspectRatio: "16:9" as const,
+  aspectRatio: "16:9",
   continuity: { location: "PAK workshop" },
-  idempotencyKey: "scene-1-v1",
+  cameraMotion: "slow push",
+  generateAudio: false,
+  idempotencyKey: "scene-1-shot-1-v1",
 };
 
 describe("FakeVideoProvider", () => {
+  it("accepts the provider-neutral Phase 7 shot generation contract", () => {
+    expect(request.shotId).toBe("shot-1");
+    expect(request.cameraMotion).toBe("slow push");
+    expect(request.generateAudio).toBe(false);
+  });
+
   it("returns a deterministic completed generation result", async () => {
     const provider = new FakeVideoProvider();
     const handle = await provider.submit(request);

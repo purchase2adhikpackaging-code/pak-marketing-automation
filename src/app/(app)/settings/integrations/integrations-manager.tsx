@@ -23,7 +23,17 @@ export type IntegrationOrganizationWorkspace = {
 
 type Message = { type: "success" | "error"; text: string } | null;
 type OpenAIModel = (typeof OPENAI_ALLOWED_MODELS)[number];
-type PendingOperation = "save-key" | "remove-key" | "save-model" | "test" | "toggle" | null;
+type PendingOperation =
+  | "save-key"
+  | "remove-key"
+  | "save-model"
+  | "test"
+  | "toggle"
+  | "save-ltx-key"
+  | "remove-ltx-key"
+  | "test-ltx"
+  | "toggle-ltx"
+  | null;
 
 function statusLabel(status: SafeIntegrationConnection["status"] | undefined): string {
   switch (status) {
@@ -45,18 +55,30 @@ function safeConfiguredModel(connection: SafeIntegrationConnection | undefined):
     : "gpt-5.6-luna";
 }
 
-function pendingLabel(operation: PendingOperation, enabling: boolean): string | null {
+function pendingLabel(
+  operation: PendingOperation,
+  openAiEnabling: boolean,
+  ltxEnabling: boolean,
+): string | null {
   switch (operation) {
     case "save-key":
-      return "Saving API key…";
+      return "Saving OpenAI API key…";
     case "remove-key":
-      return "Removing API key…";
+      return "Removing OpenAI API key…";
     case "save-model":
-      return "Saving model configuration…";
+      return "Saving OpenAI model configuration…";
     case "test":
-      return "Testing connection…";
+      return "Testing OpenAI connection…";
     case "toggle":
-      return enabling ? "Enabling OpenAI…" : "Disabling OpenAI…";
+      return openAiEnabling ? "Enabling OpenAI…" : "Disabling OpenAI…";
+    case "save-ltx-key":
+      return "Saving LTX API key…";
+    case "remove-ltx-key":
+      return "Removing LTX API key…";
+    case "test-ltx":
+      return "Testing LTX credentials without generating video…";
+    case "toggle-ltx":
+      return ltxEnabling ? "Enabling LTX…" : "Disabling LTX…";
     default:
       return null;
   }
@@ -68,9 +90,12 @@ export function IntegrationsManager({ organizations }: { organizations: Integrat
     Object.fromEntries(organizations.map((organization) => [organization.id, organization.connections])),
   );
   const [apiKey, setApiKey] = useState("");
+  const [ltxApiKey, setLtxApiKey] = useState("");
   const [model, setModel] = useState<OpenAIModel>("gpt-5.6-luna");
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [confirmDisable, setConfirmDisable] = useState(false);
+  const [confirmLtxRemove, setConfirmLtxRemove] = useState(false);
+  const [confirmLtxDisable, setConfirmLtxDisable] = useState(false);
   const [message, setMessage] = useState<Message>(null);
   const [pendingOperation, setPendingOperation] = useState<PendingOperation>(null);
   const [isPending, startTransition] = useTransition();
@@ -78,14 +103,18 @@ export function IntegrationsManager({ organizations }: { organizations: Integrat
   const organization = organizations.find((item) => item.id === selectedOrganizationId) ?? organizations[0];
   const connections = organization ? connectionsByOrg[organization.id] ?? [] : [];
   const openAiConnection = connections.find((connection) => connection.provider === "OPENAI");
+  const ltxConnection = connections.find((connection) => connection.provider === "LTX");
   const canManage = organization ? can(organization.role, "settings:manage") : false;
   const configuredModel = safeConfiguredModel(openAiConnection);
-  const enabling = openAiConnection?.status === "DISABLED";
+  const openAiEnabling = openAiConnection?.status === "DISABLED";
+  const ltxEnabling = ltxConnection?.status === "DISABLED";
 
   useEffect(() => {
     setModel(configuredModel);
     setConfirmRemove(false);
     setConfirmDisable(false);
+    setConfirmLtxRemove(false);
+    setConfirmLtxDisable(false);
   }, [configuredModel, selectedOrganizationId]);
 
   function replaceConnection(next: SafeIntegrationConnection) {
@@ -158,6 +187,46 @@ export function IntegrationsManager({ organizations }: { organizations: Integrat
     setConfirmDisable(false);
   }
 
+  function saveLtxKey(event: FormEvent) {
+    event.preventDefault();
+    if (!organization || !ltxApiKey.trim()) return;
+    run(
+      "save-ltx-key",
+      () => saveIntegrationSecretAction({
+        organizationId: organization.id,
+        provider: "LTX",
+        secretName: "API_KEY",
+        secretValue: ltxApiKey,
+      }),
+      "LTX API key saved securely.",
+    );
+    setLtxApiKey("");
+  }
+
+  function removeLtxKey() {
+    if (!organization) return;
+    run(
+      "remove-ltx-key",
+      () => removeIntegrationSecretAction({
+        organizationId: organization.id,
+        provider: "LTX",
+        secretName: "API_KEY",
+      }),
+      "LTX API key removed.",
+    );
+    setConfirmLtxRemove(false);
+  }
+
+  function setLtxDisabled(disabled: boolean) {
+    if (!organization) return;
+    run(
+      "toggle-ltx",
+      () => setIntegrationDisabledAction({ organizationId: organization.id, provider: "LTX", disabled }),
+      disabled ? "LTX disabled." : "LTX enabled.",
+    );
+    setConfirmLtxDisable(false);
+  }
+
   if (!organization) {
     return (
       <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-950/60 p-6 text-sm text-slate-400">
@@ -167,7 +236,7 @@ export function IntegrationsManager({ organizations }: { organizations: Integrat
     );
   }
 
-  const currentPendingLabel = pendingLabel(pendingOperation, enabling);
+  const currentPendingLabel = pendingLabel(pendingOperation, openAiEnabling, ltxEnabling);
 
   return (
     <div className="mt-8 space-y-6">
@@ -189,9 +258,12 @@ export function IntegrationsManager({ organizations }: { organizations: Integrat
             onChange={(event) => {
               setSelectedOrganizationId(event.target.value);
               setApiKey("");
+              setLtxApiKey("");
               setMessage(null);
               setConfirmRemove(false);
               setConfirmDisable(false);
+              setConfirmLtxRemove(false);
+              setConfirmLtxDisable(false);
             }}
           >
             {organizations.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
@@ -298,32 +370,16 @@ export function IntegrationsManager({ organizations }: { organizations: Integrat
                   className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 disabled:opacity-50"
                 >Test connection</button>
                 {openAiConnection && openAiConnection.status === "DISABLED" ? (
-                  <button
-                    type="button"
-                    disabled={isPending}
-                    onClick={() => setOpenAiDisabled(false)}
-                    className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 disabled:opacity-50"
-                  >Enable</button>
+                  <button type="button" disabled={isPending} onClick={() => setOpenAiDisabled(false)} className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 disabled:opacity-50">Enable</button>
                 ) : openAiConnection && !confirmDisable ? (
-                  <button
-                    type="button"
-                    disabled={isPending}
-                    onClick={() => { setMessage(null); setConfirmDisable(true); setConfirmRemove(false); }}
-                    className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 disabled:opacity-50"
-                  >Disable</button>
+                  <button type="button" disabled={isPending} onClick={() => { setMessage(null); setConfirmDisable(true); setConfirmRemove(false); }} className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 disabled:opacity-50">Disable</button>
                 ) : null}
               </div>
               {confirmDisable ? (
                 <div className="rounded-xl border border-amber-900/60 bg-amber-950/20 p-3">
                   <p className="text-sm text-amber-100">Disable OpenAI for this organization? Content generation will be unavailable until OpenAI is enabled again.</p>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      aria-label="Confirm disable OpenAI"
-                      onClick={() => setOpenAiDisabled(true)}
-                      disabled={isPending}
-                      className="rounded-lg bg-amber-100 px-3 py-2 text-xs font-semibold text-amber-950"
-                    >Confirm disable</button>
+                    <button type="button" aria-label="Confirm disable OpenAI" onClick={() => setOpenAiDisabled(true)} disabled={isPending} className="rounded-lg bg-amber-100 px-3 py-2 text-xs font-semibold text-amber-950">Confirm disable</button>
                     <button type="button" onClick={() => setConfirmDisable(false)} disabled={isPending} className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200">Cancel</button>
                   </div>
                 </div>
@@ -333,16 +389,98 @@ export function IntegrationsManager({ organizations }: { organizations: Integrat
         ) : <p className="mt-6 rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-3 text-sm text-slate-400">Owner or Admin access is required to manage integration credentials.</p>}
       </article>
 
+      <article className="rounded-2xl border border-slate-800 bg-slate-950/60 p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <h3 className="text-xl font-semibold text-white">LTX Video</h3>
+              <span className="rounded-full border border-slate-700 px-2.5 py-1 text-xs font-medium text-slate-300">{statusLabel(ltxConnection?.status)}</span>
+            </div>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+              Used by approved Scene Planning shots for LTX 2.3 Pro video generation. The API key is stored in Integration Vault and is never displayed after saving.
+            </p>
+          </div>
+          <div className="text-right text-xs text-slate-500">
+            <div>{ltxConnection?.maskedHint ?? "No saved key"}</div>
+            {ltxConnection?.lastVerifiedAt ? <div className="mt-1">Verified {new Date(ltxConnection.lastVerifiedAt).toLocaleString()}</div> : null}
+          </div>
+        </div>
+
+        {canManage ? (
+          <div className="mt-6 grid gap-6 lg:grid-cols-2">
+            <form onSubmit={saveLtxKey} className="space-y-3 rounded-xl border border-slate-800 p-4">
+              <label className="block text-sm font-medium text-slate-200" htmlFor="ltx-api-key">LTX API key</label>
+              <input
+                id="ltx-api-key"
+                aria-label="LTX API key"
+                type="password"
+                autoComplete="new-password"
+                value={ltxApiKey}
+                onChange={(event) => setLtxApiKey(event.target.value)}
+                placeholder={ltxConnection ? "Paste a replacement key" : "Paste API key"}
+                disabled={isPending}
+                className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white placeholder:text-slate-600"
+              />
+              <div className="flex flex-wrap gap-2">
+                <button type="submit" aria-label="Save LTX API key" disabled={isPending || !ltxApiKey.trim()} className="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50">Save LTX API key</button>
+                {ltxConnection && !confirmLtxRemove ? (
+                  <button type="button" disabled={isPending} onClick={() => { setMessage(null); setConfirmLtxRemove(true); setConfirmLtxDisable(false); }} className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 disabled:opacity-50">Remove LTX key</button>
+                ) : null}
+              </div>
+              {confirmLtxRemove ? (
+                <div className="rounded-xl border border-red-900/60 bg-red-950/20 p-3">
+                  <p className="text-sm text-red-100">Remove the saved LTX API key? Video generation will stop until a new key is saved.</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button type="button" aria-label="Confirm remove LTX API key" onClick={removeLtxKey} disabled={isPending} className="rounded-lg bg-red-100 px-3 py-2 text-xs font-semibold text-red-950">Confirm remove</button>
+                    <button type="button" onClick={() => setConfirmLtxRemove(false)} disabled={isPending} className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200">Cancel</button>
+                  </div>
+                </div>
+              ) : null}
+              <p className="text-xs leading-5 text-slate-500">Write-only secret. PAK retains only a masked suffix and verification state outside Vault.</p>
+            </form>
+
+            <div className="space-y-4 rounded-xl border border-slate-800 p-4">
+              <div>
+                <p className="text-sm font-medium text-slate-200">Credential verification</p>
+                <p className="mt-2 text-xs leading-5 text-slate-500">The connection test performs an authenticated read-only lookup for a nonexistent LTX job. It does not submit a generation request or consume video-generation credits.</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  aria-label="Test LTX connection"
+                  disabled={isPending || !ltxConnection || ltxConnection.status === "NOT_CONFIGURED"}
+                  onClick={() => run(
+                    "test-ltx",
+                    () => testIntegrationConnectionAction({ organizationId: organization.id, provider: "LTX" }),
+                    "LTX credentials verified without generating video.",
+                  )}
+                  className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-200 disabled:opacity-50"
+                >Test LTX connection</button>
+                {ltxConnection && ltxConnection.status === "DISABLED" ? (
+                  <button type="button" disabled={isPending} onClick={() => setLtxDisabled(false)} className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 disabled:opacity-50">Enable LTX</button>
+                ) : ltxConnection && !confirmLtxDisable ? (
+                  <button type="button" disabled={isPending} onClick={() => { setMessage(null); setConfirmLtxDisable(true); setConfirmLtxRemove(false); }} className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-300 disabled:opacity-50">Disable LTX</button>
+                ) : null}
+              </div>
+              {confirmLtxDisable ? (
+                <div className="rounded-xl border border-amber-900/60 bg-amber-950/20 p-3">
+                  <p className="text-sm text-amber-100">Disable LTX for this organization? New video generation will be unavailable until LTX is enabled again.</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button type="button" aria-label="Confirm disable LTX" onClick={() => setLtxDisabled(true)} disabled={isPending} className="rounded-lg bg-amber-100 px-3 py-2 text-xs font-semibold text-amber-950">Confirm disable</button>
+                    <button type="button" onClick={() => setConfirmLtxDisable(false)} disabled={isPending} className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200">Cancel</button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ) : <p className="mt-6 rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-3 text-sm text-slate-400">LTX credential management is restricted to organization Owners and Admins.</p>}
+      </article>
+
       <div className="grid gap-4 md:grid-cols-2">
-        {[
-          ["Meta", "Facebook, Instagram and WhatsApp credentials will use this same vault in the publishing integration phase."],
-          ["LTX / Video", "Video provider credentials will use this same vault when Scene Planning and generation are enabled."],
-        ].map(([title, description]) => (
-          <article key={title} className="rounded-2xl border border-slate-800 bg-slate-950/40 p-5">
-            <div className="flex items-center justify-between gap-3"><h3 className="font-semibold text-white">{title}</h3><span className="rounded-full border border-slate-800 px-2 py-1 text-xs text-slate-500">Planned</span></div>
-            <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
-          </article>
-        ))}
+        <article className="rounded-2xl border border-slate-800 bg-slate-950/40 p-5">
+          <div className="flex items-center justify-between gap-3"><h3 className="font-semibold text-white">Meta</h3><span className="rounded-full border border-slate-800 px-2 py-1 text-xs text-slate-500">Planned</span></div>
+          <p className="mt-2 text-sm leading-6 text-slate-500">Facebook, Instagram and WhatsApp credentials will use this same vault in the publishing integration phase.</p>
+        </article>
       </div>
     </div>
   );

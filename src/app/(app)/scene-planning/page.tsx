@@ -31,7 +31,7 @@ export default async function ScenePlanningPage({
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">PAK Workspace</p>
       <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">Scene Planning</h2>
       <p className="mt-4 max-w-3xl text-base leading-7 text-slate-400">
-        Convert approved Content Studio artifacts into provider-neutral, versioned scene and shot plans. Phase 6 preserves canonical narration, visual continuity, deterministic quality checks, and approval state before any future video provider is allowed to run.
+        Convert approved Content Studio artifacts into provider-neutral, versioned scene and shot plans. Canonical narration, visual continuity, deterministic quality checks, source freshness, and approval remain authoritative; only approved current shots can proceed to Phase 7 video generation.
       </p>
 
       {!projectParam ? (

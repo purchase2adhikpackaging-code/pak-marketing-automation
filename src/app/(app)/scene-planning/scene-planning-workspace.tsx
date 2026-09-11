@@ -262,8 +262,8 @@ export function ScenePlanningWorkspace({ organizationId, actorRole, project, vis
           <div className="mt-5 space-y-5">
             <div className="flex flex-wrap items-center gap-3"><span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusTone(plan.status)}`}>Version {plan.versionNumber} · {plan.status}</span><span className={plan.sourceFresh ? "text-xs text-emerald-300" : "text-xs text-red-300"}>{plan.sourceFresh ? "Source current" : "Source stale"}</span></div>
             {plan.status === "APPROVED" ? <p className="rounded-xl border border-emerald-900/50 bg-emerald-950/20 p-3 text-sm text-emerald-200">Approved versions are immutable.</p> : null}
-            {plan.status === "APPROVED" && plan.sourceFresh ? <div className="rounded-xl border border-emerald-800/60 bg-emerald-950/20 p-4"><p className="text-sm font-semibold text-emerald-100">Approved Scene Plan is ready for Phase 7 video-generation handoff.</p><p className="mt-1 text-sm leading-6 text-emerald-200/80">Phase 6 exports an immutable provider-neutral package only. No video provider is executed from this workspace.</p></div> : null}
-            <ScenePlanEditor organizationId={organizationId} actorRole={actorRole} planVersionId={plan.id} status={plan.status} scenes={plan.scenes} />
+            {plan.status === "APPROVED" && plan.sourceFresh ? <div className="rounded-xl border border-emerald-800/60 bg-emerald-950/20 p-4"><p className="text-sm font-semibold text-emerald-100">Approved Scene Plan is ready for Phase 7 shot generation.</p><p className="mt-1 text-sm leading-6 text-emerald-200/80">Generate each approved shot through the secure provider worker; completed output is imported into PAK Media before it is marked ready.</p></div> : null}
+            <ScenePlanEditor organizationId={organizationId} actorRole={actorRole} planVersionId={plan.id} status={plan.status} sourceFresh={plan.sourceFresh} scenes={plan.scenes} />
           </div>
         )}
       </section>

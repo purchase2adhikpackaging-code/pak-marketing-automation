@@ -119,8 +119,8 @@ describe("Integration Settings production readiness", () => {
     render(<IntegrationsManager organizations={organizations} />);
     fireEvent.click(screen.getByRole("button", { name: "Test connection" }));
 
-    expect(await screen.findByText("Testing connection…")).toBeTruthy();
+    expect(await screen.findByText("Testing OpenAI connection…")).toBeTruthy();
     resolveAction({ ok: true, connection: configuredConnection() });
-    await waitFor(() => expect(screen.queryByText("Testing connection…")).toBeNull());
+    await waitFor(() => expect(screen.queryByText("Testing OpenAI connection…")).toBeNull());
   });
 });

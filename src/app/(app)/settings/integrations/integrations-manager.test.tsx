@@ -46,6 +46,41 @@ describe("IntegrationsManager", () => {
     expect(document.body.textContent).not.toContain("sk-");
   });
 
+  it("renders a write-only LTX credential workflow for organization managers", () => {
+    render(
+      <IntegrationsManager
+        organizations={[
+          {
+            id: "11111111-1111-4111-8111-111111111111",
+            label: "PAK",
+            role: "OWNER",
+            connections: [
+              {
+                id: "33333333-3333-4333-8333-333333333333",
+                organizationId: "11111111-1111-4111-8111-111111111111",
+                provider: "LTX",
+                displayName: "LTX Video",
+                status: "CONFIGURED",
+                config: {},
+                secretVersion: 1,
+                maskedHint: "••••wxyz",
+                createdAt: "2026-09-11T00:00:00.000Z",
+                updatedAt: "2026-09-11T00:00:00.000Z",
+              },
+            ],
+          },
+        ]}
+      />,
+    );
+
+    expect(screen.getByRole("heading", { name: "LTX Video" })).not.toBeNull();
+    expect(screen.getByText("••••wxyz")).not.toBeNull();
+    expect((screen.getByLabelText("LTX API key") as HTMLInputElement).value).toBe("");
+    expect(screen.getByRole("button", { name: "Save LTX API key" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Test LTX connection" })).not.toBeNull();
+    expect(document.body.textContent).not.toContain("wxyz-secret-value");
+  });
+
   it("does not show credential mutation controls to non-managers", () => {
     render(
       <IntegrationsManager
@@ -61,6 +96,7 @@ describe("IntegrationsManager", () => {
     );
 
     expect(screen.queryByRole("button", { name: "Save API key" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Save LTX API key" })).toBeNull();
     expect(screen.getByText(/Owner or Admin access is required/i)).not.toBeNull();
   });
 });
