@@ -8,6 +8,8 @@ import { generateContentAction } from "./actions";
 import { ContentStudioForm } from "./content-studio-form";
 import type { SelectableKnowledgeRecord } from "./knowledge-selector";
 
+const push = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 vi.mock("./actions", () => ({ generateContentAction: vi.fn() }));
 
 const organizationOne = "11111111-1111-4111-8111-111111111111";
@@ -55,6 +57,7 @@ const artifact: ScriptArtifact = {
 
 describe("ContentStudioForm Knowledge grounding", () => {
   beforeEach(() => {
+    push.mockReset();
     vi.mocked(generateContentAction).mockReset();
     vi.mocked(generateContentAction).mockResolvedValue({ ok: true, item, artifact });
   });
