@@ -37,7 +37,7 @@ describe("LTX adapter capabilities", () => {
     expect(() => resolveLtxResolution("4:5")).toThrow(/UNSUPPORTED_ASPECT_RATIO/);
   });
 
-  it("submits the current async V2 LTX-2.3 Pro request without provider-generated audio", async () => {
+  it("submits the current async V2 LTX-2.5 Pro request without provider-generated audio", async () => {
     const fetchFn = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ id: "ltx-job-1", created_at: "2026-09-11T12:00:00Z" }), {
         status: 202,
@@ -54,7 +54,7 @@ describe("LTX adapter capabilities", () => {
     expect(init.headers.authorization).toBe("Bearer secret-ltx-key");
     expect(JSON.parse(String(init.body))).toEqual({
       prompt: request.prompt,
-      model: "ltx-2-3-pro",
+      model: "ltx-2-5-pro",
       duration: 8,
       resolution: "1920x1080",
       fps: 24,
@@ -73,5 +73,25 @@ describe("LTX adapter capabilities", () => {
     await expect(provider.getStatus(handle)).resolves.toEqual({ state: "QUEUED" });
     await expect(provider.getStatus(handle)).resolves.toEqual({ state: "PROCESSING", progress: 42 });
     await expect(provider.getStatus(handle)).resolves.toEqual({ state: "COMPLETED", progress: 100 });
+  });
+
+  it("returns the completed video result only from a completed job payload", async () => {
+    const fetchFn = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          status: "completed",
+          id: "ltx-job-1",
+          result: { video_url: "https://provider.invalid/temporary.mp4" },
+          created_at: "2026-09-11T12:00:00Z",
+        }),
+        { status: 200 },
+      ),
+    );
+    const provider = new LtxVideoProvider({ apiKey: "secret-ltx-key", fetchFn });
+
+    await expect(provider.getResult({ provider: "ltx", externalId: "ltx-job-1" })).resolves.toEqual({
+      outputUrl: "https://provider.invalid/temporary.mp4",
+      mimeType: "video/mp4",
+    });
   });
 });
