@@ -164,20 +164,20 @@ with check (
   and exists (
     select 1
     from public.jobs j
-    where j.id = job_id
-      and j.organization_id = organization_id
+    where j.id = video_generation_attempts.job_id
+      and j.organization_id = video_generation_attempts.organization_id
   )
   and exists (
     select 1
     from public.scene_plan_versions v
     join public.scene_plan_scenes s on s.scene_plan_version_id = v.id
     join public.scene_plan_shots sh on sh.scene_id = s.id
-    where v.id = plan_version_id
-      and s.id = scene_id
-      and sh.id = shot_id
-      and v.organization_id = organization_id
-      and s.organization_id = organization_id
-      and sh.organization_id = organization_id
+    where v.id = video_generation_attempts.plan_version_id
+      and s.id = video_generation_attempts.scene_id
+      and sh.id = video_generation_attempts.shot_id
+      and v.organization_id = video_generation_attempts.organization_id
+      and s.organization_id = video_generation_attempts.organization_id
+      and sh.organization_id = video_generation_attempts.organization_id
       and v.status = 'APPROVED'
   )
 );
