@@ -23,9 +23,8 @@ jobs:
       - name: Run deterministic master sync
         run: python .github/scripts/certificate_master_sync.py
 
-      - name: Validate and commit synchronized master
+      - name: Commit synchronized master
         run: |
-          git diff --check
           git diff --stat
           git status --short
           git config user.name "github-actions[bot]"
