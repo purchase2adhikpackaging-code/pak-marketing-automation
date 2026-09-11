@@ -137,3 +137,81 @@ revoke all on function public.claim_due_video_generation_dispatch(text, integer,
 revoke all on function public.claim_due_video_generation_dispatch(text, integer, integer) from anon;
 revoke all on function public.claim_due_video_generation_dispatch(text, integer, integer) from authenticated;
 grant execute on function public.claim_due_video_generation_dispatch(text, integer, integer) to service_role;
+
+-- Install the recurring Edge invocation only after the current environment has
+-- explicitly stored its own project URL in Vault under `project_url`. This keeps
+-- local/dev/branch databases from accidentally calling the production project.
+create or replace function public.install_video_generation_dispatch_cron()
+returns bigint
+language plpgsql
+security definer
+set search_path = public, cron, net, vault
+as $$
+declare
+  v_project_url text;
+  v_dispatch_secret text;
+  v_job_id bigint;
+begin
+  select decrypted_secret
+    into v_project_url
+    from vault.decrypted_secrets
+    where name = 'project_url'
+    limit 1;
+
+  select decrypted_secret
+    into v_dispatch_secret
+    from vault.decrypted_secrets
+    where name = 'pak/video-generation/dispatcher'
+    limit 1;
+
+  if v_project_url is null or btrim(v_project_url) = '' then
+    raise exception 'Vault secret project_url is required before installing video generation dispatch cron';
+  end if;
+
+  if v_dispatch_secret is null or btrim(v_dispatch_secret) = '' then
+    raise exception 'video generation dispatcher credential is unavailable';
+  end if;
+
+  select cron.schedule(
+    'pak-video-generation-dispatch',
+    '10 seconds',
+    $cron$
+      select net.http_post(
+        url := rtrim(
+          (select decrypted_secret from vault.decrypted_secrets where name = 'project_url'),
+          '/'
+        ) || '/functions/v1/video-generation-dispatcher',
+        headers := jsonb_build_object(
+          'Content-Type', 'application/json',
+          'x-pak-dispatch-token',
+          (select decrypted_secret from vault.decrypted_secrets where name = 'pak/video-generation/dispatcher')
+        ),
+        body := '{}'::jsonb,
+        timeout_milliseconds := 10000
+      ) as request_id;
+    $cron$
+  ) into v_job_id;
+
+  return v_job_id;
+end;
+$$;
+
+revoke all on function public.install_video_generation_dispatch_cron() from public;
+revoke all on function public.install_video_generation_dispatch_cron() from anon;
+revoke all on function public.install_video_generation_dispatch_cron() from authenticated;
+grant execute on function public.install_video_generation_dispatch_cron() to service_role;
+
+-- Existing production environments that already have `project_url` configured become
+-- unattended immediately. New environments remain inert until deployment supplies their
+-- own URL and invokes install_video_generation_dispatch_cron().
+do $$
+begin
+  if exists (
+    select 1
+    from vault.secrets
+    where name = 'project_url'
+  ) then
+    perform public.install_video_generation_dispatch_cron();
+  end if;
+end;
+$$;
