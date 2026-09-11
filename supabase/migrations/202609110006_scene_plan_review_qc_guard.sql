@@ -17,8 +17,8 @@ declare
   reviewer_only boolean;
 begin
   if new.status = 'REVIEW_REQUIRED' and old.status is distinct from new.status then
-    if old.status <> 'QC_REQUIRED' then
-      raise exception 'scene plan may enter review only from QC_REQUIRED';
+    if old.status not in ('DRAFT','QC_REQUIRED') then
+      raise exception 'scene plan may enter review only from a fresh draft QC result or QC_REQUIRED';
     end if;
 
     if new.narration_coverage_hash is null then
