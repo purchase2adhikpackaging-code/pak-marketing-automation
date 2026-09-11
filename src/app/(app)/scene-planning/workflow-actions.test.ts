@@ -80,6 +80,7 @@ describe("Scene Planning workflow actions", () => {
   it("generates from server-loaded project/source context, persists once, then runs deterministic QC", async () => {
     const dependencies = {
       getActor: vi.fn().mockResolvedValue({ id: actorId }),
+      authorize: vi.fn().mockResolvedValue(true),
       loadGenerationContext: vi.fn().mockResolvedValue(context),
       generatePlan: vi.fn().mockResolvedValue({ plan: generatedPlan, provider: "openai", model: "gpt-5.6-terra" }),
       persistPlan: vi.fn().mockResolvedValue({ id: planVersionId }),
@@ -89,6 +90,7 @@ describe("Scene Planning workflow actions", () => {
     const result = await executeGenerateScenePlanAction({ organizationId, projectId }, dependencies);
 
     expect(result).toEqual({ ok: true, planVersionId, blockerCount: 0, warningCount: 1 });
+    expect(dependencies.authorize).toHaveBeenCalledWith(actorId, organizationId);
     expect(dependencies.loadGenerationContext).toHaveBeenCalledWith(organizationId, projectId);
     expect(dependencies.generatePlan).toHaveBeenCalledWith(context);
     expect(dependencies.persistPlan).toHaveBeenCalledTimes(1);
@@ -119,6 +121,7 @@ describe("Scene Planning workflow actions", () => {
     const stale = { ...context, source: { ...context.source, integrityHash: "sha256:new" } };
     const dependencies = {
       getActor: vi.fn().mockResolvedValue({ id: actorId }),
+      authorize: vi.fn().mockResolvedValue(true),
       loadGenerationContext: vi.fn().mockResolvedValue(stale),
       generatePlan: vi.fn(),
       persistPlan: vi.fn(),
@@ -154,6 +157,7 @@ describe("Scene Planning workflow actions", () => {
   it("requires warning acknowledgement before approval and never performs provider execution", async () => {
     const dependencies = {
       getActor: vi.fn().mockResolvedValue({ id: actorId }),
+      authorize: vi.fn().mockResolvedValue(true),
       countUnacknowledgedWarnings: vi.fn().mockResolvedValue(2),
       acknowledgeWarnings: vi.fn(),
       approvePlan: vi.fn(),
