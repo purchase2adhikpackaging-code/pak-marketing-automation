@@ -51,6 +51,26 @@ describe("assertGranularReplanBoundary", () => {
     expect(() => assertGranularReplanBoundary(current, next, { scope: "SHOT", targetSceneOrdinal: 1, targetShotOrdinal: 2, preserveHumanModifiedShots: true })).not.toThrow();
   });
 
+  it("protects a targeted human-modified shot unless replacement is explicit", () => {
+    const current = plan();
+    const next = structuredClone(current);
+    next.scenes[0]!.shots[0]!.creativeDirection = "Replanned human target";
+
+    expect(() => assertGranularReplanBoundary(current, next, {
+      scope: "SHOT",
+      targetSceneOrdinal: 1,
+      targetShotOrdinal: 1,
+      preserveHumanModifiedShots: true,
+    })).toThrow(/human/i);
+
+    expect(() => assertGranularReplanBoundary(current, next, {
+      scope: "SHOT",
+      targetSceneOrdinal: 1,
+      targetShotOrdinal: 1,
+      preserveHumanModifiedShots: false,
+    })).not.toThrow();
+  });
+
   it("rejects a shot replan that changes scene metadata or sibling shots", () => {
     const current = plan();
     const changedScene = structuredClone(current);
