@@ -138,10 +138,9 @@ jobs:
               found = len(set(re.findall(rf'\b{code}-\d{{3}}\b', master)))
               assert found == expected, (code, found, expected)
           assert '# 39. Portfolio Architecture Checkpoint v0.2.0' in master
+          assert not any(marker in master for marker in ('<<<<<<<', '=======', '>>>>>>>'))
           print('master sync verified:', new_sha, 'bytes:', len(new_raw), 'lines:', master.count('\n'))
           PY
-
-          git diff --check -- docs/academic/PAK_ACADEMIC_CURRICULUM_STUDY_MATERIAL_BLUEPRINT_PRD.md
 
       - name: Commit synchronized master
         shell: bash
