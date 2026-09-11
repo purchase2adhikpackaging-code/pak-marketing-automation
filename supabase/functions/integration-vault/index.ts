@@ -19,6 +19,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-
 const SECRET_NAME_RE = /^[A-Z][A-Z0-9_]{1,63}$/;
 const SENSITIVE_CONFIG_KEY_RE = /(api.?key|secret|token|password|credential|private.?key)/i;
 const PROVIDERS = new Set<Provider>(["OPENAI", "META", "LTX"]);
+const LTX_CREDENTIAL_TEST_URL = "https://api.ltx.io/v2/text-to-video/00000000-0000-4000-8000-000000000000";
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
@@ -175,6 +176,46 @@ Deno.serve(async (req: Request) => {
     if (typeof connectionId !== "string" || !connectionId) return json(404, { error: "NOT_CONFIGURED" });
     const connection = await getConnection();
     return connection ? json(200, { connection }) : json(500, { error: "UPDATE_FAILED" });
+  }
+
+  if (input.provider === "LTX") {
+    const { data: apiKey, error: secretError } = await admin.rpc("read_integration_vault_secret", {
+      _organization_id: input.organizationId,
+      _provider: "LTX",
+      _secret_name: "API_KEY",
+    });
+    if (secretError || typeof apiKey !== "string" || !apiKey) return json(404, { error: "NOT_CONFIGURED" });
+
+    let providerResponse: Response;
+    try {
+      providerResponse = await fetch(LTX_CREDENTIAL_TEST_URL, {
+        method: "GET",
+        headers: { authorization: `Bearer ${apiKey}` },
+      });
+    } catch {
+      return json(503, { error: "TEST_UNAVAILABLE" });
+    }
+
+    if (providerResponse.status === 429 || providerResponse.status >= 500) {
+      return json(503, { error: "TEST_UNAVAILABLE" });
+    }
+
+    const ok = providerResponse.ok || providerResponse.status === 404;
+    const authInvalid = providerResponse.status === 401 || providerResponse.status === 403;
+    const succeeded = ok && !authInvalid;
+    const { data: connectionId, error: resultError } = await admin.rpc("record_integration_test_result", {
+      _organization_id: input.organizationId,
+      _provider: "LTX",
+      _actor_user_id: user.id,
+      _succeeded: succeeded,
+      _error_code: succeeded ? null : "AUTH_INVALID",
+    });
+    if (resultError) return json(500, { error: "TEST_FAILED" });
+    if (typeof connectionId !== "string" || !connectionId) return json(404, { error: "NOT_CONFIGURED" });
+    if (!succeeded) return json(422, { error: "AUTH_INVALID" });
+
+    const connection = await getConnection();
+    return connection ? json(200, { connection }) : json(500, { error: "TEST_FAILED" });
   }
 
   if (input.provider !== "OPENAI") return json(400, { error: "TEST_NOT_IMPLEMENTED" });
