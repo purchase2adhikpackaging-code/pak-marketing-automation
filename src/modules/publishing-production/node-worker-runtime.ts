@@ -41,6 +41,7 @@ function checkpointPrefix(job: ProductionJob): string {
 function workerTransport(admin: SupabaseClient): PublishingProductionTransport {
   return {
     async insertRun() { throw new Error("Worker transport cannot create production runs."); },
+    async insertJobs() { throw new Error("Worker transport cannot enqueue production jobs."); },
     async listRuns() { throw new Error("Worker transport cannot list production runs."); },
     async getRun() { throw new Error("Worker transport cannot read production runs."); },
     async listPublications() { throw new Error("Worker transport cannot list publications."); },
