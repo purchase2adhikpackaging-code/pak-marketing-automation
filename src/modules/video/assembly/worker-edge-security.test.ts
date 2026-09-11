@@ -55,11 +55,13 @@ describe("final assembly worker security boundary", () => {
     expect(edgeSource).toContain("storage_path");
   });
 
-  it("bounds component count and signed URL lifetime", () => {
+  it("bounds component count and signed URL lifetime and returns the provider-issued upload token", () => {
     expect(edgeSource).toContain("FINAL_ASSEMBLY_MAX_COMPONENTS");
     expect(edgeSource).toContain("FINAL_ASSEMBLY_SIGNED_URL_TTL_SECONDS");
     expect(edgeSource).toContain("createSignedUrl");
     expect(edgeSource).toContain("createSignedUploadUrl");
+    expect(edgeSource).toContain("uploadData.token");
+    expect(edgeSource).toContain("uploadToken: uploadData.token");
   });
 
   it("accepts only claim, complete and fail worker operations", () => {
