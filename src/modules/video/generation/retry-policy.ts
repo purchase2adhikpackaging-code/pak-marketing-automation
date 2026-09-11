@@ -5,8 +5,7 @@ export type VideoGenerationRetryDecision =
   | { retry: true; delaySeconds: number };
 
 const MAX_EXPENSIVE_ATTEMPTS = 4;
-const BASE_DELAY_SECONDS = 15;
-const MAX_DELAY_SECONDS = 300;
+const RETRY_DELAYS_SECONDS = [5, 15, 45] as const;
 
 export function classifyRetry(
   error: Pick<VideoProviderError, "code" | "retryable">,
@@ -17,9 +16,7 @@ export function classifyRetry(
   if (error.code === "LTX_SUBMISSION_UNKNOWN") return { retry: false };
   if (attemptNumber >= MAX_EXPENSIVE_ATTEMPTS) return { retry: false };
 
-  const delaySeconds = Math.min(
-    MAX_DELAY_SECONDS,
-    BASE_DELAY_SECONDS * 2 ** (attemptNumber - 1),
-  );
+  const delaySeconds = RETRY_DELAYS_SECONDS[attemptNumber - 1];
+  if (delaySeconds === undefined) return { retry: false };
   return { retry: true, delaySeconds };
 }
