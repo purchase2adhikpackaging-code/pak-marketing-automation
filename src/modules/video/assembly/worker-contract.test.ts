@@ -23,7 +23,7 @@ const manifest: FinalAssemblyRenderManifest = {
   },
   components: [
     {
-      ordinal: 0,
+      ordinal: 1,
       shotId: "44444444-4444-4444-8444-444444444444",
       mediaAssetId: "55555555-5555-4555-8555-555555555555",
       signedDownloadUrl: "https://storage.example/download/shot-1",
@@ -51,9 +51,9 @@ describe("final assembly worker contract", () => {
   it("rejects unbounded component lists", () => {
     expect(() => parseFinalAssemblyRenderManifest({
       ...manifest,
-      components: Array.from({ length: FINAL_ASSEMBLY_MAX_COMPONENTS + 1 }, (_, ordinal) => ({
+      components: Array.from({ length: FINAL_ASSEMBLY_MAX_COMPONENTS + 1 }, (_, index) => ({
         ...manifest.components[0]!,
-        ordinal,
+        ordinal: index + 1,
       })),
     })).toThrow();
   });
