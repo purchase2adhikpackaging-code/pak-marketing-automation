@@ -16,7 +16,7 @@ describe("Scene Planning draft editing SQL", () => {
   });
 
   it("allows edits only before immutable lifecycle states", () => {
-    expect(sql).toContain("status in ('DRAFT','QC_REQUIRED','REVIEW_REQUIRED')");
+    expect(sql).toContain("plan_status not in ('DRAFT','QC_REQUIRED','REVIEW_REQUIRED')");
     expect(sql).toContain("scene plan version is not editable");
   });
 
@@ -33,7 +33,7 @@ describe("Scene Planning draft editing SQL", () => {
   it("marks manual shot edits human-modified without permitting narration replacement", () => {
     expect(sql).toContain("update public.scene_plan_shots");
     expect(sql).toContain("master_visual_prompt = _master_visual_prompt");
-    expect(sql).toContain("camera_motion = _camera_motion");
+    expect(sql).toContain("camera_motion = coalesce(_camera_motion, '')");
     expect(sql).toContain("human_modified = true");
     expect(sql).not.toContain("narration_start_char = _narration_start_char");
     expect(sql).not.toContain("narration_end_char = _narration_end_char");

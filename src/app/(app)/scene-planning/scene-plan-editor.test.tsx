@@ -134,7 +134,9 @@ describe("ScenePlanEditor", () => {
       orderedSceneIds: [props().scenes[1]!.id, props().scenes[0]!.id],
     }));
 
-    fireEvent.click(screen.getByRole("button", { name: "Move Shot 1.1 down" }));
+    const moveShot = screen.getByRole("button", { name: "Move Shot 1.1 down" }) as HTMLButtonElement;
+    await waitFor(() => expect(moveShot.disabled).toBe(false));
+    fireEvent.click(moveShot);
     await waitFor(() => expect(reorderScenePlanShotsAction).toHaveBeenCalledWith({
       organizationId: props().organizationId,
       planVersionId: props().planVersionId,

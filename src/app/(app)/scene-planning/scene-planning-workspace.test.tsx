@@ -97,8 +97,8 @@ describe("ScenePlanningWorkspace", () => {
     expect(screen.getByRole("heading", { name: "Production Brief" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Visual Bible" })).toBeTruthy();
     expect(screen.getByText("Scene 1 · HOOK")).toBeTruthy();
-    expect(screen.getByText("Creative Direction")).toBeTruthy();
-    expect(screen.getByText("Generation Specification")).toBeTruthy();
+    expect(screen.getByLabelText("Shot 1.1 creative direction")).toBeTruthy();
+    expect(screen.getByLabelText("Shot 1.1 generation specification")).toBeTruthy();
     expect(screen.getByText(/Characters 0–31/)).toBeTruthy();
     expect(screen.getByText("Railway excellence begins here.")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Save Scene 1 changes" })).toBeTruthy();
@@ -160,7 +160,10 @@ describe("ScenePlanningWorkspace", () => {
   });
 
   it("does not expose approval to EDITOR role", () => {
-    render(<ScenePlanningWorkspace {...props({ actorRole: "EDITOR" })} />);
+    render(<ScenePlanningWorkspace {...props({
+      actorRole: "EDITOR",
+      plan: { ...props().plan!, status: "QC_REQUIRED" },
+    })} />);
     expect(screen.queryByRole("button", { name: "Approve Scene Plan" })).toBeNull();
     expect(screen.getByRole("button", { name: "Submit for review" })).toBeTruthy();
   });
