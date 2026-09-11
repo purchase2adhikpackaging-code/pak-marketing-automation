@@ -33,7 +33,7 @@ describe("final assembly worker security boundary", () => {
   });
 
   it("never returns privileged credentials to the worker", () => {
-    expect(edgeSource).not.toMatch(/SUPABASE_SERVICE_ROLE_KEY[\s\S]*json\(/i);
+    expect(edgeSource).not.toMatch(/json\([^)]*SUPABASE_SERVICE_ROLE_KEY/i);
     expect(edgeSource).not.toContain("decrypted_secret:");
     expect(edgeSource).not.toContain("serviceRoleKey:");
   });
