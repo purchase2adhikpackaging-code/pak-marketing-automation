@@ -18,6 +18,6 @@ describe("Scene Planning Supabase repository security", () => {
 
   it("scopes repository reads and writes by organization", () => {
     expect(source).toContain('.eq("organization_id", organizationId)');
-    expect(source).toContain('p_organization_id: input.organizationId');
+    expect(source).toContain('_organization_id: input.organizationId');
   });
 });
