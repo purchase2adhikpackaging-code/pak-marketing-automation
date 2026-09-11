@@ -80,14 +80,11 @@ begin
 
   v_current_source_hash := 'sha256:' || encode(
     digest(
-      convert_to(
-        v_source_artifact_id::text
-        || chr(0)
-        || v_source_artifact_revision::text
-        || chr(0)
-        || v_source_script,
-        'UTF8'
-      ),
+      convert_to(v_source_artifact_id::text, 'UTF8')
+      || decode('00', 'hex')
+      || convert_to(v_source_artifact_revision::text, 'UTF8')
+      || decode('00', 'hex')
+      || convert_to(v_source_script, 'UTF8'),
       'sha256'
     ),
     'hex'
