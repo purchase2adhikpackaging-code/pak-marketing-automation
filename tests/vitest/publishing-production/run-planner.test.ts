@@ -9,8 +9,8 @@ const d01: ProgrammeRegistryEntry = {
   duration: "2 years",
   academicStructure: "4 semesters",
   modularPath: "`diplomas/D01/S1.md`",
-  curriculumStatus: "Approved",
-  chapterStatus: "Complete",
+  curriculumStatus: "Subject Architecture Complete",
+  chapterStatus: "Pending",
   studyMaterialStatus: "Pending",
   printStatus: "Pending",
   masterPrdRef: "26",
@@ -23,7 +23,7 @@ const b03: ProgrammeRegistryEntry = {
   duration: "3 years",
   academicStructure: "6 semesters",
   modularPath: "`bachelors/B03/S1.md`",
-  curriculumStatus: "Catalogue only",
+  curriculumStatus: "Catalogue Only",
   chapterStatus: "Pending",
   studyMaterialStatus: "Pending",
   printStatus: "Pending",
@@ -52,7 +52,7 @@ const loader = async (programme: ProgrammeRegistryEntry) => {
 };
 
 describe("planProductionRun", () => {
-  it("plans one governed subject", async () => {
+  it("plans one governed subject even though chapter writing is still pending", async () => {
     const result = await planProductionRun({
       scope: { type: "SUBJECT", programmeCode: "PAK-D01", subjectCode: "D01-102" },
       registry: [d01, b03],
@@ -103,7 +103,7 @@ describe("planProductionRun", () => {
     }));
   });
 
-  it("excludes architecture-pending programmes rather than inventing jobs", async () => {
+  it("excludes catalogue-only architecture rather than inventing jobs", async () => {
     const result = await planProductionRun({
       scope: { type: "PORTFOLIO" },
       registry: [d01, b03],
