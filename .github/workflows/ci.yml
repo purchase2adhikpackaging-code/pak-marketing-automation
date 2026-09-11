@@ -35,46 +35,6 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Focused blueprint tests
-        continue-on-error: true
-        run: npx vitest run tests/vitest/publishing-factory/blueprint.test.ts
-
-      - name: Focused knowledge-selection tests
-        continue-on-error: true
-        run: npx vitest run tests/vitest/publishing-factory/knowledge-selection.test.ts
-
-      - name: Focused manuscript-domain tests
-        continue-on-error: true
-        run: npx vitest run tests/vitest/publishing-factory/manuscript-domain.test.ts
-
-      - name: Focused manuscript-writer tests
-        continue-on-error: true
-        run: npx vitest run tests/vitest/publishing-factory/manuscript-writer.test.ts
-
-      - name: Focused manuscript-serializer tests
-        continue-on-error: true
-        run: npx vitest run tests/vitest/publishing-factory/manuscript-serializer.test.ts
-
-      - name: Focused checkpoint-store tests
-        continue-on-error: true
-        run: npx vitest run tests/vitest/publishing-factory/checkpoint-store.test.ts
-
-      - name: Focused worker-queue tests
-        continue-on-error: true
-        run: npx vitest run tests/vitest/publishing-factory/worker-queue.test.ts
-
-      - name: Unit tests diagnostic report
-        continue-on-error: true
-        run: npx vitest run --reporter=json --outputFile=vitest-report.json
-
-      - name: Upload unit test diagnostic report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: vitest-report-${{ github.sha }}
-          path: vitest-report.json
-          if-no-files-found: error
-
       - name: Unit tests
         run: npm run test:run
 
@@ -86,6 +46,9 @@ jobs:
 
       - name: Canonical knowledge lock audit
         run: npm run publishing:knowledge-list
+
+      - name: Publishing manuscript factory smoke
+        run: npm run publishing:book-write -- --programme PAK-D01 --subject D01-102 --provider fake --state-root artifacts/publishing/ci-manuscript
 
       - name: Publishing deterministic QA fixture
         run: npm run publishing:qa-fixture
