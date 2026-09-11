@@ -63,13 +63,17 @@ test("Track B mobile navigation traverses all fourteen primary routes without ho
     const closeNavigation = page.getByRole("button", { name: "Close navigation" });
     await expect(closeNavigation).toHaveAttribute("aria-expanded", "true");
 
-    const primaryNavigation = page.getByRole("navigation", { name: "Primary" });
+    let primaryNavigation = page.getByRole("navigation", { name: "Primary" });
     await primaryNavigation.getByRole("link", { name: label, exact: true }).click();
 
     await expect(page).toHaveURL(new RegExp(`${href.replace("/", "\\/")}$`));
     await expect(page.getByRole("heading", { name: label })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Open navigation" })).toHaveAttribute("aria-expanded", "false");
 
+    const collapsedNavigation = page.getByRole("button", { name: "Open navigation" });
+    await expect(collapsedNavigation).toHaveAttribute("aria-expanded", "false");
+
+    await collapsedNavigation.click();
+    primaryNavigation = page.getByRole("navigation", { name: "Primary" });
     const currentLinks = primaryNavigation.locator('a[aria-current="page"]');
     await expect(currentLinks).toHaveCount(1);
     await expect(currentLinks.first()).toHaveAttribute("href", href);
@@ -79,5 +83,8 @@ test("Track B mobile navigation traverses all fourteen primary routes without ho
       content: document.documentElement.scrollWidth,
     }));
     expect(widths.content, `${href} overflows horizontally`).toBeLessThanOrEqual(widths.viewport);
+
+    await page.getByRole("button", { name: "Close navigation" }).click();
+    await expect(page.getByRole("button", { name: "Open navigation" })).toHaveAttribute("aria-expanded", "false");
   }
 });
