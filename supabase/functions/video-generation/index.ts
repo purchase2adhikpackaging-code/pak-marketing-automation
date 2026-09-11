@@ -214,6 +214,18 @@ function isDuplicateStorageError(error: unknown): boolean {
   return /already exists|duplicate|409/i.test(message);
 }
 
+function safeEqual(left: string, right: string): boolean {
+  const encoder = new TextEncoder();
+  const a = encoder.encode(left);
+  const b = encoder.encode(right);
+  let diff = a.length ^ b.length;
+  const length = Math.max(a.length, b.length);
+  for (let index = 0; index < length; index += 1) {
+    diff |= (a[index] ?? 0) ^ (b[index] ?? 0);
+  }
+  return diff === 0;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204 });
   if (req.method !== "POST") return json(405, { error: "METHOD_NOT_ALLOWED" });
@@ -222,16 +234,30 @@ Deno.serve(async (req: Request) => {
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!supabaseUrl || !serviceRoleKey) return json(500, { error: "SERVER_MISCONFIGURED" });
 
-  const authorization = req.headers.get("authorization") ?? "";
-  const token = authorization.toLowerCase().startsWith("bearer ") ? authorization.slice(7).trim() : "";
-  if (!token) return json(401, { error: "UNAUTHORIZED" });
-
   const admin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { data: userData, error: userError } = await admin.auth.getUser(token);
-  const user = userData.user;
-  if (userError || !user) return json(401, { error: "UNAUTHORIZED" });
+
+  const dispatchToken = req.headers.get("x-pak-dispatch-token") ?? "";
+  let internalDispatch = false;
+  let userId: string | null = null;
+
+  if (dispatchToken) {
+    const { data: dispatchSecret, error: dispatchSecretError } = await admin.rpc("read_video_generation_dispatch_secret");
+    if (dispatchSecretError || typeof dispatchSecret !== "string" || !dispatchSecret) {
+      return json(500, { error: "DISPATCH_AUTH_UNAVAILABLE" });
+    }
+    if (!safeEqual(dispatchToken, dispatchSecret)) return json(401, { error: "UNAUTHORIZED" });
+    internalDispatch = true;
+  } else {
+    const authorization = req.headers.get("authorization") ?? "";
+    const token = authorization.toLowerCase().startsWith("bearer ") ? authorization.slice(7).trim() : "";
+    if (!token) return json(401, { error: "UNAUTHORIZED" });
+    const { data: userData, error: userError } = await admin.auth.getUser(token);
+    const user = userData.user;
+    if (userError || !user) return json(401, { error: "UNAUTHORIZED" });
+    userId = user.id;
+  }
 
   let body: RequestBody;
   try {
@@ -241,15 +267,17 @@ Deno.serve(async (req: Request) => {
   }
   if (!parseRequestBody(body)) return json(400, { error: "INVALID_REQUEST" });
 
-  const { data: membership, error: membershipError } = await admin
-    .from("organization_memberships")
-    .select("role")
-    .eq("organization_id", body.organizationId)
-    .eq("user_id", user.id)
-    .maybeSingle();
-  if (membershipError) return json(500, { error: "AUTHORIZATION_UNAVAILABLE" });
-  if (!membership || !["OWNER", "ADMIN", "EDITOR"].includes(String(membership.role))) {
-    return json(403, { error: "FORBIDDEN" });
+  if (!internalDispatch) {
+    const { data: membership, error: membershipError } = await admin
+      .from("organization_memberships")
+      .select("role")
+      .eq("organization_id", body.organizationId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (membershipError) return json(500, { error: "AUTHORIZATION_UNAVAILABLE" });
+    if (!membership || !["OWNER", "ADMIN", "EDITOR"].includes(String(membership.role))) {
+      return json(403, { error: "FORBIDDEN" });
+    }
   }
 
   const { data: job, error: jobError } = await admin
