@@ -26,6 +26,7 @@ const finalAssemblyManifestSchema = z.object({
   expiresAt: z.string().datetime({ offset: true }),
   output: z.object({
     signedUploadUrl: z.string().url(),
+    uploadToken: z.string().min(16).max(4096),
     existingSignedDownloadUrl: z.string().url().optional(),
     bucket: z.literal("generated-media"),
     path: z.string().min(1).max(1024),
