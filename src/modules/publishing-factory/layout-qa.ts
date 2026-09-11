@@ -11,18 +11,6 @@ export async function runDomLayoutQa(page: Page): Promise<QaFinding[]> {
   const issues = await page.evaluate((tolerance) => {
     const results: RawLayoutIssue[] = [];
 
-    const escapes = (inner: DOMRect, outer: DOMRect): boolean =>
-      inner.left < outer.left - tolerance ||
-      inner.top < outer.top - tolerance ||
-      inner.right > outer.right + tolerance ||
-      inner.bottom > outer.bottom + tolerance;
-
-    const intersects = (a: DOMRect, b: DOMRect): boolean =>
-      a.left < b.right - tolerance &&
-      a.right > b.left + tolerance &&
-      a.top < b.bottom - tolerance &&
-      a.bottom > b.top + tolerance;
-
     const root = document.documentElement;
     if (root.scrollWidth > root.clientWidth + tolerance) {
       results.push({
@@ -44,7 +32,12 @@ export async function runDomLayoutQa(page: Page): Promise<QaFinding[]> {
           const range = document.createRange();
           range.selectNodeContents(node);
           const rect = range.getBoundingClientRect();
-          if (rect.width > 0 && rect.height > 0 && escapes(rect, boxRect)) {
+          const escapesBox =
+            rect.left < boxRect.left - tolerance ||
+            rect.top < boxRect.top - tolerance ||
+            rect.right > boxRect.right + tolerance ||
+            rect.bottom > boxRect.bottom + tolerance;
+          if (rect.width > 0 && rect.height > 0 && escapesBox) {
             results.push({
               defectClass: "internal-box-overflow",
               message: `Text escapes the bounds of ${componentId}.`,
@@ -61,7 +54,12 @@ export async function runDomLayoutQa(page: Page): Promise<QaFinding[]> {
 
       for (const child of element.querySelectorAll<HTMLElement>("img, svg, table")) {
         const rect = child.getBoundingClientRect();
-        if (rect.width > 0 && rect.height > 0 && escapes(rect, boxRect)) {
+        const escapesBox =
+          rect.left < boxRect.left - tolerance ||
+          rect.top < boxRect.top - tolerance ||
+          rect.right > boxRect.right + tolerance ||
+          rect.bottom > boxRect.bottom + tolerance;
+        if (rect.width > 0 && rect.height > 0 && escapesBox) {
           results.push({
             defectClass: "internal-box-overflow",
             message: `A visual/table element escapes the bounds of ${componentId}.`,
@@ -83,7 +81,12 @@ export async function runDomLayoutQa(page: Page): Promise<QaFinding[]> {
         const right = protectedElements[j];
         if (!right) continue;
         const rightRect = right.getBoundingClientRect();
-        if (intersects(leftRect, rightRect)) {
+        const intersects =
+          leftRect.left < rightRect.right - tolerance &&
+          leftRect.right > rightRect.left + tolerance &&
+          leftRect.top < rightRect.bottom - tolerance &&
+          leftRect.bottom > rightRect.top + tolerance;
+        if (intersects) {
           results.push({
             defectClass: "forbidden-element-overlap",
             message: "Elements marked data-pak-no-overlap visually intersect.",
