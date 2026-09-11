@@ -9,13 +9,16 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "publishing:registry": "tsx src/modules/publishing-factory/cli.ts registry",
+    "publishing:qa-fixture": "tsx src/modules/publishing-factory/cli.ts qa-fixture --fixture good"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.57.0",
     "next": "^15.5.0",
     "openai": "^6.0.0",
+    "pdfjs-dist": "^6.3.289",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "zod": "^4.1.0"
@@ -33,6 +36,7 @@
     "eslint-config-next": "^15.5.0",
     "jsdom": "^26.1.0",
     "tailwindcss": "^4.1.0",
+    "tsx": "^4.20.5",
     "typescript": "^5.9.0",
     "vitest": "^3.2.0"
   }

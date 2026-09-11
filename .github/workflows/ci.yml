@@ -26,6 +26,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
       - name: Typecheck
         run: npm run typecheck
 
@@ -35,11 +38,14 @@ jobs:
       - name: Unit tests
         run: npm run test:run
 
+      - name: Publishing registry smoke test
+        run: npm run publishing:registry
+
+      - name: Publishing deterministic QA fixture
+        run: npm run publishing:qa-fixture
+
       - name: Build
         run: npm run build
-
-      - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
 
       - name: E2E smoke test
         run: npm run test:e2e
