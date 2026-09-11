@@ -40,41 +40,44 @@ Phase 7 already provides:
 
 The current `/media-library` route is only a readiness page. `media_assets` is the authoritative media identity and must remain so.
 
-## 3. Architectural choices
+## 3. Architectural choice
 
-### 3.1 Chosen approach — dedicated container render worker
+### 3.1 Chosen approach — dedicated PAK render worker
 
-Final composition runs in a dedicated PAK render worker with FFmpeg/ffprobe available in a container runtime.
+Final composition runs in a dedicated containerized PAK render worker with FFmpeg/ffprobe.
 
-Control plane remains:
+Control plane:
 
-`Next.js UI/server action → Supabase RPC/DB → Supabase Edge worker boundary → PAK render worker → private Supabase Storage → media_assets`
+`Next.js UI/server action → Supabase RPC/DB → Supabase Edge control boundary → PAK render worker → private Supabase Storage → media_assets`
 
-The render worker does **not** receive the Supabase service-role key and does not write the database directly. It receives only short-lived signed input/output URLs, a bounded immutable render manifest, and an internal worker credential.
+The render worker:
 
-Why this is chosen:
+- does not receive a Supabase service-role key;
+- does not write PAK database rows directly;
+- receives only short-lived signed input/output URLs and a bounded immutable render manifest;
+- authenticates to the Edge control boundary using a high-entropy internal worker credential stored only in secure deployment configuration;
+- has no LTX/provider credentials.
 
-- 90–180 second FFmpeg composition is long-running CPU/media work and does not belong inside a browser request;
-- Supabase Edge is the wrong runtime for native FFmpeg execution;
-- Vercel request execution is not the durable render authority and may be quota/duration constrained;
-- browser FFmpeg/WASM would expose execution to client lifecycle, memory pressure and tampering;
-- a third-party render API would introduce avoidable vendor lock-in and another paid-provider contract.
+Why:
+
+- 90–180 second FFmpeg composition is CPU/media work and must not depend on a browser or web-request lifetime;
+- Supabase Edge is not the right native FFmpeg runtime;
+- Vercel request execution is not the durable render authority and may be duration/quota constrained;
+- browser FFmpeg/WASM would expose correctness to client lifecycle, memory pressure and tampering;
+- a third-party render SaaS would add avoidable vendor lock-in and a new paid-provider surface.
 
 ### 3.2 Rejected approaches
 
-**FFmpeg inside Next/Vercel function** — rejected because render completion must not depend on a web request duration or Vercel execution quota.
-
-**FFmpeg inside Supabase Edge** — rejected because native long-running media composition is not an appropriate Edge-function responsibility.
-
-**Browser FFmpeg/WASM** — rejected because final asset correctness, tenancy and completion cannot depend on an open browser.
-
-**Third-party render SaaS as Phase 8 authority** — rejected for the initial implementation because PAK can own a deterministic FFmpeg pipeline without introducing another provider credential/cost surface.
+- **Next/Vercel FFmpeg request** — render completion must not depend on request duration or hosting quota.
+- **Supabase Edge FFmpeg** — native long-running composition does not belong in Edge runtime.
+- **Browser FFmpeg/WASM** — final asset correctness and tenancy cannot depend on an open browser.
+- **Third-party render API as authority** — unnecessary for a deterministic concatenation/normalization pipeline.
 
 ## 4. Final assembly domain model
 
 ### 4.1 `video_assemblies`
 
-Add an organization-scoped assembly record representing one immutable component snapshot and its final output.
+One organization-scoped record represents one immutable component snapshot and final output.
 
 Logical fields:
 
@@ -86,27 +89,27 @@ Logical fields:
 - `render_profile`: initially `PAK_MASTER_1080P_V1`
 - `readiness_hash text NOT NULL`
 - `source_integrity_hash text NOT NULL`
-- `aspect_ratio`: initially only `16:9 | 9:16`
+- `aspect_ratio`: `16:9 | 9:16`
 - `component_count integer > 0`
 - `expected_duration_seconds numeric > 0`
 - `final_media_asset_id uuid nullable`
-- normalized failure code/message/retryability metadata where useful
+- normalized failure code/message/retryability metadata
 - `created_by uuid`
 - timestamps
 
 Rules:
 
-- parent plan and organization must match;
+- plan and organization must match;
 - lineage fields are immutable after creation;
-- `COMPLETED` requires `final_media_asset_id`;
-- final media must belong to the same organization;
-- browser roles may read same-org assemblies but may not fabricate or directly mutate render execution state.
+- `COMPLETED` requires same-org `final_media_asset_id`;
+- authenticated members may read same-org assemblies;
+- browser roles may not directly fabricate/mutate execution state.
 
 ### 4.2 `video_assembly_components`
 
-Snapshot every required shot/media input used by the render.
+Immutable snapshot of every shot/media input used by an assembly.
 
-Logical fields:
+Fields:
 
 - `id uuid PK`
 - `organization_id uuid NOT NULL`
@@ -125,33 +128,33 @@ Constraints:
 
 - unique `(assembly_id, ordinal)`;
 - unique `(assembly_id, shot_id)`;
-- component organization must match assembly, scene, shot and media organizations;
-- component records are immutable snapshots after enqueue.
+- organization must match assembly, scene, shot and media;
+- component rows are immutable after enqueue.
 
 ### 4.3 Required-shot rule
 
 The current Scene Plan schema has no explicit optional-shot flag. Phase 8 therefore treats **every persisted shot in an APPROVED plan as required**. It must not infer optionality from free-form `generation_requirements` JSON.
 
-If optional-shot semantics are needed later, they require an explicit schema/requirement change.
+Optional-shot semantics require a future explicit schema/requirement change.
 
-## 5. Readiness calculation
+## 5. Final-render readiness
 
-Final-render readiness is computed server-side from authoritative persisted state. Browser state cannot declare a plan ready.
+Readiness is computed server-side from authoritative persisted state. Browser state cannot declare a plan ready.
 
-A plan is READY only when all of the following are true:
+A plan is READY only when:
 
 1. caller belongs to the organization;
-2. plan exists in that organization;
+2. plan exists in the organization;
 3. plan status is `APPROVED`;
 4. plan source-integrity hash still matches its current canonical script artifact;
-5. no BLOCKER QC finding exists for the plan;
-6. plan contains at least one scene and at least one shot;
-7. every persisted shot has a completed Phase 7 generation attempt with a non-null `media_asset_id`;
-8. each selected media asset belongs to the same organization, is `VIDEO`, `ACTIVE`, and has a private storage identity plus checksum;
-9. only supported plan aspect ratios are used (`16:9` or `9:16` in Phase 8 v1);
-10. no component references a missing/archived/failed asset.
+5. no BLOCKER QC finding exists;
+6. plan contains at least one scene and shot;
+7. every shot has a COMPLETED Phase 7 generation attempt with `media_asset_id`;
+8. selected media belongs to the same org, is `VIDEO`, `ACTIVE`, private, checksummed and present in Storage;
+9. aspect ratio is `16:9` or `9:16`;
+10. no component references archived/failed/missing media.
 
-The read model returns normalized reasons rather than a single boolean, for example:
+Normalized reasons include:
 
 - `PLAN_NOT_APPROVED`
 - `SOURCE_STALE`
@@ -159,119 +162,112 @@ The read model returns normalized reasons rather than a single boolean, for exam
 - `NO_SHOTS`
 - `SHOT_MEDIA_MISSING`
 - `MEDIA_NOT_ACTIVE`
+- `MEDIA_OBJECT_MISSING`
 - `UNSUPPORTED_ASPECT_RATIO`
 - `ASSEMBLY_ALREADY_RUNNING`
 
-The UI must surface actionable readiness reasons and must not render an enabled Final Render CTA when blocked.
+UI must show actionable reasons and no enabled render CTA while blocked.
 
 ## 6. Readiness hash and idempotency
 
-Assembly identity depends on the exact approved plan and exact component media set.
+Compute a deterministic SHA-256 over canonical serialization of:
 
-Compute a deterministic SHA-256 readiness hash over canonical serialized values:
-
-- schema/render-profile version;
+- assembly schema/render-profile version;
 - organization ID;
 - plan version ID;
-- source integrity hash;
+- source-integrity hash;
 - plan aspect ratio;
-- ordered component tuples of:
-  - scene ID;
-  - shot ID;
-  - media asset ID;
-  - media checksum;
-  - media duration.
+- ordered component tuples: scene ID, shot ID, media asset ID, media checksum, duration.
 
-The final job idempotency key is:
+Job idempotency key:
 
 `final-video:{planVersionId}:{readinessHash}:{renderProfile}`
 
 Behavior:
 
-- same plan + same media set + same render profile reuses the existing assembly/job;
-- if the existing assembly is COMPLETED, the existing final media asset is returned;
-- if it is QUEUED/PROCESSING, no duplicate render is created;
-- component changes, new plan version or render-profile revision produce a new hash/new assembly;
-- failed retry uses the same assembly/job according to bounded job retry policy rather than creating a duplicate lineage row.
+- same plan + exact media set + profile reuses existing assembly/job;
+- COMPLETED returns existing final media;
+- QUEUED/PROCESSING does not create a duplicate;
+- component/media/plan/profile change yields new readiness hash;
+- failed retry uses the same assembly/job under bounded job retry policy.
 
 ## 7. Enqueue boundary
 
-Add one authenticated RPC/server boundary for final assembly creation. The browser submits only:
+Browser submits only:
 
 - `organizationId`
 - `planVersionId`
-- fixed allowlisted render profile
+- allowlisted fixed render profile
 
-The database/server derives all scenes, shots and media inputs itself.
+OWNER/ADMIN/EDITOR may enqueue. REVIEWER/ANALYST are read-only.
 
-OWNER/ADMIN/EDITOR may enqueue. REVIEWER/ANALYST may read status/media but may not enqueue.
+Authenticated enqueue RPC/server boundary:
 
-The enqueue transaction:
-
-1. verifies actor and role;
-2. locks/reads plan and authoritative source;
+1. verifies actor/role;
+2. re-reads plan/source/QC;
 3. computes readiness;
-4. selects one completed active PAK media asset for every shot;
+4. selects authoritative completed active media for every shot;
 5. computes readiness hash;
-6. returns existing assembly when idempotency matches;
-7. otherwise inserts `FINAL_VIDEO_ASSEMBLY` job;
+6. returns existing idempotent assembly if present;
+7. inserts `FINAL_VIDEO_ASSEMBLY` durable job;
 8. inserts `video_assemblies`;
-9. inserts immutable `video_assembly_components` in scene/shot order;
+9. inserts ordered immutable component snapshot;
 10. returns IDs only.
 
-Generic authenticated `jobs` policies must exclude direct creation/update of `FINAL_VIDEO_ASSEMBLY` jobs, matching the Phase 7 paid-generation hardening pattern.
+Generic authenticated `jobs` policies must exclude direct INSERT/UPDATE of `FINAL_VIDEO_ASSEMBLY`, mirroring Phase 7 generation hardening.
 
-## 8. Render execution protocol
+## 8. Render worker protocol
 
-### 8.1 Worker relationship
+### 8.1 Pull model
 
-The render worker is a trusted compute worker but not a database administrator.
+Worker uses a dedicated Edge endpoint with internal credential.
 
-It authenticates to a dedicated Supabase Edge endpoint using an internal high-entropy worker credential. That credential is never sent to browsers and is stored only in secure backend/worker configuration.
+1. worker asks for one due render;
+2. Edge/service-role boundary claims job using lease + `SKIP LOCKED` semantics;
+3. Edge revalidates job/assembly/org/components;
+4. Edge issues short-lived signed GET URLs for private inputs;
+5. Edge issues short-lived signed upload URL for deterministic output path;
+6. Edge returns immutable manifest;
+7. worker downloads/verifies inputs, renders and uploads output;
+8. worker reports success/failure using assembly/job IDs only;
+9. Edge finalizes media/assembly/job state and releases lease.
 
-The worker uses a pull protocol:
+The worker never receives provider URLs, LTX credentials, browser tokens or database admin credentials.
 
-1. request one due assembly work item;
-2. Edge/service-role boundary claims the job with lease/`SKIP LOCKED` semantics;
-3. Edge revalidates assembly/job/org/component lineage;
-4. Edge creates short-lived signed GET URLs for each private input object;
-5. Edge creates a short-lived signed upload URL for the deterministic final output object;
-6. Edge returns an immutable render manifest;
-7. worker downloads/verifies inputs, renders, uploads output;
-8. worker reports success/failure to Edge;
-9. Edge finalizes DB/media state atomically where DB state is concerned and releases the lease.
+### 8.2 Worker credential
 
-The worker never receives raw provider result URLs, LTX credentials, Supabase service-role credentials, or browser session tokens.
+Use a high-entropy `PAK_RENDER_WORKER_TOKEN` provisioned separately in:
 
-### 8.2 Render manifest
+- Supabase Edge secure secret configuration; and
+- render-worker deployment secret configuration.
 
-Manifest contains only bounded non-secret execution data:
+Never commit this secret. Browser/server actions cannot read it. Edge uses constant-time comparison for worker requests.
 
-- manifest schema version;
-- assembly/job IDs;
-- organization ID;
-- aspect ratio;
-- render profile;
-- ordered components with signed URL, expected checksum and expected duration;
+### 8.3 Manifest
+
+Bounded non-secret fields only:
+
+- schema version;
+- assembly/job/org IDs;
+- aspect ratio/render profile;
+- ordered components with signed GET URL, expected checksum and expected duration;
 - signed output upload URL;
-- output object path;
+- deterministic output object path;
 - expiry timestamp.
 
-Manifest must have a maximum component count and URL expiry. Worker rejects expired or malformed manifests.
+Worker rejects malformed/expired manifests and enforces component-count/file-size limits.
 
-### 8.3 Output path
+### 8.4 Output path
 
-Use the existing private `generated-media` bucket rather than creating a second identity system.
-
-Final object path:
+Reuse private `generated-media` bucket:
 
 `{organizationId}/final-video/{planVersionId}-{readinessHashPrefix}.mp4`
 
-`media_assets` remains the final durable media identity.
+`media_assets` is the only durable media identity.
 
-## 9. Deterministic FFmpeg profile
+## 9. Deterministic render profile
 
-Initial profile: `PAK_MASTER_1080P_V1`.
+`PAK_MASTER_1080P_V1`:
 
 - 16:9 → 1920×1080
 - 9:16 → 1080×1920
@@ -279,221 +275,215 @@ Initial profile: `PAK_MASTER_1080P_V1`.
 - H.264 / `libx264`
 - `yuv420p`
 - MP4 `+faststart`
-- deterministic ordered concatenation
-- hard cuts in v1
-- provider/source clip audio is stripped in v1
+- deterministic scene/shot order
+- hard cuts only
+- source clip audio stripped
 
-Why hard cuts/audio stripping in v1:
+Hard cuts/audio stripping are intentional:
 
-- Scene Plan transition text is creative intent, not yet a typed render transition contract;
-- inventing transition mappings would silently change timing/creative meaning;
-- Phase 7 intentionally disables provider-generated audio to preserve canonical narration authority;
-- Phase 8 baseline contains no approved TTS/music-provider contract.
+- Scene Plan transition text is creative intent, not a typed render-transition contract;
+- inventing mappings would silently change timing/meaning;
+- Phase 7 deliberately requests `generate_audio: false`;
+- current baseline has no approved TTS/music contract.
 
-Phase 8 therefore produces the **final visual master** from approved shot media. Narration/TTS/music generation is not silently invented in this phase. A later explicit audio contract can extend the render manifest without changing media identity or assembly lineage.
+Phase 8 produces the **final visual master**. It does not silently invent narration/music/TTS. A later audio contract can extend the manifest without changing assembly/media identity.
 
-### 9.1 Input validation
+### 9.1 Input QA
 
-For every component the worker:
+For every component:
 
-- downloads only from provided signed URL;
-- enforces bounded file size;
-- computes SHA-256 and matches the expected PAK checksum;
-- runs ffprobe;
-- requires valid video stream;
-- rejects empty/corrupt input;
-- normalizes frame rate and output dimensions with scale/pad rather than uncontrolled stretching.
+- download only from signed URL;
+- enforce max bytes;
+- compute SHA-256 and match PAK checksum;
+- ffprobe valid video stream;
+- reject empty/corrupt input;
+- normalize frame rate/dimensions with scale+pad, never uncontrolled stretching.
 
-### 9.2 Final QA
+### 9.2 Output QA
 
-Before success report:
+Before success:
 
-- output exists and is non-empty;
-- ffprobe reports one valid video stream;
-- dimensions match profile;
-- frame rate is valid;
-- duration is positive and within a bounded tolerance of summed rendered component duration;
-- output SHA-256 is computed;
-- upload completed successfully.
+- non-empty output;
+- ffprobe valid video stream;
+- exact target dimensions;
+- valid frame rate;
+- positive duration within bounded tolerance of rendered component sum;
+- SHA-256 computed;
+- signed upload succeeded.
 
 ## 10. Finalization and retry
 
-On successful worker report, Edge/service-role boundary:
+Success boundary:
 
-1. verifies job lease/assembly identity;
-2. verifies deterministic output path;
-3. creates/upserts final `media_assets` row with:
-   - organization;
-   - `asset_type = VIDEO`;
-   - source `GENERATED`;
-   - bucket/path;
-   - mime `video/mp4`;
-   - duration/dimensions/checksum;
-   - generating job ID;
-   - active status;
-   - Phase 8 lineage metadata;
-4. links `video_assemblies.final_media_asset_id`;
-5. marks assembly COMPLETED;
-6. marks job COMPLETED with safe result metadata.
+1. verify job lease/assembly identity;
+2. verify deterministic bucket/path;
+3. create/upsert final `media_assets` row with VIDEO/GENERATED, bucket/path, MIME, duration, dimensions, checksum, generating job and safe assembly lineage metadata;
+4. set `video_assemblies.final_media_asset_id`;
+5. mark assembly COMPLETED;
+6. mark job COMPLETED with safe result metadata.
 
-Retry policy:
+Retry:
 
-- bounded maximum three render attempts for infrastructure/transient failures;
-- validation/checksum/corrupt-input errors are terminal until source media changes;
-- lease expiry permits safe reclaim when no success was finalized;
-- deterministic output path + assembly idempotency make repeated upload/finalize safe;
-- a worker outcome that is genuinely ambiguous must be reconciled against output-object existence before rerendering.
+- max three attempts for transient infrastructure/worker failures;
+- checksum/corrupt-input/validation errors are terminal until component media changes;
+- lease expiry permits reclaim;
+- deterministic path/idempotency makes repeat completion safe;
+- before rerender after ambiguous worker outcome, Edge checks deterministic output object existence and reconciles if possible.
 
 ## 11. Media Library schema expansion
 
-`media_assets` remains authoritative but needs enough metadata for an operator product.
+`media_assets` remains authoritative.
 
-Add/backfill logical fields:
+Add/backfill:
 
-- `storage_bucket text` — existing Phase 7 generated rows backfill `generated-media`;
-- `display_name text`;
-- `size_bytes bigint nullable`;
-- `metadata jsonb NOT NULL default {}` for safe non-secret lineage/display metadata;
+- `storage_bucket text NOT NULL DEFAULT 'generated-media'` so existing and future Phase 7 inserts remain compatible;
+- `display_name text NOT NULL` with existing rows backfilled from object basename;
+- `size_bytes bigint nullable CHECK >= 0`;
+- `metadata jsonb NOT NULL DEFAULT '{}'` for safe non-secret technical/lineage metadata;
 - `created_by uuid nullable`;
 - `archived_at timestamptz nullable`;
 - `archived_by uuid nullable`.
 
-Do not duplicate assets into a second media table.
+Storage identity becomes `(organization_id, storage_bucket, storage_path)`. Replace the older `(organization_id, storage_path)` uniqueness so objects with identical paths in different private buckets cannot collide logically.
 
-Indexes should support:
+Indexes support:
 
-- organization + created time pagination;
-- organization + status;
-- organization + asset type;
-- organization + source;
-- generating job lookup.
+- org + created cursor pagination;
+- org + status;
+- org + asset_type;
+- org + source;
+- generating-job lookup.
 
-## 12. Media upload/storage design
+Direct authenticated `media_assets` INSERT/UPDATE/DELETE policies are hardened; authoritative mutation happens through validated server/RPC/Edge boundaries.
 
-### 12.1 Upload bucket
+## 12. Controlled upload design
 
-Create a private `media-library` bucket for operator uploads/imports. Existing generated assets remain in `generated-media`.
+### 12.1 Private upload bucket
 
-Allowed baseline categories:
+Create private `media-library` bucket. Existing generated/final assets remain in `generated-media`.
 
-- image
-- video
-- audio
-- document
+Initial allowlist:
 
-MIME and file-size allowlists are enforced before signed upload issuance and verified again at finalization.
+- IMAGE: JPEG/PNG/WebP, max 25 MiB
+- VIDEO: MP4/WebM/QuickTime, max 512 MiB
+- AUDIO: MPEG/WAV/M4A/AAC-compatible MIME, max 100 MiB
+- DOCUMENT: PDF/DOCX, max 25 MiB
 
-### 12.2 Direct signed upload flow
+Server-side constants are authoritative; client prevalidation is UX only.
 
-OWNER/ADMIN/EDITOR may upload.
+### 12.2 `media_upload_sessions`
 
-1. browser requests upload session with safe metadata: filename, MIME, size, asset type;
-2. server/Edge validates role and allowlists;
-3. backend derives organization-prefixed object path and returns short-lived signed upload URL;
-4. browser uploads bytes directly to Storage;
-5. browser calls finalize using upload/session ID only;
-6. backend verifies object exists, path/org/MIME/size match the issued session;
-7. backend creates `media_assets` record;
-8. session becomes finalized and cannot create a second asset.
+Two-step direct upload requires a small auditable session table:
 
-Browser does not choose an arbitrary storage path and does not directly insert authoritative media lineage.
-
-A small `media_upload_sessions` table is allowed to make this two-step flow idempotent/auditable:
-
+- id;
 - organization;
 - actor;
-- expected path/MIME/size/type;
+- expected bucket/path;
+- original/display filename;
+- expected MIME/type/size;
 - state `ISSUED | FINALIZED | EXPIRED | FAILED`;
 - media asset ID nullable;
 - expiry/timestamps.
 
-## 13. Media read/preview
+### 12.3 Upload flow
 
-All media list/detail queries are organization-scoped and paginated.
+OWNER/ADMIN/EDITOR:
 
-List filters:
+1. browser submits filename/MIME/size/type;
+2. Edge validates role + allowlist;
+3. backend derives path such as `{organizationId}/uploads/{yyyy}/{uuid}/{sanitizedName}`;
+4. backend creates upload session + short-lived signed upload URL;
+5. browser uploads directly to Storage;
+6. browser finalizes using upload-session ID only;
+7. backend verifies object exists and matches issued bucket/path/MIME/size;
+8. backend creates `media_assets` row with `source = UPLOAD`;
+9. session becomes FINALIZED and is idempotent.
+
+Browser cannot choose arbitrary authoritative path and cannot directly insert media lineage.
+
+## 13. Media read, preview and download
+
+List/detail are org-scoped and paginated.
+
+Filters:
 
 - asset type;
 - source;
 - status;
 - optional display-name search;
-- cursor pagination by `(created_at, id)`.
+- cursor `(created_at, id)`.
 
-Asset detail shows:
+Detail route shows:
 
 - display name;
 - type/MIME/dimensions/duration/size;
-- source;
-- status;
-- created time;
-- generating job where applicable;
-- generation/assembly lineage where applicable;
-- safe checksum/technical metadata where useful.
+- source/status/created time;
+- generating job;
+- generation/assembly lineage;
+- safe technical metadata.
 
-Preview/download uses short-lived signed GET URLs created only after same-org membership authorization. Raw service-role credentials never enter the browser.
+Preview/download uses short-lived signed GET URL only after same-org authorization. Raw storage/admin credentials never enter browser state.
 
-## 14. Archive and delete
+Preferred route: `/media-library/[assetId]` for addressable operator workflows and future Approval/Publishing linkage.
+
+## 14. Archive and permanent delete
 
 Roles:
 
-- OWNER/ADMIN/EDITOR may upload;
-- OWNER/ADMIN/EDITOR may archive assets where product lineage permits;
-- permanent delete is OWNER/ADMIN only;
-- REVIEWER/ANALYST are read-only.
+- upload: OWNER/ADMIN/EDITOR;
+- archive: OWNER/ADMIN/EDITOR where lineage permits;
+- permanent delete: OWNER/ADMIN only;
+- REVIEWER/ANALYST: read-only.
 
 Rules:
 
-- archive changes authoritative media status and hides it from default active lists;
-- an asset referenced by active video-generation or final-assembly lineage cannot be permanently deleted;
-- permanent delete is an authenticated backend/Edge operation, not direct browser Storage deletion;
-- delete is idempotent: missing object after a previous successful delete is treated as already removed, then DB cleanup may continue;
-- storage operation and DB deletion use verified organization/bucket/path values from the media row, never browser-supplied paths.
+- archive marks media `ARCHIVED` and hides it from default active lists;
+- media referenced by active Phase 7 generation lineage or any final assembly/component lineage cannot be permanently deleted;
+- permanent delete is backend/Edge-only and derives bucket/path from DB row;
+- storage delete is idempotent: already-missing object is treated as removed, then DB cleanup may continue;
+- browser never supplies a trusted storage path for deletion.
 
-Direct authenticated `media_assets` INSERT/UPDATE/DELETE policies should be hardened so authoritative lifecycle mutation goes through validated server/RPC/Edge boundaries rather than arbitrary row writes.
+## 15. Scene Planning UI
 
-## 15. Scene Planning UI changes
-
-For an APPROVED/current plan add a **Final Video** production card.
+Add **Final Video** card for approved/current plan.
 
 States:
 
-- `Blocked` — show normalized readiness reasons;
-- `Ready` — OWNER/ADMIN/EDITOR can `Generate Final Video`;
-- `Queued` / `Rendering` — display durable status, no duplicate CTA;
-- `Failed` — normalized failure + retry when backend says safe;
-- `Complete` — link to PAK media identity and `Open in Media Library`.
+- `Blocked` — normalized readiness reasons;
+- `Ready` — OWNER/ADMIN/EDITOR sees `Generate Final Video`;
+- `Queued` / `Rendering` — durable state, no duplicate CTA;
+- `Failed` — normalized error + retry only when backend marks safe;
+- `Complete` — PAK media identity + `Open in Media Library`.
 
-A per-shot COMPLETED state must never be presented as a complete final film.
+Per-shot completion must never be displayed as a completed final film.
 
 ## 16. Media Library UI
 
-Replace the readiness page with an operational route.
+Replace readiness page with real operator route.
 
 Desktop:
 
-- page header + Upload action;
-- filter bar;
-- paginated table/list;
-- type icon/preview thumbnail where safe;
+- header + Upload;
+- filters;
+- paginated list/table;
+- type/preview thumbnail when safe;
 - name/type/source/status;
-- linked generation/job/assembly context;
-- created time;
-- actions.
+- lineage/job context;
+- created time/actions.
 
 Mobile:
 
-- stacked asset cards with the same authoritative state/actions;
-- no desktop-only critical operation.
-
-Asset detail may be a dedicated route or drawer, but URL-addressable detail is preferred for operator workflows and future Approval/Publishing integration.
+- stacked cards preserving all critical operations.
 
 Upload UX:
 
-- file selection;
-- client-side prevalidation for fast feedback;
-- signed direct upload progress;
+- file select;
+- fast client prevalidation;
+- signed direct-upload progress;
 - finalize state;
-- clear normalized failure without leaking storage internals.
+- normalized failure with no storage internals.
+
+Asset detail supports preview/download and role-authorized archive/delete.
 
 ## 17. Authorization matrix
 
@@ -505,108 +495,116 @@ Upload UX:
 | Archive media | ✓ | ✓ | ✓ | — | — |
 | Permanent delete | ✓ | ✓ | — | — | — |
 | Enqueue final assembly | ✓ | ✓ | ✓ | — | — |
-| Read assembly status/final asset | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Read assembly/final media | ✓ | ✓ | ✓ | ✓ | ✓ |
 
-RLS remains the final read boundary. Privileged mutations use narrowly scoped server/Edge functions with explicit role/lineage checks.
+RLS remains final read boundary. Privileged mutations use narrowly scoped server/Edge/RPC checks.
 
 ## 18. Failure handling
 
-Normalized failure families:
+Readiness:
 
-### Readiness
-- plan not approved/current;
+- not approved/current;
 - QC blocker;
 - missing shot media;
-- archived/failed media;
+- archived/failed/missing object;
 - unsupported aspect ratio.
 
-### Upload
+Upload:
+
 - unsupported MIME/type;
-- file too large;
+- too large;
 - signed URL expired;
-- object verification mismatch;
+- object mismatch;
 - finalize conflict.
 
-### Render
+Render:
+
 - input download failure;
 - checksum mismatch;
-- corrupt/invalid video;
+- corrupt video;
 - FFmpeg failure;
 - worker unavailable;
-- output verification failure;
+- output QA failure;
 - output upload failure;
-- completion/finalization failure.
+- finalization failure.
 
-Raw FFmpeg stderr, storage internals, signed URLs, internal worker token and service-role information are never returned to browser UI.
+Raw FFmpeg stderr, signed URLs, internal worker token, storage internals and admin credentials never reach browser UI.
 
 ## 19. Testing strategy
 
-### Unit/domain
+### Domain/unit
 
-- readiness reason calculation;
-- deterministic component ordering;
+- readiness reasons;
+- deterministic ordering;
 - readiness hash/idempotency;
-- render profile normalization;
+- render profile;
 - safe error mapping;
-- media filter/query schemas;
-- authorization helpers.
+- media query/filter schemas;
+- authorization.
 
 ### SQL/schema
 
-- new tables/constraints/indexes/RLS;
-- same-org parentage guards;
-- authenticated direct mutation denial;
+- media metadata backfill/uniqueness/indexes;
+- new assembly/component/session tables;
+- RLS/parentage/immutability;
+- direct browser mutation denial;
 - enqueue-only assembly creation;
-- component immutability;
 - completed assembly requires same-org final media;
-- referenced asset delete denial.
+- referenced media delete denial.
 
 ### Worker
 
-- render manifest validation;
+- manifest validation;
+- expiry/credential boundary;
 - checksum verification;
 - FFmpeg command construction;
-- terminal/transient classification;
+- transient/terminal classification;
 - deterministic output path;
-- fixture integration test using short generated clips and ffprobe verification.
+- integration test with short generated fixture clips + ffprobe output verification.
 
-CI does not need real LTX because Phase 8 consumes PAK-owned fixture media.
+CI never requires real LTX because Phase 8 consumes PAK-owned fixture media.
 
 ### UI/E2E
 
 - blocked final-render reasons;
-- ready/enqueue state;
-- running/completed final render state using fake worker path;
+- ready/enqueue;
+- queued/rendering/completed fake-worker flow;
 - Media Library list/filter/detail;
-- upload/finalize happy path with deterministic test storage abstraction;
+- upload/finalize test abstraction;
 - role-based mutation visibility;
 - mobile critical workflows.
 
 ### Live release gates
 
-- migrations applied to connected PAK Supabase in repository order;
+- migrations applied in repository order;
 - RLS/function privilege probes;
 - private bucket checks;
 - advisor review;
-- final-assembly Edge boundary deployed and unauthorized request denied;
+- assembly/media Edge boundaries deployed;
+- unauthorized worker request denied;
 - render worker deployed to an approved container runtime;
-- real smoke using deterministic non-LTX fixture clips produces a valid final PAK media asset;
-- exact-head typecheck, lint, unit, build and Playwright green before merge.
+- deterministic non-LTX fixture smoke produces a valid final PAK `media_assets` record;
+- exact-head typecheck, lint, unit, build and Playwright green.
 
-Phase 8 is **not production-complete** if the render worker is only coded but not deployed/verified. External container-host availability must be reported as an operational blocker rather than misrepresented as completion.
+Phase 8 is **not production-complete** if the render worker is only coded but not deployed/verified. Lack of an available container host is an operational blocker, not completion.
 
-## 20. Migration/implementation shape
+## 20. Forward migration order
 
-Expected forward migrations (names may be adjusted only before first application):
+Dependencies require media bucket identity before assembly enqueue snapshots it.
 
-1. `video_final_assemblies` — assembly + components + RLS/guards;
-2. `video_final_assembly_enqueue` — readiness/idempotent enqueue RPC + job policy hardening;
-3. `media_library_metadata` — media metadata/backfill/indexes/policy hardening;
-4. `media_upload_sessions` — controlled signed-upload session lineage;
-5. `video_final_assembly_completion` — final media/assembly/job completion boundary;
-6. any performance/security hardening discovered by live advisors as forward migrations.
+Expected forward migrations, before first application:
 
-Expected code areas:
+1. `media_library_metadata` — add/backfill `storage_bucket`, display metadata, replace storage uniqueness, indexes, media policy hardening, private upload bucket;
+2. `video_final_assemblies` — assembly/components tables, guards, RLS;
+3. `video_final_assembly_enqueue` — readiness/idempotent enqueue RPC + `FINAL_VIDEO_ASSEMBLY` job-policy hardening;
+4. `media_upload_sessions` — controlled upload-session table/RLS/functions;
+5. `video_final_assembly_completion` — idempotent final-media/assembly/job completion and referenced-media delete guards;
+6. `video_final_assembly_dispatch` — worker claim/lease/reconciliation boundary and any internal-secret support required by the deployed worker model;
+7. advisor-discovered performance/security hardening as new forward migrations only.
+
+Phase 7 `complete_generated_video_import` remains compatible because `media_assets.storage_bucket` defaults to `generated-media`.
+
+## 21. Expected code areas
 
 - `src/modules/video/assembly/*`
 - `src/modules/media/*`
@@ -615,37 +613,35 @@ Expected code areas:
 - `supabase/functions/video-assembly/*`
 - `supabase/functions/media-library/*`
 - `workers/video-render/*` containerized FFmpeg worker
-- E2E/tests/docs/traceability updates.
+- migrations/tests/E2E/docs/traceability.
 
-## 21. Non-goals
+## 22. Non-goals
 
 Phase 8 does not add:
 
 - TTS/narration synthesis;
 - music generation/licensing;
-- creative transition inference from free-form Scene Plan text;
+- creative transition inference;
 - subtitles/captions;
 - generic Approval Center;
 - publishing/calendar/analytics;
 - a second media identity table;
-- a second video-generation provider;
-- direct browser access to private buckets or worker credentials.
+- another video-generation provider;
+- direct browser access to private buckets/worker secrets.
 
-These require explicit later requirements rather than hidden scope expansion.
+## 23. Exit criteria
 
-## 22. Exit criteria
+Phase 8 is complete only when:
 
-Phase 8 may be called complete only when:
-
-1. an APPROVED, source-current, blocker-free plan with complete shot media resolves READY;
-2. blocked plans expose deterministic reasons and cannot enqueue;
-3. final assembly enqueue is tenant/role validated and idempotent;
-4. a deployed render worker can consume an immutable manifest and produce verified MP4 output;
-5. final output is imported as one organization-scoped PAK `media_assets` record with component lineage;
-6. duplicate clicks/retries cannot create duplicate final output identity for the same readiness hash;
-7. Media Library lists existing Phase 7 generated assets plus Phase 8 final/uploaded assets;
-8. operator upload, preview, archive and authorized delete work through private storage boundaries;
+1. approved/current/blocker-free plan with complete shot media resolves READY;
+2. blocked plan exposes deterministic reasons and cannot enqueue;
+3. enqueue is tenant/role validated and idempotent;
+4. deployed worker consumes immutable manifest and produces verified MP4;
+5. final output is one organization-scoped PAK `media_assets` record with component lineage;
+6. retries/clicks cannot create duplicate final output identity for same readiness hash;
+7. Media Library lists Phase 7 generated, Phase 8 final and uploaded assets;
+8. upload, signed preview/download, archive and authorized delete work with private storage;
 9. REVIEWER/ANALYST cannot mutate media or enqueue renders;
-10. RLS/storage/security negative probes pass live;
+10. live RLS/storage/security negative probes pass;
 11. exact-head CI including production build and Playwright is green;
-12. a real deployed-worker assembly smoke produces a valid playable PAK-owned final video asset.
+12. real deployed-worker fixture assembly smoke produces a playable PAK-owned final video asset.
