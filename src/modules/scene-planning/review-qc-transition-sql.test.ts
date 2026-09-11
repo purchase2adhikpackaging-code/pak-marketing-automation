@@ -13,11 +13,11 @@ describe("Scene Planning review QC transition SQL", () => {
     expect(existsSync(migrationPath)).toBe(true);
   });
 
-  it("blocks REVIEW_REQUIRED transitions without current QC evidence", () => {
+  it("blocks REVIEW_REQUIRED transitions without current QC evidence while allowing fresh-draft QC promotion", () => {
     expect(sql).toContain("new.status = 'REVIEW_REQUIRED'");
     expect(sql).toContain("new.narration_coverage_hash is null");
     expect(sql).toContain("scene plan must pass current QC before review");
-    expect(sql).toContain("old.status <> 'QC_REQUIRED'");
+    expect(sql).toContain("old.status not in ('DRAFT','QC_REQUIRED')");
   });
 
   it("blocks review and approval transitions while blocker findings remain", () => {
