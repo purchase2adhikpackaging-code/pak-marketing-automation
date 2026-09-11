@@ -91,7 +91,7 @@ B4 pre-matrix release verification was completed on branch head `a091c04a4de6f7e
 - Vitest: PASS — 233/233 tests across 48 test files.
 - Production build: PASS.
 - Playwright/E2E: PASS — 17/17 tests.
-- The real unauthenticated `/dashboard` boundary redirects to `/login`; the CI authorization bypass is request-scoped, requires explicit CI + bypass environment flags, and is disabled for `NODE_ENV=production`.
+- The real unauthenticated `/dashboard` boundary redirects to `/login`; the E2E authorization bypass requires a non-production runtime, explicit `E2E_AUTH_BYPASS=true`, and the exact `x-pak-e2e-auth-bypass: allow` request header.
 - Desktop release traversal uses the rendered primary navigation across all fourteen routes and verifies exactly one `aria-current="page"` link after every transition.
 - Mobile release traversal at 390 × 844 uses the disclosure navigation across all fourteen routes, verifies collapse/reopen semantics and the current-route marker, and verifies no horizontal overflow at every destination.
 - Future and foundation-only routes preserve truthful `Planned` / `Foundation only` boundaries with no fabricated operational actions.
@@ -102,3 +102,5 @@ The final B4 release gate is the CI result on the exact PR head that includes th
 ## Matrix completeness rule
 
 This matrix contains exactly fourteen unique primary routes. No route is marked fully production-ready solely because `page.tsx` exists. Track B now reconciles the implemented, partial, and future entry surfaces so users see truthful readiness boundaries and valid recovery paths. B4 adds cross-route desktop/mobile release verification and a real unauthenticated boundary test; it does not implement Phase 6+ domain workflows. Those capabilities remain governed by the roadmap phases shown above.
+
+There are no unresolved P0 production-readiness blockers in the fourteen-route Track B matrix. Final Track B closure still requires integration into the production branch, exact-green production integration checks, Vercel production deployment verification, and live production smoke as defined by the B4 release plan.
