@@ -11,6 +11,13 @@ export type EdgeInvokeDependencies = {
   fetchFn: typeof fetch;
 };
 
+export type VideoGenerationEdgeRequest = {
+  operation: "submit" | "reconcile";
+  organizationId: string;
+  jobId: string;
+  attemptId: string;
+};
+
 async function productionAccessToken(): Promise<string | null> {
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase.auth.getSession();
@@ -79,4 +86,15 @@ export function invokeIntegrationVault<T>(body: unknown): Promise<T> {
 
 export function invokeContentGeneration<T>(body: unknown): Promise<T> {
   return invokeEdgeFunction<T>("generate-content", body, productionDependencies());
+}
+
+export function invokeVideoGenerationWithDependencies<T>(
+  body: VideoGenerationEdgeRequest,
+  dependencies: EdgeInvokeDependencies,
+): Promise<T> {
+  return invokeEdgeFunction<T>("video-generation", body, dependencies);
+}
+
+export function invokeVideoGeneration<T>(body: VideoGenerationEdgeRequest): Promise<T> {
+  return invokeVideoGenerationWithDependencies<T>(body, productionDependencies());
 }
