@@ -159,12 +159,13 @@ describe("ScenePlanningWorkspace", () => {
     await waitFor(() => expect(cloneScenePlanForEditAction).toHaveBeenCalled());
   });
 
-  it("does not expose approval to EDITOR role", () => {
+  it("requires QC rerun before an EDITOR can progress a modified plan", () => {
     render(<ScenePlanningWorkspace {...props({
       actorRole: "EDITOR",
       plan: { ...props().plan!, status: "QC_REQUIRED" },
     })} />);
     expect(screen.queryByRole("button", { name: "Approve Scene Plan" })).toBeNull();
-    expect(screen.getByRole("button", { name: "Submit for review" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Submit for review" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Run QC" })).toBeTruthy();
   });
 });
