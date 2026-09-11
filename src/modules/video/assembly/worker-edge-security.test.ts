@@ -24,6 +24,13 @@ describe("final assembly worker security boundary", () => {
     expect(migrationSql).toMatch(/revoke all on function public\.claim_video_assembly_work[\s\S]*from authenticated/i);
   });
 
+  it("reclaims expired PROCESSING work without bypassing the max-attempt cap", () => {
+    expect(migrationSql).toContain("j.state in ('QUEUED', 'RETRYING', 'PROCESSING')");
+    expect(migrationSql).toContain("j.attempt_count < j.max_attempts");
+    expect(migrationSql).toContain("j.lease_expires_at <= now()");
+    expect(migrationSql).toMatch(/j\.state = 'PROCESSING'[\s\S]*a\.state = 'PROCESSING'/i);
+  });
+
   it("requires only the internal worker credential and does not fall back to browser JWT auth", () => {
     expect(edgeSource).toContain("x-pak-render-worker-token");
     expect(edgeSource).toContain("read_video_assembly_worker_secret");
