@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from "vitest";
-import { AppError } from "@/lib/errors/app-error";
 import { enqueueFinalVideoAssembly } from "./enqueue";
 import type { FinalAssemblyRepository } from "./repository";
 
@@ -68,7 +67,7 @@ describe("enqueueFinalVideoAssembly", () => {
         { organizationId: "", planVersionId: "plan-1" },
         repository,
       ),
-    ).rejects.toMatchObject<AppError>({ code: "VALIDATION_ERROR" });
+    ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
 
     expect(repository.enqueueApprovedPlan).not.toHaveBeenCalled();
   });
