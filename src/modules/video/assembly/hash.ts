@@ -18,22 +18,28 @@ export type AssemblyReadinessHashInput = {
   components: readonly AssemblyReadinessHashComponent[];
 };
 
-export function computeAssemblyReadinessHash(input: AssemblyReadinessHashInput): string {
-  const canonical = JSON.stringify({
-    schemaVersion: "final-assembly-v1",
-    organizationId: input.organizationId,
-    planVersionId: input.planVersionId,
-    sourceIntegrityHash: input.sourceIntegrityHash,
-    aspectRatio: input.aspectRatio,
-    renderProfile: input.renderProfile,
-    components: input.components.map((component) => ({
-      sceneId: component.sceneId,
-      shotId: component.shotId,
-      mediaAssetId: component.mediaAssetId,
-      mediaChecksum: component.mediaChecksum,
-      durationSeconds: component.durationSeconds,
-    })),
-  });
+function appendCanonicalField(hash: ReturnType<typeof createHash>, value: string | number): void {
+  hash.update(String(value), "utf8");
+  hash.update(Buffer.from([0]));
+}
 
-  return `sha256:${createHash("sha256").update(canonical, "utf8").digest("hex")}`;
+export function computeAssemblyReadinessHash(input: AssemblyReadinessHashInput): string {
+  const hash = createHash("sha256");
+
+  appendCanonicalField(hash, "final-assembly-v1");
+  appendCanonicalField(hash, input.organizationId);
+  appendCanonicalField(hash, input.planVersionId);
+  appendCanonicalField(hash, input.sourceIntegrityHash);
+  appendCanonicalField(hash, input.aspectRatio);
+  appendCanonicalField(hash, input.renderProfile);
+
+  for (const component of input.components) {
+    appendCanonicalField(hash, component.sceneId);
+    appendCanonicalField(hash, component.shotId);
+    appendCanonicalField(hash, component.mediaAssetId);
+    appendCanonicalField(hash, component.mediaChecksum);
+    appendCanonicalField(hash, Math.round(component.durationSeconds * 1000));
+  }
+
+  return `sha256:${hash.digest("hex")}`;
 }
