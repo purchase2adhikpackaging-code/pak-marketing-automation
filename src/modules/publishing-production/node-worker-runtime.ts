@@ -10,7 +10,7 @@ import { FileCheckpointStore } from "@/modules/publishing-factory/checkpoint-sto
 import { loadKnowledgeRegistry } from "@/modules/publishing-factory/knowledge-registry";
 import { publishQaPassedBook } from "./artifact-publisher";
 import { PublishingProductionRepository, type PublishingProductionTransport } from "./repository";
-import { runNodePublishingWorker, type NodePublishingWorkerDependencies } from "./node-worker";
+import { runNodePublishingWorker, type NodePublishingWorkerDependencies, type WorkerProcessOutcome } from "./node-worker";
 import type { ProductionJob } from "./domain";
 
 const BUCKET = "publishing-books";
@@ -137,7 +137,7 @@ async function persistCheckpoints(admin: SupabaseClient, localRoot: string, stor
   }
 }
 
-async function processProductionJob(admin: SupabaseClient, job: ProductionJob) {
+async function processProductionJob(admin: SupabaseClient, job: ProductionJob): Promise<WorkerProcessOutcome> {
   const temp = await mkdtemp(join(tmpdir(), "pak-publishing-worker-"));
   const checkpointRoot = join(temp, "checkpoints");
   const artifactRoot = join(temp, "artifacts");
@@ -163,7 +163,7 @@ async function processProductionJob(admin: SupabaseClient, job: ProductionJob) {
 
     if (result.incomplete) {
       return {
-        kind: "yield" as const,
+        kind: "yield",
         checkpointRoot: storageCheckpointPrefix,
         currentStage: "MANUSCRIPT_IN_PROGRESS",
       };
@@ -200,12 +200,12 @@ async function processProductionJob(admin: SupabaseClient, job: ProductionJob) {
     });
 
     return {
-      kind: "complete" as const,
-      qaStatus: "QA_PASSED" as const,
+      kind: "complete",
+      qaStatus: "QA_PASSED",
       pdfArtifactPath: published.pdfPath,
       manifestArtifactPath: published.manifestPath,
-      providerName: result.manuscript?.provider.name,
-      providerModel: result.manuscript?.provider.model,
+      ...(result.manuscript?.provider.name ? { providerName: result.manuscript.provider.name } : {}),
+      ...(result.manuscript?.provider.model ? { providerModel: result.manuscript.provider.model } : {}),
       knowledgeHashes: result.manuscript?.knowledgePacks ?? [],
     };
   } finally {
@@ -236,7 +236,7 @@ export async function runConfiguredPublishingWorker(input: {
 }) {
   return runNodePublishingWorker({
     workerId: input.workerId,
-    concurrency: input.concurrency,
+    ...(input.concurrency !== undefined ? { concurrency: input.concurrency } : {}),
     dependencies: createConfiguredWorkerDependencies(),
   });
 }
