@@ -1,0 +1,153 @@
+name: Temporary Master PRD Sync
+
+on:
+  push:
+    branches:
+      - docs/certificate-master-sync-v0.2.0
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: docs/certificate-master-sync-v0.2.0
+          fetch-depth: 0
+
+      - name: Synchronize C05-C12 into master v0.2.0
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+
+          root = Path('docs/academic')
+          master_path = root / 'PAK_ACADEMIC_CURRICULUM_STUDY_MATERIAL_BLUEPRINT_PRD.md'
+          master = master_path.read_text(encoding='utf-8')
+          raw = master.encode()
+          old_sha = hashlib.sha1(f'blob {len(raw)}\0'.encode() + raw).hexdigest()
+          assert old_sha == '54df7159609c264e0011adb8b36542e26d450ddf', old_sha
+          assert master.count('# 30. Portfolio Architecture Checkpoint v0.1.9') == 1
+
+          master = master.replace('**Version:** 0.1.9', '**Version:** 0.2.0', 1)
+          master = master.replace('**Baseline Date:** 10 September 2026', '**Baseline Date:** 11 September 2026', 1)
+
+          old_road = '| v0.1.9 | PAK-C04 6-month Locomotive Maintenance certificate module architecture | **CURRENT** |\n| v0.2 | Complete programme/module and year/semester-wise subject architecture for all programmes | IN PROGRESS |'
+          new_road = '| v0.1.9 | PAK-C04 6-month Locomotive Maintenance certificate module architecture | COMPLETE |\n| v0.2.0 | Certificate architecture batch synchronization — PAK-C05 through PAK-C12; Certificate portfolio complete at 12/12 programmes and 126 module placements | **CURRENT** |\n| v0.2 | Complete programme/module and year/semester-wise subject architecture for all programmes; continue with Bachelor’s-level, PGD and Master’s-level architectures | IN PROGRESS |'
+          assert old_road in master
+          master = master.replace(old_road, new_road, 1)
+
+          old_next = '''## 14. Next Controlled Work Item
+
+          With PAK-D01 through PAK-D05 and PAK-C01 through PAK-C04 now mapped at subject/module level, the next controlled curriculum work item is:
+
+          ### `PAK-C05 — Certificate in Wheelset & Bogie Technology`
+
+          The next revision must define the complete 4-month module/block architecture for PAK-C05, including wheelset construction, wheels/axles/bearings/axleboxes, bogie frames, suspension, running gear, measurement and inspection, common defects, maintenance practice, safety-critical boundaries, traceability and final applied assessment.
+
+          All future curriculum development and textbook production must comply with Section 26 — Global Print-Ready Academic Publishing & Book Production Standard.'''.replace('\n          ', '\n')
+          new_next = '''## 14. Next Controlled Work Item
+
+          PAK-D01 through PAK-D05 and the full Certificate portfolio PAK-C01 through PAK-C12 are now mapped at subject/module level and synchronized into this consolidated master PRD.
+
+          The next controlled portfolio-development work item is:
+
+          ### `PAK-B01 — Bachelor's-Level Railway Engineering`
+
+          The next revision must define the complete 3-year / 6-semester subject architecture for PAK-B01 before any Bachelor's-level textbook prose begins. The formal-degree naming and awarding caveat in Section 11 remains mandatory: curriculum architecture does not itself confer Polish degree-awarding authority or accreditation.
+
+          All future curriculum development and textbook production must comply with Section 26 — Global Print-Ready Academic Publishing & Book Production Standard.'''.replace('\n          ', '\n')
+          assert old_next in master
+          master = master.replace(old_next, new_next, 1)
+
+          old_rev = '| 0.1.9 | 10 Sep 2026 | Added complete 24-week / 12-module architecture for PAK-C04 Locomotive Maintenance with print-publication and technical-visual requirements | Active |'
+          new_rev = '| 0.1.9 | 10 Sep 2026 | Added complete 24-week / 12-module architecture for PAK-C04 Locomotive Maintenance with print-publication and technical-visual requirements | Superseded |\n| 0.2.0 | 11 Sep 2026 | Synchronized approved PAK-C05–C12 modular architectures into the consolidated master; Certificate portfolio architecture complete at 12/12 programmes and 126 module placements | Active |'
+          assert old_rev in master
+          master = master.replace(old_rev, new_rev, 1)
+
+          sections = {'C05':31,'C06':32,'C07':33,'C08':34,'C09':35,'C10':36,'C11':37,'C12':38}
+          appended = []
+          for code, sec in sections.items():
+              f = root / 'certificates' / code / f'PAK-{code}.md'
+              lines = f.read_text(encoding='utf-8').splitlines()
+              title = lines[0].removeprefix('# ').strip()
+              start = lines.index('## Programme Identity')
+              body = lines[start:]
+              h2 = 0
+              out = []
+              for line in body:
+                  if line.startswith('## '):
+                      h2 += 1
+                      line = f'## {sec}.{h2} ' + line[3:]
+                  out.append(line)
+              block = [
+                  '---', '', f'# {sec}. {title}', '',
+                  f'**Synchronization record:** Approved modular architecture synchronized from `docs/academic/certificates/{code}/PAK-{code}.md` into master PRD v0.2.0 on 11 September 2026. Curriculum substance is preserved; the modular file remains the day-to-day working source and this section is the consolidated governance/audit copy.', '',
+                  *out,
+              ]
+              appended.append('\n'.join(block).rstrip())
+
+          checkpoint = '''---
+
+          # 39. Portfolio Architecture Checkpoint v0.2.0
+
+          The controlled Certificate batch synchronization is complete.
+
+          | Portfolio Level | Programmes Completed | Curriculum Placements Defined |
+          |---|---:|---:|
+          | Certificate | **12 of 12** | **126 module placements** |
+          | Diploma | **5 of 5** | **120 semester subject placements** |
+          | Bachelor's-level | 0 of 5 | Pending |
+          | Postgraduate Diploma | 0 of 6 | Pending |
+          | Master's-level | 0 of 6 | Pending |
+
+          ### 39.1 Certificate Batch Synchronization Record
+
+          - PAK-C01 through PAK-C04 remain governed by their previously consolidated master sections.
+          - PAK-C05 through PAK-C12 have now been synchronized from their approved modular files into Sections 31 through 38.
+          - The Certificate portfolio therefore contains **12 approved programme architectures and 126 programme module placements** before any cross-programme reuse/deduplication into shared master modules.
+          - The five Diploma architectures remain complete at **120 semester subject placements**.
+          - Chapter architecture remains **not yet started**.
+          - Full study-material writing remains **not yet started**.
+          - Print production remains **not yet started**.
+
+          ### 39.2 Architecture-Before-Books Gate
+
+          Completion of Certificate programme architecture does **not** authorize full textbook production. Section 26 remains mandatory. No full subject/module book may enter production until its chapter architecture, learning outcomes, practical requirements, technical/regulatory references, assessments, safety flags, publication deliverables and visual plan have been mapped and approved.
+
+          ### 39.3 Next Controlled Portfolio Target
+
+          **`PAK-B01 — Bachelor's-Level Railway Engineering` — 3 Years / 6 Semesters.**
+
+          The next controlled phase is programme/semester subject architecture for PAK-B01. The degree-awarding caveat in Section 11 remains mandatory throughout Bachelor's-level curriculum development and any future marketing/publication activity.'''.replace('\n          ', '\n')
+
+          master = master.rstrip() + '\n\n' + '\n\n'.join(appended) + '\n\n' + checkpoint.rstrip() + '\n'
+          master_path.write_text(master, encoding='utf-8')
+
+          new_raw = master_path.read_bytes()
+          new_sha = hashlib.sha1(f'blob {len(new_raw)}\0'.encode() + new_raw).hexdigest()
+          assert new_sha == '4a9e119ec37b4edab88dee18cb49bb5110bae8be', new_sha
+
+          for code, expected in {'C05':8,'C06':8,'C07':12,'C08':12,'C09':12,'C10':6,'C11':8,'C12':12}.items():
+              import re
+              found = len(set(re.findall(rf'\b{code}-\d{{3}}\b', master)))
+              assert found == expected, (code, found, expected)
+          assert '# 39. Portfolio Architecture Checkpoint v0.2.0' in master
+          print('master sync verified:', new_sha, 'bytes:', len(new_raw), 'lines:', master.count('\n'))
+          PY
+
+          git diff --check -- docs/academic/PAK_ACADEMIC_CURRICULUM_STUDY_MATERIAL_BLUEPRINT_PRD.md
+
+      - name: Commit synchronized master
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/academic/PAK_ACADEMIC_CURRICULUM_STUDY_MATERIAL_BLUEPRINT_PRD.md
+          git commit -m "docs: synchronize certificate architectures into master v0.2.0"
+          git push origin HEAD:docs/certificate-master-sync-v0.2.0
