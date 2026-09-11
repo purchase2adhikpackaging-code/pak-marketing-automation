@@ -1,7 +1,7 @@
 import type { VideoGenerationRequest } from "../types";
 
 export const LTX_TEXT_TO_VIDEO_ENDPOINT = "https://api.ltx.io/v2/text-to-video";
-export const LTX_DEFAULT_MODEL = "ltx-2-5-pro" as const;
+export const LTX_DEFAULT_MODEL = "ltx-2-3-pro" as const;
 export const LTX_DEFAULT_FPS = 24 as const;
 
 export type LtxCameraMotion =
