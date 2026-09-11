@@ -53,18 +53,23 @@ const currentPlan: ScenePlanGeneration = {
   }],
 };
 
+function baseDependencies() {
+  return {
+    getActor: vi.fn().mockResolvedValue({ id: actorId }),
+    authorize: vi.fn().mockResolvedValue(true),
+    loadReplanContext: vi.fn().mockResolvedValue({ context, currentPlan }),
+    generatePlan: vi.fn().mockResolvedValue({ plan: structuredClone(currentPlan), provider: "openai", model: "gpt-5.6-terra" }),
+    validateBoundary: vi.fn(),
+    persistPlan: vi.fn().mockResolvedValue({ id: nextPlanVersionId }),
+    runAndPersistQc: vi.fn().mockResolvedValue({ blockerCount: 0, warningCount: 1 }),
+  };
+}
+
 describe("executeGranularReplanAction", () => {
   it("loads persisted context, requests the exact scope, validates the boundary, persists a new version, and reruns QC", async () => {
     const nextPlan = structuredClone(currentPlan);
     nextPlan.scenes[0]!.shots[1]!.creativeDirection = "Replanned target";
-    const dependencies = {
-      getActor: vi.fn().mockResolvedValue({ id: actorId }),
-      loadReplanContext: vi.fn().mockResolvedValue({ context, currentPlan }),
-      generatePlan: vi.fn().mockResolvedValue({ plan: nextPlan, provider: "openai", model: "gpt-5.6-terra" }),
-      validateBoundary: vi.fn(),
-      persistPlan: vi.fn().mockResolvedValue({ id: nextPlanVersionId }),
-      runAndPersistQc: vi.fn().mockResolvedValue({ blockerCount: 0, warningCount: 1 }),
-    };
+    const dependencies = { ...baseDependencies(), generatePlan: vi.fn().mockResolvedValue({ plan: nextPlan, provider: "openai", model: "gpt-5.6-terra" }) };
 
     const result = await executeGranularReplanAction({
       organizationId,
@@ -76,6 +81,7 @@ describe("executeGranularReplanAction", () => {
     }, dependencies);
 
     expect(result).toEqual({ ok: true, planVersionId: nextPlanVersionId, blockerCount: 0, warningCount: 1 });
+    expect(dependencies.authorize).toHaveBeenCalledWith(actorId, organizationId);
     expect(dependencies.loadReplanContext).toHaveBeenCalledWith(organizationId, planVersionId);
     expect(dependencies.generatePlan).toHaveBeenCalledWith(context, currentPlan, {
       scope: "SHOT",
@@ -88,13 +94,17 @@ describe("executeGranularReplanAction", () => {
     expect(dependencies.runAndPersistQc).toHaveBeenCalledWith(nextPlanVersionId, context, nextPlan);
   });
 
+  it("denies unauthorized actors before loading context or consuming provider spend", async () => {
+    const dependencies = { ...baseDependencies(), authorize: vi.fn().mockResolvedValue(false) };
+    const result = await executeGranularReplanAction({ organizationId, planVersionId, scope: "SCENE", targetSceneOrdinal: 1, replaceHumanModifiedShots: false }, dependencies);
+    expect(result).toEqual({ ok: false, error: "You do not have permission to replan Scene Planning content for this organization." });
+    expect(dependencies.loadReplanContext).not.toHaveBeenCalled();
+    expect(dependencies.generatePlan).not.toHaveBeenCalled();
+  });
+
   it("refuses stale source before provider or persistence work", async () => {
     const staleContext = { ...context, source: { ...context.source, integrityHash: "sha256:new" } };
-    const dependencies = {
-      getActor: vi.fn().mockResolvedValue({ id: actorId }),
-      loadReplanContext: vi.fn().mockResolvedValue({ context: staleContext, currentPlan }),
-      generatePlan: vi.fn(), validateBoundary: vi.fn(), persistPlan: vi.fn(), runAndPersistQc: vi.fn(),
-    };
+    const dependencies = { ...baseDependencies(), loadReplanContext: vi.fn().mockResolvedValue({ context: staleContext, currentPlan }) };
     const result = await executeGranularReplanAction({ organizationId, planVersionId, scope: "SCENE", targetSceneOrdinal: 1, replaceHumanModifiedShots: false }, dependencies);
     expect(result).toEqual({ ok: false, error: "The source artifact changed. Refresh Scene Planning before replanning." });
     expect(dependencies.generatePlan).not.toHaveBeenCalled();
@@ -102,13 +112,7 @@ describe("executeGranularReplanAction", () => {
   });
 
   it("maps boundary/provider failures to a safe replan error and does not persist", async () => {
-    const dependencies = {
-      getActor: vi.fn().mockResolvedValue({ id: actorId }),
-      loadReplanContext: vi.fn().mockResolvedValue({ context, currentPlan }),
-      generatePlan: vi.fn().mockResolvedValue({ plan: structuredClone(currentPlan), provider: "openai", model: "gpt-5.6-terra" }),
-      validateBoundary: vi.fn().mockImplementation(() => { throw new Error("provider changed sibling"); }),
-      persistPlan: vi.fn(), runAndPersistQc: vi.fn(),
-    };
+    const dependencies = { ...baseDependencies(), validateBoundary: vi.fn().mockImplementation(() => { throw new Error("provider changed sibling"); }) };
     const result = await executeGranularReplanAction({ organizationId, planVersionId, scope: "SHOT", targetSceneOrdinal: 1, targetShotOrdinal: 2, replaceHumanModifiedShots: false }, dependencies);
     expect(result).toEqual({ ok: false, error: "Granular Scene Planning replan is temporarily unavailable." });
     expect(dependencies.persistPlan).not.toHaveBeenCalled();
