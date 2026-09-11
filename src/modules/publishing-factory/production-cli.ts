@@ -363,7 +363,7 @@ function resultJson(result: CompileBookResult): Record<string, unknown> {
     bookId: result.job.bookId,
     status: result.job.status,
     qaPassed: result.report?.passed ?? false,
-    resumed: result.resumed,
+    resumed: result.resumedChapterIds.length > 0,
     generatedChapterIds: result.generatedChapterIds,
     pdfPath: result.render?.pdfPath ?? null,
     htmlPath: result.render?.htmlPath ?? null,
