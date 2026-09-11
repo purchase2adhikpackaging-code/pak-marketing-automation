@@ -7,11 +7,13 @@
 ## 1. Legend
 
 - **Implemented** — merged behavior exists and is verified at the required automated/runtime level.
-- **Implemented / external acceptance pending** — engineering/infrastructure is released, but a controlled provider/operational acceptance step cannot run until an external prerequisite such as credential/credits exists.
+- **Implemented / external acceptance pending** — engineering/infrastructure is released, but a controlled provider acceptance step awaits an external prerequisite such as credential/credits.
 - **Partial** — real supporting behavior exists but one or more baseline journeys remain open.
 - **Missing** — product workflow is not implemented; a readiness route does not count.
 - **Legacy/Foundation** — retained compatibility/infrastructure exists but is not the current authoritative domain model.
-- **Redesign** — implementation exists but conflicts with the current frozen contract and blocks downstream dependence.
+- **Redesign** — implementation exists but conflicts with the current contract and blocks downstream dependence.
+
+Stable requirement IDs retain their original semantic meaning. New Phase 6–7 behavior uses new IDs rather than reusing historical IDs.
 
 ## 2. Current requirement matrix
 
@@ -25,11 +27,11 @@
 | PRD-ML-001..008 Multilingual artifacts | Content Studio artifacts | content_script_artifacts | unit/E2E/schema assertions | **Implemented** | Maintenance |
 | PRD-SET-002..010 Integration Vault | Settings → Integrations | integration_connections, integration_secrets→Vault, integration_audit_events | Edge/security/RLS/component/live tests | **Implemented for OpenAI + LTX; Meta pending** | Phase 10 for Meta |
 | PRD-JOB-001..005 Durable jobs | Provider/job workflows | jobs | state/idempotency/claim/retry tests + live privilege probes | **Implemented foundation** | Continuous |
-| PRD-VID-001..007 Scene Planning | Scene Planning | video_projects, visual_bibles, scene_plan_versions/scenes/shots/qc | unit/QC/RBAC/RLS/E2E + live probes | **Implemented** | Maintenance |
-| PRD-VID-008..014 Per-shot provider generation | Scene Planning / Settings | jobs, video_generation_attempts, Edge workers, Vault | provider/state/retry/security/media tests + live Edge probes | **Implemented / external paid acceptance pending** | Operational acceptance when LTX credential/credits exist |
-| PRD-VID-015..017 Final assembly | Scene Planning / Media | future final-assembly job + final media asset | readiness/assembly/E2E | **Missing** | Phase 8 |
-| PRD-MEDIA-001..006 Media | Media Library / Scene Planning | media_assets, Storage, generating_job lineage | schema/RLS/import tests | **Partial** — generated video import implemented; operator library missing | Phase 8 |
-| PRD-DASH-001..004 Dashboard | Dashboard | aggregate current workflow state | UI/E2E | **Partial** | After Phases 8–12 provide complete signals |
+| PRD-VID-001..004 + PRD-VID-008..011 Scene Planning | Scene Planning | video_projects, visual_bibles, scene_plan_versions/scenes/shots/qc | unit/QC/RBAC/RLS/E2E + live probes | **Implemented** | Maintenance |
+| PRD-VID-006..007 + PRD-VID-012..018 Per-shot provider generation | Scene Planning / Settings | jobs, video_generation_attempts, Edge workers, Vault, media_assets | provider/state/retry/security/media tests + live Edge probes | **Implemented / external paid acceptance pending** | Operational acceptance when LTX credential/credits exist |
+| PRD-VID-005 + PRD-VID-019 Final assembly/readiness | Scene Planning / Media | future final-assembly job + final media asset | readiness/assembly/E2E | **Missing** | Phase 8 |
+| PRD-MEDIA-001..006 Media | Media Library / Scene Planning | media_assets, Storage, generating_job lineage | schema/RLS/import tests | **Partial** — generated-video import implemented; operator library missing | Phase 8 |
+| PRD-DASH-001..004 Dashboard | Dashboard | aggregate workflow state | UI/E2E | **Partial** | After Phases 8–12 provide complete signals |
 | PRD-APR-001..005 Generic Approval | Approval Center | approval_requests, approval_events | workflow/E2E/RLS | **Missing**; Scene Plan has domain approval only | Phase 9 |
 | PRD-PUB-001..006 Publishing | Publishing | integration targets/attempts/jobs | fake provider + idempotency + live smoke | **Missing** | Phase 10 |
 | PRD-CAL-001..003 Calendar | Content Calendar | publication scheduling state | E2E/timezone tests | **Missing** | Phase 11 |
@@ -40,7 +42,7 @@
 | PRD-TST-001..003 Testimonials | Student Testimonials | future testimonial/consent/media domain | consent/RLS/privacy tests | **Missing** | Phase 16 |
 | PRD-MAN-001..003 Manual authoring | Manual Generation | shared content/artifact model | editor/revision tests | **Partial/Foundation only** | Phase 17 |
 | PRD-SET-001 Full Settings | Settings | organization/membership/config + integrations | E2E/RLS | **Partial** — Integrations implemented; Organization/Members/Operational config incomplete | Future settings slices |
-| TRD-DEP Hosted app | Entire app | Next.js host + PAK Supabase | build/deployment/runtime verification | **Partial operationally** — app build green; Vercel quota may independently block deployment | Infrastructure/operations |
+| TRD-DEP Hosted app | Entire app | Next.js host + PAK Supabase | build/deployment/runtime verification | **Partial operationally** — app build green; external host quota may independently block deployment | Infrastructure/operations |
 | TRD-TEST-001..006 Release gates | CI/release | GitHub Actions + live Supabase probes | exact-head CI + runtime checks | **Implemented process** | Continuous |
 
 ## 3. Implemented foundation traceability
@@ -103,7 +105,7 @@ Implementation areas:
 
 Verified boundaries:
 - browser submits source IDs rather than trusted Knowledge content;
-- same-org ACTIVE Knowledge reloaded server-side;
+- same-org ACTIVE Knowledge is reloaded server-side;
 - bounded context;
 - immutable source snapshots;
 - EN/PL/HI canonical/translation revision and stale behavior;
@@ -114,7 +116,7 @@ Verified boundaries:
 Requirement families:
 - PRD-GEN-006
 - PRD-SET-002..010
-- UX-SET-001..006
+- UX-SET-001..007
 - TRD-SEC-001..010
 
 Implementation areas:
@@ -134,16 +136,18 @@ Verified boundaries:
 - safe masked metadata only in browser;
 - service-role-only raw secret resolution;
 - immutable audit events;
-- OpenAI configured runtime use;
+- OpenAI runtime credential use;
 - LTX configure/remove/enable/disable/test flow;
-- LTX connection test uses read-only provider request and does not submit a paid generation.
+- LTX connection test does not submit a paid generation.
 
 ### 3.5 Scene Planning
 
 Requirement families:
-- PRD-VID-001..007
-- UX-SCENE-001..009
+- PRD-VID-001..004
+- PRD-VID-008..011
+- UX-SCENE-001..011
 - TRD-SCENE-001..008
+- TRD-VID-002, TRD-VID-006
 
 Implementation areas:
 - `src/app/(app)/scene-planning/*`
@@ -173,9 +177,10 @@ Verified boundaries:
 ### 3.6 Phase 7 video provider generation
 
 Requirement families:
-- PRD-VID-008..014
+- PRD-VID-006..007
+- PRD-VID-012..018
 - UX-VID-001..006
-- TRD-VID-004..012
+- TRD-VID-004, TRD-VID-007..014
 - TRD-JOB-001..007
 - TRD-MEDIA-001..004
 
@@ -201,16 +206,16 @@ Verified boundaries:
 - direct browser INSERT/UPDATE of paid generation jobs blocked;
 - direct browser creation/mutation of attempts blocked;
 - LTX adapter remains behind provider-neutral contract;
-- attempt lineage supports submit/process/import/failure/submission-unknown;
+- attempt lineage covers submit/process/import/failure/submission-unknown;
 - maximum four attempts and 5/15/45 retry eligibility;
 - `SUBMISSION_UNKNOWN` is not blindly retried;
-- generated provider output imported to private `generated-media` object before completion;
+- provider output is imported to private `generated-media` before completion;
 - PAK media identity uses `media_assets`, not provider URL;
-- unattended 10-second dispatcher with leased `SKIP LOCKED` claiming;
+- unattended 10-second dispatcher uses leased `SKIP LOCKED` claiming;
 - internal cron/Edge execution uses Vault-held dispatcher token;
 - unauthorized dispatcher request verified 401;
 - scheduled empty dispatcher requests verified 200;
-- paid provider smoke explicitly deferred because no production org LTX credential/credits are configured.
+- paid provider smoke deferred because no production org LTX credential/credits are configured.
 
 ## 4. Partial / future module traceability
 
@@ -229,6 +234,11 @@ Still required:
 - final assembled video visibility/lineage.
 
 ### Final video assembly — Phase 8
+
+Requirement families:
+- PRD-VID-005, PRD-VID-019
+- TRD-VID-005..006
+- UX-SCENE-003
 
 Still required:
 - final-assembly job;
@@ -301,12 +311,13 @@ Phase 7 does not force `scene_plan_scenes` into this legacy relationship. Curren
 ## 6. Drift-control rules
 
 1. Every feature PR lists requirement IDs implemented or modified.
-2. Requirement changes update PRD/TRD/UX/DB and this matrix before or with implementation.
-3. A UI route without mapped workflow/backend requirements is not a completed feature.
-4. A backend table without an owning product workflow is speculative and should not be added.
-5. Security-sensitive features require positive and negative traceability: who may act and who must be denied.
-6. Paid-provider workflows require explicit spend-boundary traceability and duplicate-spend/idempotency tests.
-7. Items marked `Redesign` block downstream dependence until reconciled.
-8. Legacy/Foundation entities are not extended by new features without a documented compatibility reason.
-9. Exact-head CI evidence is required for merge claims.
-10. Live provider smoke must never be fabricated when credentials/credits are absent; deferred operational acceptance is recorded explicitly.
+2. Existing requirement IDs retain their original semantic meaning; new behavior receives new IDs.
+3. Requirement changes update PRD/TRD/UX/DB and this matrix before or with implementation.
+4. A UI route without mapped workflow/backend requirements is not a completed feature.
+5. A backend table without an owning product workflow is speculative and should not be added.
+6. Security-sensitive features require positive and negative traceability: who may act and who must be denied.
+7. Paid-provider workflows require explicit spend-boundary traceability and duplicate-spend/idempotency tests.
+8. Items marked `Redesign` block downstream dependence until reconciled.
+9. Legacy/Foundation entities are not extended by new features without a documented compatibility reason.
+10. Exact-head CI evidence is required for merge claims.
+11. Live provider smoke must never be fabricated when credentials/credits are absent; deferred operational acceptance is recorded explicitly.
