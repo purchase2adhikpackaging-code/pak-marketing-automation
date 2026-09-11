@@ -83,6 +83,13 @@ export function assertGranularReplanBoundary(
       if (!currentTargetShot || !nextTargetShot) {
         conflict("Shot replan structure changed or the target shot is missing.");
       }
+      if (
+        boundary.preserveHumanModifiedShots &&
+        currentTargetShot.humanModified &&
+        !equal(currentTargetShot, nextTargetShot)
+      ) {
+        conflict("Shot replan attempted to overwrite a human-modified target shot.");
+      }
 
       for (const currentShot of currentScene.shots) {
         if (currentShot.ordinal === boundary.targetShotOrdinal) continue;
