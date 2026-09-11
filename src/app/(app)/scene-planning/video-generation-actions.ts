@@ -59,7 +59,16 @@ export type VideoGenerationActionDependencies = {
 function normalizeEdgeResult(value: unknown): SafeVideoGenerationActionResult {
   const parsed = safeEdgeResultSchema.safeParse(value);
   if (!parsed.success) return { ok: false, error: "Video generation returned an invalid response." };
-  return { ok: true, ...parsed.data };
+  const data = parsed.data;
+  return {
+    ok: true,
+    state: data.state,
+    jobId: data.jobId,
+    attemptId: data.attemptId,
+    ...(data.mediaAssetId !== undefined ? { mediaAssetId: data.mediaAssetId } : {}),
+    ...(data.errorCode !== undefined ? { errorCode: data.errorCode } : {}),
+    ...(data.retryable !== undefined ? { retryable: data.retryable } : {}),
+  };
 }
 
 async function authorizeEditor(
