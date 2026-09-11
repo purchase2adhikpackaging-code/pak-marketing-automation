@@ -1,0 +1,73 @@
+[
+  {
+    "id": "eu-dir-2016-797",
+    "title": "Directive (EU) 2016/797 on the interoperability of the rail system within the European Union",
+    "publisher": "European Union",
+    "authority": "eu-law",
+    "url": "https://eur-lex.europa.eu/eli/dir/2016/797/",
+    "documentId": "Directive (EU) 2016/797",
+    "editionOrVersion": "Consolidated text available on EUR-Lex",
+    "effectiveOrPublishedDate": "2016-05-26",
+    "accessedDate": "2026-09-11",
+    "scopeNote": "Primary EU legal framework for railway interoperability; use the current EUR-Lex consolidated text when publication requires current legal interpretation."
+  },
+  {
+    "id": "eu-dir-2016-798",
+    "title": "Directive (EU) 2016/798 on railway safety",
+    "publisher": "European Union",
+    "authority": "eu-law",
+    "url": "https://eur-lex.europa.eu/eli/dir/2016/798/oj/eng",
+    "documentId": "Directive (EU) 2016/798",
+    "effectiveOrPublishedDate": "2016-05-26",
+    "accessedDate": "2026-09-11",
+    "scopeNote": "Primary EU railway-safety framework; legal applicability and national implementation must be checked for operational use."
+  },
+  {
+    "id": "eu-reg-2019-779",
+    "title": "Commission Implementing Regulation (EU) 2019/779 on certification of entities in charge of maintenance",
+    "publisher": "European Union",
+    "authority": "eu-law",
+    "url": "https://eur-lex.europa.eu/eli/reg_impl/2019/779/oj/eng",
+    "documentId": "Commission Implementing Regulation (EU) 2019/779",
+    "effectiveOrPublishedDate": "2019-05-27",
+    "accessedDate": "2026-09-11",
+    "scopeNote": "EU framework for ECM certification; educational material must not substitute for current legal text or entity procedures."
+  },
+  {
+    "id": "era-tsi-portal",
+    "title": "Technical Specifications for Interoperability",
+    "publisher": "European Union Agency for Railways",
+    "authority": "era",
+    "url": "https://www.era.europa.eu/domains/technical-specifications-interoperability_en",
+    "accessedDate": "2026-09-11",
+    "scopeNote": "ERA navigation and explanatory portal for current TSI domains; individual subsystem pages and current EU legal acts govern detailed applicability."
+  },
+  {
+    "id": "era-inf-tsi",
+    "title": "Infrastructure TSI",
+    "publisher": "European Union Agency for Railways",
+    "authority": "era",
+    "url": "https://www.era.europa.eu/domains/technical-specifications-interoperability/infrastructure-tsi_en",
+    "accessedDate": "2026-09-11",
+    "scopeNote": "ERA infrastructure-TSI overview and links to governing legal text/guidance; do not convert TSI requirements into workshop instructions."
+  },
+  {
+    "id": "era-ecm-guidance",
+    "title": "ECM Guidance",
+    "publisher": "European Union Agency for Railways",
+    "authority": "era",
+    "url": "https://www.era.europa.eu/content/discover-latest-version-ecm-guidance",
+    "editionOrVersion": "Latest version landing page",
+    "accessedDate": "2026-09-11",
+    "scopeNote": "ERA educational/guidance material supporting interpretation of ECM requirements; governing legislation remains authoritative."
+  },
+  {
+    "id": "era-ertms-portal",
+    "title": "European Rail Traffic Management System (ERTMS)",
+    "publisher": "European Union Agency for Railways",
+    "authority": "era",
+    "url": "https://www.era.europa.eu/domains/european-rail-traffic-management-system-ertms_en",
+    "accessedDate": "2026-09-11",
+    "scopeNote": "ERA system-level ERTMS information for educational grounding; detailed signalling design and operating rules require applicable controlled sources."
+  }
+]
