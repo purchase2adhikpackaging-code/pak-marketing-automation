@@ -47,6 +47,15 @@ describe("approved-shot video generation enqueue SQL", () => {
     expect(sql).toContain("reused");
   });
 
+  it("returns the latest retry attempt when an idempotent generation job already exists", () => {
+    const existingJobBranch = sql.slice(
+      sql.indexOf("if v_existing_job_id is not null then"),
+      sql.indexOf("insert into public.jobs ("),
+    );
+    expect(existingJobBranch).toContain("order by a.attempt_number desc");
+    expect(existingJobBranch).toContain("limit 1");
+  });
+
   it("does not accept caller-supplied prompt or provider credentials", () => {
     const signature = sql.slice(
       sql.indexOf("create or replace function public.enqueue_video_shot_generation("),
