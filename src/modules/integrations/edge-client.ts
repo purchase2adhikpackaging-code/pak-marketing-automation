@@ -12,7 +12,7 @@ export type EdgeInvokeDependencies = {
 };
 
 export type VideoGenerationEdgeRequest = {
-  operation: "submit" | "reconcile";
+  operation: "submit" | "reconcile" | "retry";
   organizationId: string;
   jobId: string;
   attemptId: string;
