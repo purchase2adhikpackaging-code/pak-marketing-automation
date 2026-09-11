@@ -3,16 +3,33 @@ import type { ProductionJob } from "@/modules/publishing-production/domain";
 import { runNodePublishingWorker } from "@/modules/publishing-production/node-worker";
 
 function job(id: string): ProductionJob {
+  const bookJobPayload = {
+    bookId: `BOOK-${id}`,
+    programmeCode: "PAK-D01",
+    programmeTitle: "Diploma in Railway Rolling Stock Engineering & Maintenance",
+    level: "diploma" as const,
+    academicPeriod: "S1",
+    subjectCode: "D01-102",
+    subjectTitle: "Applied Engineering Mathematics & Physics for Railways",
+    publicationType: "textbook" as const,
+    edition: "2026",
+    revision: "0.1.0",
+    curriculumSourcePaths: ["docs/academic/diplomas/D01/S1.md"],
+    status: "PLANNED" as const,
+    repairAttempts: {},
+  };
   return {
     id,
     organizationId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
     productionRunId: "11111111-1111-4111-8111-111111111111",
-    bookId: `BOOK-${id}`,
+    bookId: bookJobPayload.bookId,
     programmeCode: "PAK-D01",
     subjectCode: "D01-102",
     academicPeriod: "S1",
     edition: "2026",
     revision: "0.1.0",
+    bookJobPayload,
+    curriculumText: "D01-102 governed curriculum text",
     status: "RUNNING",
     claimCount: 1,
     failureAttempts: 0,
