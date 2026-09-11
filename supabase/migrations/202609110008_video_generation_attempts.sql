@@ -154,33 +154,6 @@ for select
 to authenticated
 using (public.is_org_member(organization_id));
 
-create policy video_generation_attempts_insert_editor
-on public.video_generation_attempts
-for insert
-to authenticated
-with check (
-  public.has_org_role(organization_id, array['OWNER','ADMIN','EDITOR'])
-  and (created_by is null or created_by = (select auth.uid()))
-  and exists (
-    select 1
-    from public.jobs j
-    where j.id = video_generation_attempts.job_id
-      and j.organization_id = video_generation_attempts.organization_id
-  )
-  and exists (
-    select 1
-    from public.scene_plan_versions v
-    join public.scene_plan_scenes s on s.scene_plan_version_id = v.id
-    join public.scene_plan_shots sh on sh.scene_id = s.id
-    where v.id = video_generation_attempts.plan_version_id
-      and s.id = video_generation_attempts.scene_id
-      and sh.id = video_generation_attempts.shot_id
-      and v.organization_id = video_generation_attempts.organization_id
-      and s.organization_id = video_generation_attempts.organization_id
-      and sh.organization_id = video_generation_attempts.organization_id
-      and v.status = 'APPROVED'
-  )
-);
-
--- No authenticated UPDATE/DELETE policies are created. Provider execution state is
--- reconciled only by the trusted Edge execution boundary. Members can read lineage.
+-- Authenticated browser roles cannot create or mutate paid-provider attempts directly.
+-- Creation occurs only through the validated enqueue RPC; provider state transitions and
+-- retries occur only through the trusted service-role Edge execution boundary.
