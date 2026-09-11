@@ -63,6 +63,18 @@ jobs:
         continue-on-error: true
         run: npx vitest run tests/vitest/publishing-factory/worker-queue.test.ts
 
+      - name: Unit tests diagnostic report
+        continue-on-error: true
+        run: npx vitest run --reporter=json --outputFile=vitest-report.json
+
+      - name: Upload unit test diagnostic report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitest-report-${{ github.sha }}
+          path: vitest-report.json
+          if-no-files-found: error
+
       - name: Unit tests
         run: npm run test:run
 
