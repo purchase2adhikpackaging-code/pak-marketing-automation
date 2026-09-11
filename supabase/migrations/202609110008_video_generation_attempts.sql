@@ -70,7 +70,6 @@ as $$
 declare
   v_plan_org uuid;
   v_plan_status text;
-  v_job_org uuid;
   v_media_org uuid;
 begin
   if tg_op = 'UPDATE' and (
@@ -116,11 +115,12 @@ begin
     raise exception 'video generation shot lineage mismatch';
   end if;
 
-  select j.organization_id into v_job_org
+  if not exists (
+    select 1
     from public.jobs j
-    where j.id = new.job_id;
-
-  if v_job_org is null or v_job_org <> new.organization_id then
+    where j.id = new.job_id
+      and j.organization_id = new.organization_id
+  ) then
     raise exception 'video generation job organization mismatch';
   end if;
 
