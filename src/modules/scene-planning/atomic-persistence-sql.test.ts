@@ -30,7 +30,9 @@ describe("Scene Planning atomic persistence SQL", () => {
   it("lets REVIEWER approve only through a constrained REVIEW_REQUIRED -> APPROVED update", () => {
     expect(sql).toContain("array['OWNER','ADMIN','EDITOR','REVIEWER']");
     expect(sql).toContain("reviewers may only approve review-ready scene plans");
-    expect(sql).toContain("new.approved_by = auth.uid()");
+    expect(sql).toContain("new.approved_by <> auth.uid()");
+    expect(sql).toContain("old.status <> 'REVIEW_REQUIRED'");
+    expect(sql).toContain("new.status <> 'APPROVED'");
   });
 
   it("does not grant any provider execution capability", () => {
