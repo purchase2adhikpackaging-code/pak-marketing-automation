@@ -1,5 +1,6 @@
-import { ModulePage } from "@/components/app-shell/module-page";
+import { B3_MODULE_READINESS } from "@/components/app-shell/module-readiness";
+import { ModuleReadinessPage } from "@/components/app-shell/module-readiness-page";
 
 export default function ApprovalCenterPage() {
-  return <ModulePage title="Approval Center" description="Review scripts, translations, scenes, renders, and publishing copy with auditable decisions." />;
+  return <ModuleReadinessPage config={B3_MODULE_READINESS["/approval-center"]} />;
 }

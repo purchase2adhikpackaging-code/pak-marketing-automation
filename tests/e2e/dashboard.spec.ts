@@ -4,7 +4,7 @@ test("Dashboard renders a truthful safe state when CI has no synthetic organizat
   await page.goto("/dashboard");
 
   await expect(page.getByRole("heading", { name: "Dashboard" })).toBeVisible();
-  await expect(page.getByRole("alert")).toContainText("No organization workspace is available for this account.");
+  await expect(page.getByText("No organization workspace is available for this account.", { exact: true })).toBeVisible();
   await expect(page.getByRole("region", { name: "Implemented workflow health" })).toHaveCount(0);
 });
 
