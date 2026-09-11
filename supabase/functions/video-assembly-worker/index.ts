@@ -339,14 +339,14 @@ Deno.serve(async (req: Request) => {
     const { data: uploadData, error: uploadError } = await admin.storage
       .from(GENERATED_MEDIA_BUCKET)
       .createSignedUploadUrl(outputPath, { upsert: true });
-    if (uploadError || !uploadData?.signedUrl) {
+    if (uploadError || !uploadData?.signedUrl || !uploadData.token) {
       await admin.rpc("fail_video_assembly_work", {
         _worker_id: body.workerId,
         _organization_id: claim.organization_id,
         _job_id: claim.job_id,
         _assembly_id: claim.assembly_id,
         _error_code: "OUTPUT_SIGNING_FAILED",
-        _error_message: "The private final-output upload URL could not be issued.",
+        _error_message: "The private final-output upload credential could not be issued.",
         _retryable: true,
       });
       return json(503, { error: "OUTPUT_SIGNING_FAILED" });
@@ -364,6 +364,7 @@ Deno.serve(async (req: Request) => {
         expiresAt,
         output: {
           signedUploadUrl: uploadData.signedUrl,
+          uploadToken: uploadData.token,
           ...(existingSignedDownloadUrl ? { existingSignedDownloadUrl } : {}),
           bucket: GENERATED_MEDIA_BUCKET,
           path: outputPath,
