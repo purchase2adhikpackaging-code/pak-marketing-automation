@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { AppRole } from "@/modules/auth/roles";
+import type { BookJob } from "@/modules/publishing-factory/domain";
 import {
   ProductionJobSchema,
   ProductionRunSchema,
@@ -17,6 +18,7 @@ type PublicationRow = Record<string, unknown>;
 
 export interface PublishingProductionTransport {
   insertRun(payload: Record<string, unknown>): Promise<RunRow>;
+  insertJobs(payloads: Record<string, unknown>[]): Promise<JobRow[]>;
   listRuns(organizationId: string): Promise<RunRow[]>;
   getRun(organizationId: string, runId: string): Promise<RunRow | null>;
   rpc(name: string, args: Record<string, unknown>): Promise<unknown>;
@@ -98,6 +100,7 @@ export class PublishingProductionRepository {
       scope_value: scope,
       requested_concurrency: input.requestedConcurrency,
       planned_count: input.plannedCount,
+      queued_count: input.plannedCount,
       idempotency_key: idempotencyKey({
         organizationId: input.organizationId,
         scope,
@@ -105,6 +108,31 @@ export class PublishingProductionRepository {
       }),
     });
     return parseRun(row);
+  }
+
+  async enqueueJobs(input: {
+    organizationId: string;
+    productionRunId: string;
+    jobs: Array<{ job: BookJob; curriculumText: string }>;
+  }): Promise<ProductionJob[]> {
+    if (input.jobs.length === 0) return [];
+    const payloads = input.jobs.map(({ job, curriculumText }) => {
+      if (!curriculumText.trim()) throw new Error(`Curriculum text is required for ${job.bookId}.`);
+      return {
+        organization_id: input.organizationId,
+        production_run_id: input.productionRunId,
+        book_id: job.bookId,
+        programme_code: job.programmeCode,
+        subject_code: job.subjectCode,
+        academic_period: job.academicPeriod,
+        edition: job.edition,
+        revision: job.revision,
+        book_job_payload: job,
+        curriculum_text: curriculumText,
+        status: "QUEUED",
+      };
+    });
+    return (await this.transport.insertJobs(payloads)).map(parseJob);
   }
 
   async listRuns(organizationId: string): Promise<ProductionRun[]> {
