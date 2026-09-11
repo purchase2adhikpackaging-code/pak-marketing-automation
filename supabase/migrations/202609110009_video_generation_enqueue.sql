@@ -204,7 +204,7 @@ begin
       'generateAudio', false,
       'profile', _profile,
       'provider', 'LTX',
-      'providerModel', 'ltx-2-5-pro'
+      'providerModel', 'ltx-2-3-pro'
     ),
     v_idempotency_key
   )
@@ -232,7 +232,7 @@ begin
     _shot_id,
     1,
     'LTX',
-    'ltx-2-5-pro',
+    'ltx-2-3-pro',
     'QUEUED',
     v_duration_seconds,
     false,
