@@ -18,6 +18,7 @@ const sourceArtifact: ScenePlanningSourceArtifact = {
 
 function repository(overrides: Partial<ScenePlanningRepository> = {}): ScenePlanningRepository {
   return {
+    getActorRole: vi.fn().mockResolvedValue("OWNER"),
     loadSourceArtifact: vi.fn().mockResolvedValue(sourceArtifact),
     createProject: vi.fn().mockImplementation(async (input) => ({ id: "project-1", ...input })),
     getNextVersionNumber: vi.fn().mockResolvedValue(2),
@@ -40,6 +41,41 @@ function service(repo: ScenePlanningRepository = repository()) {
 }
 
 describe("ScenePlanningService", () => {
+  it("enforces existing edit and approval role boundaries", async () => {
+    const analystRepo = repository({ getActorRole: vi.fn().mockResolvedValue("ANALYST") });
+    await expect(
+      service(analystRepo).createProject({
+        organizationId: sourceArtifact.organizationId,
+        actorUserId: "44444444-4444-4444-8444-444444444444",
+        sourceArtifactId: sourceArtifact.id,
+        title: "PAK credibility film",
+        targetDurationSeconds: 55,
+        aspectRatio: "16:9",
+        qualityProfile: "CINEMATIC",
+        targetPlatforms: ["youtube"],
+      }),
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+
+    const reviewerRepo = repository({
+      getActorRole: vi.fn().mockResolvedValue("REVIEWER"),
+      loadPlanVersion: vi.fn().mockResolvedValue({
+        id: "plan-v3",
+        organizationId: sourceArtifact.organizationId,
+        videoProjectId: "project-1",
+        versionNumber: 3,
+        status: "REVIEW_REQUIRED",
+        sourceIntegrityHash: "hash-current-123456",
+      }),
+    });
+    await expect(
+      service(reviewerRepo).approvePlan({
+        organizationId: sourceArtifact.organizationId,
+        actorUserId: "44444444-4444-4444-8444-444444444444",
+        planVersionId: "plan-v3",
+      }),
+    ).resolves.toBeDefined();
+  });
+
   it("rejects cross-tenant source artifacts before project creation", async () => {
     const repo = repository();
     await expect(
@@ -206,7 +242,7 @@ describe("ScenePlanningService", () => {
     ).rejects.toMatchObject({ code: "CONFLICT" });
   });
 
-  it("refuses to clone an approved plan by mutation and delegates copy-on-write cloning", async () => {
+  it("delegates approved edits to copy-on-write cloning", async () => {
     const current = {
       id: "plan-v3",
       organizationId: sourceArtifact.organizationId,
