@@ -59,6 +59,7 @@ describe("LTX adapter capabilities", () => {
       resolution: "1920x1080",
       fps: 24,
       generate_audio: false,
+      camera_motion: "dolly_in",
     });
   });
 
