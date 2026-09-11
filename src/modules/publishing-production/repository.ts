@@ -138,6 +138,20 @@ export class PublishingProductionRepository {
     })) as JobRow);
   }
 
+  async yieldJob(input: {
+    jobId: string;
+    workerId: string;
+    checkpointRoot: string;
+    currentStage: string;
+  }): Promise<ProductionJob> {
+    return parseJob((await this.transport.rpc("yield_publishing_job", {
+      p_job_id: input.jobId,
+      p_worker_id: input.workerId,
+      p_checkpoint_root: input.checkpointRoot,
+      p_current_stage: input.currentStage,
+    })) as JobRow);
+  }
+
   async completeJob(input: {
     jobId: string;
     workerId: string;
