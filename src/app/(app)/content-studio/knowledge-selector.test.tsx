@@ -18,27 +18,17 @@ function knowledge(index: number): SelectableKnowledgeRecord {
 describe("KnowledgeSelector", () => {
   it("toggles approved source IDs and shows selected count", () => {
     const onChange = vi.fn();
-    render(
-      <KnowledgeSelector
-        records={[knowledge(1), knowledge(2)]}
-        selectedIds={[]}
-        onChange={onChange}
-      />,
-    );
+    render(<KnowledgeSelector records={[knowledge(1), knowledge(2)]} selectedIds={[]} onChange={onChange} />);
 
     expect(screen.getByText("0 of 20 selected")).toBeTruthy();
     fireEvent.click(screen.getByRole("checkbox", { name: "Approved knowledge 1" }));
-
     expect(onChange).toHaveBeenCalledWith([knowledge(1).id]);
   });
 
   it("removes an already selected source", () => {
     const onChange = vi.fn();
     const first = knowledge(1);
-    render(
-      <KnowledgeSelector records={[first, knowledge(2)]} selectedIds={[first.id]} onChange={onChange} />,
-    );
-
+    render(<KnowledgeSelector records={[first, knowledge(2)]} selectedIds={[first.id]} onChange={onChange} />);
     fireEvent.click(screen.getByRole("checkbox", { name: first.title }));
     expect(onChange).toHaveBeenCalledWith([]);
   });
@@ -49,9 +39,7 @@ describe("KnowledgeSelector", () => {
     render(<KnowledgeSelector records={records} selectedIds={selectedIds} onChange={vi.fn()} />);
 
     expect(screen.getByText("20 of 20 selected")).toBeTruthy();
-    expect(
-      (screen.getByRole("checkbox", { name: records[20]!.title }) as HTMLInputElement).disabled,
-    ).toBe(true);
+    expect((screen.getByRole("checkbox", { name: records[20]!.title }) as HTMLInputElement).disabled).toBe(true);
     expect((screen.getByRole("checkbox", { name: records[0]!.title }) as HTMLInputElement).disabled).toBe(false);
   });
 
@@ -65,9 +53,10 @@ describe("KnowledgeSelector", () => {
     expect(document.body.textContent).not.toContain("full knowledge record content");
   });
 
-  it("renders an explicit empty state", () => {
+  it("renders an explicit empty state with a real Knowledge Base recovery link", () => {
     render(<KnowledgeSelector records={[]} selectedIds={[]} onChange={vi.fn()} />);
 
     expect(screen.getByText("No ACTIVE Knowledge Base records are available for this organization.")).toBeTruthy();
+    expect(screen.getByRole("link", { name: /Open Knowledge Base/i }).getAttribute("href")).toBe("/knowledge-base");
   });
 });

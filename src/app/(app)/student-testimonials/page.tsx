@@ -1,5 +1,6 @@
-import { ModulePage } from "@/components/app-shell/module-page";
+import { B3_MODULE_READINESS } from "@/components/app-shell/module-readiness";
+import { ModuleReadinessPage } from "@/components/app-shell/module-readiness-page";
 
 export default function StudentTestimonialsPage() {
-  return <ModulePage title="Student Testimonials" description="Manage testimonial source material, approvals, generation, and reusable testimonial media." />;
+  return <ModuleReadinessPage config={B3_MODULE_READINESS["/student-testimonials"]} />;
 }

@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { B3_MODULE_READINESS } from "./module-readiness";
 import { APP_NAVIGATION } from "./navigation";
 
 const routeToPage = (href: string) =>
@@ -17,6 +18,16 @@ describe("application navigation integrity", () => {
   it("maps every primary navigation item to an existing App Router page", () => {
     for (const item of APP_NAVIGATION) {
       expect(existsSync(routeToPage(item.href)), `${item.href} is missing page.tsx`).toBe(true);
+    }
+  });
+
+  it("maps every B3 related workflow link to an implemented App Router page", () => {
+    for (const config of Object.values(B3_MODULE_READINESS)) {
+      for (const link of config.relatedLinks) {
+        expect(link.href).toMatch(/^\/[a-z0-9-]+$/);
+        expect(link.href).not.toBe("#");
+        expect(existsSync(routeToPage(link.href)), `${config.route} -> ${link.href} is missing page.tsx`).toBe(true);
+      }
     }
   });
 });

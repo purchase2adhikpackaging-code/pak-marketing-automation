@@ -1,5 +1,6 @@
-import { ModulePage } from "@/components/app-shell/module-page";
+import { B3_MODULE_READINESS } from "@/components/app-shell/module-readiness";
+import { ModuleReadinessPage } from "@/components/app-shell/module-readiness-page";
 
 export default function ContentCalendarPage() {
-  return <ModulePage title="Content Calendar" description="Coordinate planned content, recurring schedules, approvals, and downstream publishing timing." />;
+  return <ModuleReadinessPage config={B3_MODULE_READINESS["/content-calendar"]} />;
 }

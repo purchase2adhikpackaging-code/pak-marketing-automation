@@ -1,5 +1,6 @@
-import { ModulePage } from "@/components/app-shell/module-page";
+import { B3_MODULE_READINESS } from "@/components/app-shell/module-readiness";
+import { ModuleReadinessPage } from "@/components/app-shell/module-readiness-page";
 
 export default function PodcastPage() {
-  return <ModulePage title="Podcast" description="Plan, generate, review, and schedule podcast-oriented content and media assets." />;
+  return <ModuleReadinessPage config={B3_MODULE_READINESS["/podcast"]} />;
 }

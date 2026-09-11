@@ -15,3 +15,15 @@ test("Knowledge Base renders its authorized management or read surface without l
   await expect(page.getByText("No Knowledge Base organization is available for this account.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Create draft" })).toHaveCount(0);
 });
+
+test("Knowledge Base has no horizontal workflow dependency at 390x844", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/knowledge-base");
+
+  const widths = await page.evaluate(() => ({
+    viewport: document.documentElement.clientWidth,
+    content: document.documentElement.scrollWidth,
+  }));
+
+  expect(widths.content).toBeLessThanOrEqual(widths.viewport);
+});

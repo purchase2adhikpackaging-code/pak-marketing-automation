@@ -1,5 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const E2E_AUTH_BYPASS_HEADER = "x-pak-e2e-auth-bypass";
+
 export default defineConfig({
   testDir: "./tests/e2e",
   use: {
@@ -9,6 +11,17 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
+      testIgnore: /auth-boundary\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        extraHTTPHeaders: {
+          [E2E_AUTH_BYPASS_HEADER]: "allow",
+        },
+      },
+    },
+    {
+      name: "chromium-unauthenticated",
+      testMatch: /auth-boundary\.spec\.ts/,
       use: { ...devices["Desktop Chrome"] },
     },
   ],

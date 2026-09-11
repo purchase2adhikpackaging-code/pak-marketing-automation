@@ -29,8 +29,8 @@ test("approved navigation routes render their module shells", async ({ page }) =
 test("marks the current primary navigation destination", async ({ page }) => {
   await page.goto("/content-studio");
 
-  await expect(page.getByRole("link", { name: "Content Studio" })).toHaveAttribute("aria-current", "page");
-  await expect(page.getByRole("link", { name: "Settings" })).not.toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("link", { name: "Content Studio", exact: true })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("link", { name: "Settings", exact: true })).not.toHaveAttribute("aria-current", "page");
 });
 
 test("uses a compact disclosure menu on mobile", async ({ page }) => {
@@ -40,13 +40,13 @@ test("uses a compact disclosure menu on mobile", async ({ page }) => {
   const toggle = page.getByRole("button", { name: "Open navigation" });
   await expect(toggle).toBeVisible();
   await expect(toggle).toHaveAttribute("aria-expanded", "false");
-  await expect(page.getByRole("link", { name: "Settings" })).not.toBeVisible();
+  await expect(page.getByRole("link", { name: "Settings", exact: true })).not.toBeVisible();
 
   await toggle.click();
   await expect(page.getByRole("button", { name: "Close navigation" })).toHaveAttribute("aria-expanded", "true");
-  await expect(page.getByRole("link", { name: "Settings" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Settings", exact: true })).toBeVisible();
 
-  await page.getByRole("link", { name: "Settings" }).click();
+  await page.getByRole("link", { name: "Settings", exact: true }).click();
   await expect(page).toHaveURL(/\/settings$/);
   await expect(page.getByRole("button", { name: "Open navigation" })).toHaveAttribute("aria-expanded", "false");
 });

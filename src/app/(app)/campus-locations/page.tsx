@@ -1,5 +1,6 @@
-import { ModulePage } from "@/components/app-shell/module-page";
+import { B3_MODULE_READINESS } from "@/components/app-shell/module-readiness";
+import { ModuleReadinessPage } from "@/components/app-shell/module-readiness-page";
 
 export default function CampusLocationsPage() {
-  return <ModulePage title="Campus / Locations" description="Manage approved PAK campus and location identities used across knowledge and visual continuity workflows." />;
+  return <ModuleReadinessPage config={B3_MODULE_READINESS["/campus-locations"]} />;
 }

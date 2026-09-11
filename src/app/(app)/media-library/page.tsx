@@ -1,5 +1,6 @@
-import { ModulePage } from "@/components/app-shell/module-page";
+import { B3_MODULE_READINESS } from "@/components/app-shell/module-readiness";
+import { ModuleReadinessPage } from "@/components/app-shell/module-readiness-page";
 
 export default function MediaLibraryPage() {
-  return <ModulePage title="Media Library" description="Catalog reusable and generated media assets with tenant-safe storage references and provenance." />;
+  return <ModuleReadinessPage config={B3_MODULE_READINESS["/media-library"]} />;
 }
