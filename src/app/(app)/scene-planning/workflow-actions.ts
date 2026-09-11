@@ -11,6 +11,7 @@ import { ScenePlanningService } from "@/modules/scene-planning/service";
 import { computeSceneSourceIntegrityHash } from "@/modules/scene-planning/source-integrity";
 
 const editRoles: readonly AppRole[] = ["OWNER", "ADMIN", "EDITOR"];
+const approveRoles: readonly AppRole[] = ["OWNER", "ADMIN", "REVIEWER"];
 const idPairSchema = z.object({ organizationId: z.string().uuid(), projectId: z.string().uuid() }).strict();
 const planActionSchema = z.object({ organizationId: z.string().uuid(), planVersionId: z.string().uuid() }).strict();
 const approveSchema = planActionSchema.extend({ acknowledgeWarnings: z.boolean() }).strict();
@@ -62,6 +63,7 @@ export type ScenePlanningGenerationContext = {
 
 export type GenerateActionDependencies = {
   getActor(): Promise<Actor | null>;
+  authorize(actorId: string, organizationId: string): Promise<boolean>;
   loadGenerationContext(organizationId: string, projectId: string): Promise<ScenePlanningGenerationContext>;
   generatePlan(context: ScenePlanningGenerationContext): Promise<{ plan: unknown; provider: string; model: string }>;
   persistPlan(
@@ -89,6 +91,10 @@ export async function executeGenerateScenePlanAction(
   if (!actor) return { ok: false, error: "You must be signed in to generate a Scene Plan." };
 
   try {
+    const authorized = await dependencies.authorize(actor.id, parsed.data.organizationId);
+    if (!authorized) {
+      return { ok: false, error: "You do not have permission to generate a Scene Plan for this organization." };
+    }
     const context = await dependencies.loadGenerationContext(parsed.data.organizationId, parsed.data.projectId);
     if (context.source.integrityHash !== context.project.sourceIntegrityHash) {
       return { ok: false, error: "The source artifact changed. Create or refresh the Scene Planning project before generating." };
@@ -104,6 +110,7 @@ export async function executeGenerateScenePlanAction(
 
 export type ApproveActionDependencies = {
   getActor(): Promise<Actor | null>;
+  authorize(actorId: string, organizationId: string): Promise<boolean>;
   countUnacknowledgedWarnings(organizationId: string, planVersionId: string): Promise<number>;
   acknowledgeWarnings(organizationId: string, planVersionId: string, actorId: string): Promise<void>;
   approvePlan(organizationId: string, planVersionId: string, actorId: string): Promise<unknown>;
@@ -118,6 +125,10 @@ export async function executeApproveScenePlanAction(
   const actor = await dependencies.getActor();
   if (!actor) return { ok: false, error: "You must be signed in to approve a Scene Plan." };
   try {
+    const authorized = await dependencies.authorize(actor.id, parsed.data.organizationId);
+    if (!authorized) {
+      return { ok: false, error: "You do not have permission to approve a Scene Plan for this organization." };
+    }
     const warningCount = await dependencies.countUnacknowledgedWarnings(parsed.data.organizationId, parsed.data.planVersionId);
     if (warningCount > 0 && !parsed.data.acknowledgeWarnings) {
       return { ok: false, error: "Acknowledge the outstanding QC warnings before approval." };
@@ -139,10 +150,16 @@ async function getActor(): Promise<Actor | null> {
   return { id: data.user.id };
 }
 
-async function requireEditor(organizationId: string, actorId: string): Promise<void> {
+async function hasRole(organizationId: string, actorId: string, roles: readonly AppRole[]): Promise<boolean> {
   const repository = new SupabaseScenePlanningRepository();
   const role = await repository.getActorRole(organizationId, actorId);
-  if (!role || !editRoles.includes(role)) throw new Error("Scene Planning edit permission required");
+  return role !== null && roles.includes(role);
+}
+
+async function requireEditor(organizationId: string, actorId: string): Promise<void> {
+  if (!(await hasRole(organizationId, actorId, editRoles))) {
+    throw new Error("Scene Planning edit permission required");
+  }
 }
 
 async function loadGenerationContext(
@@ -281,6 +298,7 @@ function service() {
 export async function generateScenePlanAction(input: unknown) {
   return executeGenerateScenePlanAction(input, {
     getActor,
+    authorize: (actorId, organizationId) => hasRole(organizationId, actorId, editRoles),
     loadGenerationContext,
     async generatePlan(context) {
       const provider = createTextGenerationProvider({ organizationId: context.organizationId, model: "gpt-5.6-terra" });
@@ -342,9 +360,10 @@ export async function saveScenePlanningBriefAction(input: unknown): Promise<{ ok
       updated_at: new Date().toISOString(),
     }).eq("organization_id", parsed.data.organizationId).eq("id", parsed.data.projectId);
     if (error) throw error;
-    await supabase.from("scene_plan_versions").update({ status: "STALE", updated_at: new Date().toISOString() })
+    const { error: staleError } = await supabase.from("scene_plan_versions").update({ status: "STALE", updated_at: new Date().toISOString() })
       .eq("organization_id", parsed.data.organizationId).eq("video_project_id", parsed.data.projectId)
       .in("status", ["APPROVED", "REVIEW_REQUIRED"]);
+    if (staleError) throw staleError;
     return { ok: true };
   } catch {
     return { ok: false, error: "Unable to save the Scene Planning brief." };
@@ -375,9 +394,10 @@ export async function saveVisualBibleAction(input: unknown): Promise<{ ok: true 
     };
     const { error } = await supabase.from("visual_bibles").upsert(payload, { onConflict: "video_project_id,version_number" });
     if (error) throw error;
-    await supabase.from("scene_plan_versions").update({ status: "STALE", updated_at: new Date().toISOString() })
+    const { error: staleError } = await supabase.from("scene_plan_versions").update({ status: "STALE", updated_at: new Date().toISOString() })
       .eq("organization_id", parsed.data.organizationId).eq("video_project_id", parsed.data.projectId)
       .in("status", ["APPROVED", "REVIEW_REQUIRED"]);
+    if (staleError) throw staleError;
     return { ok: true };
   } catch {
     return { ok: false, error: "Unable to save the Visual Bible." };
@@ -459,6 +479,7 @@ export async function cloneScenePlanForEditAction(input: unknown): Promise<{ ok:
 export async function approveScenePlanAction(input: unknown) {
   return executeApproveScenePlanAction(input, {
     getActor,
+    authorize: (actorId, organizationId) => hasRole(organizationId, actorId, approveRoles),
     async countUnacknowledgedWarnings(organizationId, planVersionId) {
       const supabase = await createServerSupabaseClient();
       const { count, error } = await supabase.from("scene_plan_qc_findings").select("id", { count: "exact", head: true })
