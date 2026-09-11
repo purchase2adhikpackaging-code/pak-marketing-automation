@@ -1,47 +1,77 @@
 # PAK Marketing Automation — Requirements Traceability Matrix
 
 **Document ID:** PAK-TRACE-001  
-**Version:** 1.0  
-**Status:** Baseline for review
+**Version:** 1.1  
+**Status:** Current baseline after Phase 7
 
-## Legend
+## 1. Legend
 
-- **Implemented** — merged behavior exists and is verified at the appropriate level.
-- **Partial** — some behavior exists but one or more baseline requirements remain open.
-- **Missing** — not yet implemented.
-- **Redesign** — implementation exists but does not yet conform to the frozen baseline.
+- **Implemented** — merged behavior exists and is verified at the required automated/runtime level.
+- **Implemented / external acceptance pending** — engineering/infrastructure is released, but a controlled provider acceptance step awaits an external prerequisite such as credential/credits.
+- **Partial** — real supporting behavior exists but one or more baseline journeys remain open.
+- **Missing** — product workflow is not implemented; a readiness route does not count.
+- **Legacy/Foundation** — retained compatibility/infrastructure exists but is not the current authoritative domain model.
+- **Redesign** — implementation exists but conflicts with the current contract and blocks downstream dependence.
 
-## Matrix
+Stable requirement IDs retain their original semantic meaning. New Phase 6–7 behavior uses new IDs rather than reusing historical IDs.
 
-| Requirement family | UX surface | Primary backend/data | Verification | Current status | Planned phase |
+## 2. Current requirement matrix
+
+| Requirement family | UX surface | Primary backend/data | Verification | Current status | Next closure phase |
 |---|---|---|---|---|---|
-| PRD-GEN-005 Tenant isolation | All modules | organizations, memberships, tenant RLS | RLS harness + live Supabase probes | Implemented foundation | Continuous |
-| PRD-GEN-006 Server-side secrets | Settings/Integrations | integration_connections, integration_secrets | negative client-secret exposure tests | Missing | Phase 5 |
-| PRD-RBAC-001..005 Roles | Shell + all actions | organization_memberships, permission map | unit auth tests + RLS | Implemented/ongoing | Continuous |
-| PRD-KB-001..011 Knowledge Base | Knowledge Base | knowledge_records | unit/UI/E2E + live RLS | Implemented | Phase 4 |
-| PRD-CS-001..011 Content Studio grounding | Content Studio | content_items, provenance snapshots | unit/E2E + live RLS | Implemented except real org vault credential | Phase 5 completion |
-| PRD-ML-001..008 Multilingual artifacts | Content Studio artifacts | content_script_artifacts | unit/E2E/schema assertions | Implemented | Phase 3 |
-| PRD-JOB-001..004 Durable jobs | Operational status | jobs | unit/state-machine + DB claim security | Foundation implemented; provider execution expanded | Continuous / Phase 7 |
-| PRD-MEDIA-001..005 Media Library | Media Library | media_assets + storage | schema/RLS/E2E | Partial; generated-video import lineage implemented | Phase 8 |
-| PRD-VID-001..003 Scene planning | Scene Planning / Content Studio | video_projects, visual_bibles, scene_plan_versions, scene_plan_scenes, scene_plan_shots, scene_plan_qc_findings | unit/QC/RBAC/RLS/E2E + live Supabase probes | Implemented | Phase 6 |
-| PRD-VID-004..007 Video provider/render | Scene Planning / Settings / Media | jobs, video_generation_attempts, media_assets, generated-media storage, Integration Vault | provider/state/retry/media/security tests + exact-head CI + live Supabase/Edge probes; paid provider smoke when credential/credits exist | Release-ready; external paid LTX smoke deferred until credential/credits are supplied | Phase 7 |
-| PRD-APR-001..005 Approval | Approval Center | approval_requests, approval_events | workflow/E2E/RLS | Missing | Phase 9 |
-| PRD-CAL-001..003 Calendar | Content Calendar | publication scheduling | E2E/timezone tests | Missing | Phase 11 |
-| PRD-PUB-001..006 Publishing | Publishing | integrations, targets, attempts, jobs | provider fake + idempotency + live smoke | Missing | Phase 10 |
-| PRD-AN-001..005 Analytics | Analytics | metric sync/daily metrics | ingestion + freshness UI tests | Missing | Phase 12 |
-| PRD-AIR-001..004 AI Representative | AI Representative | content/media/jobs/integration | provider fake + lineage tests | Missing | Phase 13 |
-| PRD-POD-001..003 Podcast | Podcast | podcast_episodes, artifacts, media | workflow tests | Missing | Phase 14 |
-| PRD-CAMP-001..003 Campus | Campus Locations | campus_locations + knowledge linkage | CRUD/RLS tests | Missing | Phase 15 |
-| PRD-TST-001..003 Testimonials | Student Testimonials | testimonials + media | consent/RLS/privacy tests | Missing | Phase 16 |
-| PRD-MAN-001..003 Manual authoring | Manual Generation | content/artifact model | editor/revision tests | Partial/placeholder route | Phase 17 |
-| PRD-SET-001 Settings | Settings | organization/membership/config | E2E/RLS | Partial | Phase 5 onward |
-| PRD-SET-002..009 Integration Vault | Settings → Integrations | integration_connections/secrets/audit | crypto/server/RLS/E2E/live smoke | Missing | Phase 5 |
-| TRD-DEP-001..005 Hosted staging | Entire app | Vercel + PAK Supabase | build/deployment/runtime logs/Chrome | Missing real app staging | Phase 5 |
-| TRD-TEST-001..005 Release gates | CI/release | GitHub Actions + Supabase probes | exact-head CI | Implemented process | Continuous |
+| PRD-GEN-005 Tenant isolation | All implemented modules | organizations, memberships, tenant RLS | RLS tests + live Supabase probes | **Implemented** | Continuous |
+| PRD-GEN-006 / PRD-SET-003..007 Server-side secrets | Settings / provider workers | integration_connections, integration_secrets metadata, Supabase Vault, audit events | negative exposure tests + live privilege probes | **Implemented** | Continuous |
+| PRD-RBAC-001..005 Roles | Shell + actions + RLS | organization_memberships, permission map | unit auth tests + RLS | **Implemented / ongoing** | Continuous |
+| PRD-KB-001..011 Knowledge Base | Knowledge Base | knowledge_records | unit/UI/E2E + live RLS | **Implemented** | Maintenance |
+| PRD-CS-001..012 Content Studio grounding/handoff | Content Studio | content_items, artifacts, provenance | unit/E2E + live RLS/provider boundary tests | **Implemented** | Maintenance |
+| PRD-ML-001..008 Multilingual artifacts | Content Studio artifacts | content_script_artifacts | unit/E2E/schema assertions | **Implemented** | Maintenance |
+| PRD-SET-002..010 Integration Vault | Settings → Integrations | integration_connections, integration_secrets→Vault, integration_audit_events | Edge/security/RLS/component/live tests | **Implemented for OpenAI + LTX; Meta pending** | Phase 10 for Meta |
+| PRD-JOB-001..005 Durable jobs | Provider/job workflows | jobs | state/idempotency/claim/retry tests + live privilege probes | **Implemented foundation** | Continuous |
+| PRD-VID-001..004 + PRD-VID-008..011 Scene Planning | Scene Planning | video_projects, visual_bibles, scene_plan_versions/scenes/shots/qc | unit/QC/RBAC/RLS/E2E + live probes | **Implemented** | Maintenance |
+| PRD-VID-006..007 + PRD-VID-012..018 Per-shot provider generation | Scene Planning / Settings | jobs, video_generation_attempts, Edge workers, Vault, media_assets | provider/state/retry/security/media tests + live Edge probes | **Implemented / external paid acceptance pending** | Operational acceptance when LTX credential/credits exist |
+| PRD-VID-005 + PRD-VID-019 Final assembly/readiness | Scene Planning / Media | future final-assembly job + final media asset | readiness/assembly/E2E | **Missing** | Phase 8 |
+| PRD-MEDIA-001..006 Media | Media Library / Scene Planning | media_assets, Storage, generating_job lineage | schema/RLS/import tests | **Partial** — generated-video import implemented; operator library missing | Phase 8 |
+| PRD-DASH-001..004 Dashboard | Dashboard | aggregate workflow state | UI/E2E | **Partial** | After Phases 8–12 provide complete signals |
+| PRD-APR-001..005 Generic Approval | Approval Center | approval_requests, approval_events | workflow/E2E/RLS | **Missing**; Scene Plan has domain approval only | Phase 9 |
+| PRD-PUB-001..006 Publishing | Publishing | integration targets/attempts/jobs | fake provider + idempotency + live smoke | **Missing** | Phase 10 |
+| PRD-CAL-001..003 Calendar | Content Calendar | publication scheduling state | E2E/timezone tests | **Missing** | Phase 11 |
+| PRD-AN-001..005 Analytics | Analytics | metric sync/daily metrics | ingestion/freshness tests | **Missing** | Phase 12 |
+| PRD-AIR-001..004 AI Representative | AI Representative | future representative/media/jobs | provider fake + lineage tests | **Missing** | Phase 13 |
+| PRD-POD-001..003 Podcast | Podcast | future episode/audio/media domain | workflow tests | **Missing** | Phase 14 |
+| PRD-CAMP-001..003 Campus | Campus / Locations | future campus/location records | CRUD/RLS tests | **Missing** | Phase 15 |
+| PRD-TST-001..003 Testimonials | Student Testimonials | future testimonial/consent/media domain | consent/RLS/privacy tests | **Missing** | Phase 16 |
+| PRD-MAN-001..003 Manual authoring | Manual Generation | shared content/artifact model | editor/revision tests | **Partial/Foundation only** | Phase 17 |
+| PRD-SET-001 Full Settings | Settings | organization/membership/config + integrations | E2E/RLS | **Partial** — Integrations implemented; Organization/Members/Operational config incomplete | Future settings slices |
+| TRD-DEP Hosted app | Entire app | Next.js host + PAK Supabase | build/deployment/runtime verification | **Partial operationally** — app build green; external host quota may independently block deployment | Infrastructure/operations |
+| TRD-TEST-001..006 Release gates | CI/release | GitHub Actions + live Supabase probes | exact-head CI + runtime checks | **Implemented process** | Continuous |
 
-## Requirement-to-file traceability for implemented foundation
+## 3. Implemented foundation traceability
 
-### Knowledge Base
+### 3.1 Authentication / tenancy / jobs
+
+Requirement families:
+- PRD-GEN-005, PRD-GEN-007
+- PRD-RBAC-001..005
+- PRD-JOB-001..005
+- TRD-AUTH, TRD-TEN, TRD-JOB
+
+Implementation areas:
+- `src/modules/auth/*`
+- `src/modules/organizations/*`
+- `src/modules/jobs/*`
+- `supabase/migrations/202609090002_organizations_memberships.sql`
+- `supabase/migrations/202609090003_jobs.sql`
+- subsequent security/performance hardening migrations
+
+Verified boundaries:
+- organization-scoped membership roles;
+- RLS final boundary for session clients;
+- durable job state/idempotency/leases;
+- worker claim not exposed to browser roles.
+
+### 3.2 Knowledge Base
+
+Requirement families:
 - PRD-KB-001..011
 - UX-KB-001..006
 - TRD-KB-001..007
@@ -49,104 +79,245 @@
 Implementation areas:
 - `src/modules/knowledge-base/*`
 - `src/app/(app)/knowledge-base/*`
-- `supabase/migrations/202609090008_knowledge_base.sql`
-- `supabase/migrations/202609100002_knowledge_integrity_hardening.sql`
-- `supabase/migrations/202609100003_fk_audit_cleanup_fix.sql`
-- `supabase/migrations/202609100004_inline_fk_cleanup_guards.sql`
-- `supabase/migrations/202609100005_knowledge_org_immutability.sql`
-- `tests/rls/foundation-rls.sql`
+- Knowledge foundation/integrity migrations
+- RLS/security tests
 
-### Content Studio
-- PRD-CS-001..011
-- UX-CS-001..006
-- TRD-AI-001..007
+Verified boundaries:
+- DRAFT/ACTIVE/ARCHIVED lifecycle;
+- role-aware visibility;
+- revision increment and stale-edit protection;
+- organization immutability;
+- provenance-safe FK cleanup behavior.
+
+### 3.3 Content Studio + multilingual artifacts
+
+Requirement families:
+- PRD-CS-001..012
+- PRD-ML-001..008
+- UX-CS-001..007
+- TRD-AI, TRD-CONT, TRD-KB
 
 Implementation areas:
 - `src/app/(app)/content-studio/*`
 - `src/modules/content-studio/*`
 - `src/modules/ai/text/*`
-- `supabase/migrations/202609090006_content_items.sql`
-- `supabase/migrations/202609090007_content_script_artifacts.sql`
+- content/artifact/provenance migrations
 
-### Scene Planning
-- PRD-VID-001..003
-- UX-SCENE-001..003
-- TRD-VID-002/006
+Verified boundaries:
+- browser submits source IDs rather than trusted Knowledge content;
+- same-org ACTIVE Knowledge is reloaded server-side;
+- bounded context;
+- immutable source snapshots;
+- EN/PL/HI canonical/translation revision and stale behavior;
+- persisted artifact handoff to Scene Planning.
+
+### 3.4 Integration Vault — OpenAI + LTX
+
+Requirement families:
+- PRD-GEN-006
+- PRD-SET-002..010
+- UX-SET-001..007
+- TRD-SEC-001..010
+
+Implementation areas:
+- `src/app/(app)/settings/integrations/*`
+- `src/modules/integrations/*`
+- `supabase/functions/integration-vault/*`
+- Integration Vault/audit/transaction migrations
+- `supabase/migrations/202609100010_supabase_native_integration_vault.sql`
+
+Current data path:
+
+`integration_connections` → `integration_secrets.vault_secret_id` → Supabase Vault
+
+Verified boundaries:
+- OWNER/ADMIN credential management;
+- write-only secret input;
+- safe masked metadata only in browser;
+- service-role-only raw secret resolution;
+- immutable audit events;
+- OpenAI runtime credential use;
+- LTX configure/remove/enable/disable/test flow;
+- LTX connection test does not submit a paid generation.
+
+### 3.5 Scene Planning
+
+Requirement families:
+- PRD-VID-001..004
+- PRD-VID-008..011
+- UX-SCENE-001..011
+- TRD-SCENE-001..008
+- TRD-VID-002, TRD-VID-006
 
 Implementation areas:
 - `src/app/(app)/scene-planning/*`
 - `src/modules/scene-planning/*`
-- Content Studio downstream `Create Scene Plan` integration
+- Content Studio `Create Scene Plan` handoff
 - `supabase/migrations/202609110001_scene_planning.sql`
-- `supabase/migrations/202609110002_scene_planning_atomic_persistence.sql`
-- `supabase/migrations/202609110003_scene_plan_lifecycle_guards.sql`
-- `supabase/migrations/202609110004_scene_plan_reviewer_qc_ack.sql`
-- `supabase/migrations/202609110005_scene_plan_draft_editing.sql`
-- `supabase/migrations/202609110006_scene_plan_review_qc_guard.sql`
-- `supabase/migrations/202609110007_scene_plan_performance_hardening.sql`
+- `202609110002_scene_planning_atomic_persistence.sql`
+- `202609110003_scene_plan_lifecycle_guards.sql`
+- `202609110004_scene_plan_reviewer_qc_ack.sql`
+- `202609110005_scene_plan_draft_editing.sql`
+- `202609110006_scene_plan_review_qc_guard.sql`
+- `202609110007_scene_plan_performance_hardening.sql`
 - `tests/e2e/scene-planning.spec.ts`
 
 Verified boundaries:
-- canonical narration remains authoritative and source-integrity bound;
-- OWNER/ADMIN/EDITOR may create/edit/generate/replan/QC within tenant scope;
-- OWNER/ADMIN/REVIEWER approval is server- and database-constrained;
-- anonymous users cannot read Scene Planning rows under live RLS;
-- approved plans are immutable except lifecycle staleness/supersession metadata transitions;
-- Phase 6 persists provider-neutral planning data only and performs no video-provider execution.
+- source-integrity-bound Video Project;
+- versioned Visual Bible/Plan graph;
+- canonical narration authority and exact span coverage;
+- provider-neutral structured planning;
+- deterministic QC;
+- manual editing/reordering with QC invalidation;
+- granular replan with human-edit protection;
+- role-gated review/approval;
+- approved immutability and copy-on-write continuation;
+- no video-provider execution inside the planning domain.
 
-### Video generation provider integration
-- PRD-VID-004..007
-- INT-VID-001..005
-- TRD-JOB/VID requirements
+### 3.6 Phase 7 video provider generation
+
+Requirement families:
+- PRD-VID-006..007
+- PRD-VID-012..018
+- UX-VID-001..006
+- TRD-VID-004, TRD-VID-007..014
+- TRD-JOB-001..007
+- TRD-MEDIA-001..004
 
 Implementation areas:
 - `src/modules/video/providers/*`
 - `src/modules/video/generation/*`
 - `src/app/(app)/scene-planning/shot-video-generation-controls.tsx`
 - `src/app/(app)/scene-planning/video-generation-actions.ts`
-- `src/app/(app)/settings/integrations/*`
+- Settings LTX integration UI/actions
 - `supabase/functions/video-generation/*`
 - `supabase/functions/video-generation-retry/*`
 - `supabase/functions/video-generation-dispatcher/*`
-- `supabase/functions/integration-vault/*`
 - `supabase/migrations/202609110008_video_generation_attempts.sql`
-- `supabase/migrations/202609110009_video_generation_enqueue.sql`
-- `supabase/migrations/202609110010_video_generation_reconciliation.sql`
-- `supabase/migrations/202609110011_generated_video_media_import.sql`
-- `supabase/migrations/202609110012_video_generation_dispatch.sql`
+- `202609110009_video_generation_enqueue.sql`
+- `202609110010_video_generation_reconciliation.sql`
+- `202609110011_generated_video_media_import.sql`
+- `202609110012_video_generation_dispatch.sql`
 
 Verified boundaries:
-- only authenticated OWNER/ADMIN/EDITOR actors can cross the enqueue spend boundary;
-- enqueue requires approved, source-current, blocker-free plan lineage and supported shot generation parameters;
-- authenticated browser sessions cannot directly insert provider attempts or paid video-generation jobs;
-- retry, import finalization, dispatcher secret access, and unattended claiming are service-role execution boundaries only;
-- cron-to-Edge execution authenticates with a Vault-held internal dispatcher token and unauthorized dispatcher requests return `401`;
-- LTX credentials are write-only through Integration Vault and are not returned to browser state;
-- LTX credential testing uses a read-only provider lookup and does not submit a paid generation;
-- generated media is imported into private organization-scoped storage and linked to `media_assets` plus immutable attempt/job lineage;
-- paid end-to-end LTX rendering remains an explicit external operational check because no organization LTX credential/credits are currently configured; it must be executed when credentials become available rather than simulated or falsely claimed.
+- OWNER/ADMIN/EDITOR only across authenticated spend enqueue;
+- approved, current, blocker-free plan/shot required;
+- browser sends IDs only;
+- direct browser INSERT/UPDATE of paid generation jobs blocked;
+- direct browser creation/mutation of attempts blocked;
+- LTX adapter remains behind provider-neutral contract;
+- attempt lineage covers submit/process/import/failure/submission-unknown;
+- maximum four attempts and 5/15/45 retry eligibility;
+- `SUBMISSION_UNKNOWN` is not blindly retried;
+- provider output is imported to private `generated-media` before completion;
+- PAK media identity uses `media_assets`, not provider URL;
+- unattended 10-second dispatcher uses leased `SKIP LOCKED` claiming;
+- internal cron/Edge execution uses Vault-held dispatcher token;
+- unauthorized dispatcher request verified 401;
+- scheduled empty dispatcher requests verified 200;
+- paid provider smoke deferred because no production org LTX credential/credits are configured.
 
-### Foundation tenancy/jobs/media/scenes
-- PRD-GEN-005/007
-- TRD-AUTH/TEN/JOB/VID
+## 4. Partial / future module traceability
 
-Implementation areas:
-- `src/modules/auth/*`
-- `src/modules/organizations/*`
-- `src/modules/jobs/*`
-- `src/modules/media/*`
-- `src/modules/video/*`
-- `supabase/migrations/202609090002_organizations_memberships.sql`
-- `supabase/migrations/202609090003_jobs.sql`
-- `supabase/migrations/202609090004_media.sql`
-- `supabase/migrations/202609090005_video_scenes.sql`
+### Media Library — Phase 8
 
-## Drift-control rules
+Already available:
+- `media_assets` data model and RLS;
+- private generated-video storage/import;
+- generation/job lineage.
 
-1. Every new PR must list requirement IDs implemented or modified.
-2. A requirement change must update this matrix before/with implementation.
-3. A UI route without a mapped workflow/backend requirement is not considered a product feature.
-4. A backend table without an owning PRD workflow is considered speculative and should not be added.
-5. Security-sensitive features require both positive and negative traceability: who may perform the action and who must be denied.
-6. Any item marked `Redesign` blocks downstream dependence until reconciled.
-7. Phase 5 must not start implementation until the existing implementation gap audit is reviewed.
+Still required:
+- operator catalogue/list;
+- upload path;
+- preview/detail;
+- archive/delete/storage authorization;
+- final assembled video visibility/lineage.
+
+### Final video assembly — Phase 8
+
+Requirement families:
+- PRD-VID-005, PRD-VID-019
+- TRD-VID-005..006
+- UX-SCENE-003
+
+Still required:
+- final-assembly job;
+- plan/shot/media readiness calculation;
+- composition/order pipeline;
+- final QA state;
+- final media asset.
+
+### Approval Center — Phase 9
+
+Scene Plan approval exists but generic product approval does not.
+
+Still required:
+- `approval_requests`;
+- immutable `approval_events`;
+- artifact/revision/media targets;
+- approve/request-changes/reject;
+- supersession after revision.
+
+### Publishing — Phase 10
+
+Still required:
+- Meta provider configuration beyond generic Vault foundation;
+- targets/accounts;
+- publication attempts;
+- idempotent publish jobs;
+- provider reconciliation/error mapping;
+- supported Facebook/Instagram path.
+
+### Content Calendar — Phase 11
+
+Still required:
+- authoritative scheduled publication projection;
+- timezone-safe scheduling;
+- reschedule/cancel;
+- calendar/list UI.
+
+### Analytics — Phase 12
+
+Still required:
+- sync jobs/watermarks;
+- normalized metrics;
+- freshness/error UI;
+- analyst dashboard.
+
+### Specialized modules — Phases 13–17
+
+Routes currently expose truthful Planned/Foundation readiness state only.
+
+- Phase 13: AI Representative
+- Phase 14: Podcast
+- Phase 15: Campus / Locations
+- Phase 16: Student Testimonials
+- Phase 17: Manual Generation completion
+
+## 5. Legacy / compatibility traceability
+
+### `video_scenes`
+
+Status: **Legacy/Foundation**.
+
+It remains in the schema from Phase 1 but is not the authoritative Scene Planning model. New planning/provider work maps to the normalized Scene Planning graph.
+
+### `media_assets.scene_id`
+
+Status: **Legacy compatibility field**.
+
+Phase 7 does not force `scene_plan_scenes` into this legacy relationship. Current generated-video lineage is preserved through `generating_job_id`, `video_generation_attempts` and job result metadata.
+
+## 6. Drift-control rules
+
+1. Every feature PR lists requirement IDs implemented or modified.
+2. Existing requirement IDs retain their original semantic meaning; new behavior receives new IDs.
+3. Requirement changes update PRD/TRD/UX/DB and this matrix before or with implementation.
+4. A UI route without mapped workflow/backend requirements is not a completed feature.
+5. A backend table without an owning product workflow is speculative and should not be added.
+6. Security-sensitive features require positive and negative traceability: who may act and who must be denied.
+7. Paid-provider workflows require explicit spend-boundary traceability and duplicate-spend/idempotency tests.
+8. Items marked `Redesign` block downstream dependence until reconciled.
+9. Legacy/Foundation entities are not extended by new features without a documented compatibility reason.
+10. Exact-head CI evidence is required for merge claims.
+11. Live provider smoke must never be fabricated when credentials/credits are absent; deferred operational acceptance is recorded explicitly.
