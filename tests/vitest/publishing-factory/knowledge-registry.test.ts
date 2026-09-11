@@ -67,7 +67,7 @@ afterEach(async () => {
 describe("governed knowledge registry", () => {
   it("hashes canonical pack content deterministically independent of object key order", () => {
     const pack = makePack("alpha");
-    const reordered = JSON.parse(JSON.stringify(pack, Object.keys(pack).reverse())) as KnowledgePack;
+    const reordered = Object.fromEntries(Object.entries(pack).reverse()) as KnowledgePack;
     expect(hashKnowledgePack(pack)).toMatch(/^[a-f0-9]{64}$/);
     expect(hashKnowledgePack(pack)).toBe(hashKnowledgePack(reordered));
   });
