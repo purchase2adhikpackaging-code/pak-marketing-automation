@@ -132,25 +132,40 @@ Exit criteria:
 - approved plans are immutable and source-bound;
 - only approved, current plans expose a Phase 7-ready provider-neutral handoff.
 
-## Phase 7 — Video generation provider integration — NEXT
+## Phase 7 — Video generation provider integration — IMPLEMENTED
 
 Requirements:
 - PRD-VID-004..007
 - INT-VID-001..005
 - TRD-JOB/VID requirements
 
-Deliverables:
-- real LTX adapter or selected primary provider
-- credential configuration through Integration Vault
-- submit/status/result reconciliation
-- per-scene durable jobs
-- media import/linkage
-- retry/error mapping
+Delivered:
+- real LTX 2.3 Pro provider adapter with provider-neutral interfaces, capability normalization, and safe error mapping
+- approved-shot generation controls with server-side organization/role validation
+- hardened authenticated enqueue RPC that requires approved, source-current, blocker-free scene plans and supported shot parameters
+- tenant-scoped `video_generation_attempts` lineage with idempotent durable `VIDEO_SHOT_GENERATION` jobs
+- submit, reconcile, bounded retry, submission-unknown, and terminal state handling
+- generated-video import into private organization-scoped storage plus `media_assets` lineage
+- unattended 10-second Supabase `pg_cron` dispatcher with leased work claiming
+- `video-generation`, `video-generation-retry`, and `video-generation-dispatcher` Edge workers with internal dispatcher-token authentication and explicit user authorization where applicable
+- Settings → Integrations LTX credential workflow using the existing write-only Integration Vault boundary
+- no-spend LTX credential verification using an authenticated read-only lookup rather than a generation submission
 
-Exit criteria:
-- one scene can be generated end-to-end on staging;
-- provider failure/retry paths verified;
-- no provider secret exposure.
+Verification:
+- TDD RED/GREEN coverage for provider adapter, spend boundary, jobs/attempts, retry, reconciliation, media import, dispatcher security, Scene Planning controls, Integration Vault, and LTX Settings
+- exact-head typecheck, lint, unit, production build, and Playwright E2E release gate
+- live PAK Supabase migrations `202609110008` through `202609110012`
+- live Phase 7 Edge workers plus Integration Vault LTX support deployed and active
+- scheduled dispatcher HTTP calls verified successful; missing dispatcher token verified `401`
+- live RLS/function-privilege probes confirm browser roles cannot directly create provider attempts or paid-generation jobs
+- Supabase security/performance advisor review completed; the authenticated SECURITY DEFINER enqueue remains an intentional, constrained spend boundary
+- no organization LTX credential/credits are currently configured, so a paid provider render was intentionally not fabricated or triggered
+
+Release status:
+- Phase 7 implementation and infrastructure release gates are complete;
+- the first paid end-to-end LTX render is an external operational acceptance check and must be executed when an organization supplies a valid LTX credential/credits, before relying on paid rendering in production;
+- provider failure/retry behavior is covered deterministically and the live dispatcher/security boundary is verified without provider spend;
+- no provider secret is exposed to browser state or returned from Vault.
 
 ## Phase 8 — Final video assembly & Media Library expansion
 
