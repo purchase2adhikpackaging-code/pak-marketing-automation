@@ -9,11 +9,14 @@ const migrationPath = join(
 const sql = readFileSync(migrationPath, "utf8");
 
 describe("approved-shot video generation enqueue SQL", () => {
-  it("uses one authenticated atomic invoker RPC", () => {
+  it("uses one authenticated atomic privileged RPC with an explicit spend boundary", () => {
     expect(sql).toContain("create or replace function public.enqueue_video_shot_generation(");
-    expect(sql).toContain("security invoker");
-    expect(sql).toContain("auth.uid()");
+    expect(sql).toContain("security definer");
+    expect(sql).toContain("set search_path = public, extensions");
+    expect(sql).toContain("v_actor_user_id uuid := auth.uid()");
     expect(sql).toContain("public.has_org_role(_organization_id, array['OWNER','ADMIN','EDITOR'])");
+    expect(sql).toContain("revoke all on function public.enqueue_video_shot_generation");
+    expect(sql).toContain("grant execute on function public.enqueue_video_shot_generation");
   });
 
   it("requires an APPROVED current plan with no blocker findings", () => {
