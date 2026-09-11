@@ -3,8 +3,12 @@ import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { parseAcademicIndex, type ProgrammeRegistryEntry } from "./academic-index";
 import { enumerateBookJobs, type CurriculumSourceFile } from "./book-jobs";
-import type { BookJob } from "./domain";
+import { QualificationLevelSchema, type BookJob } from "./domain";
 import { runDeterministicBook } from "./orchestrator";
+import { KnowledgeSourceSchema } from "./knowledge-domain";
+import { validateKnowledgePack, validateSourceRegistry } from "./knowledge-validation";
+import { getKnowledgePack, loadKnowledgeRegistry } from "./knowledge-registry";
+import { assembleKnowledgeContext } from "./knowledge-context";
 
 export interface PublishingCliIo {
   cwd: string;
@@ -18,6 +22,13 @@ function readUtf8(cwd: string, relativePath: string): string {
 
 function loadRegistry(cwd: string): ProgrammeRegistryEntry[] {
   return parseAcademicIndex(readUtf8(cwd, "docs/academic/ACADEMIC_INDEX.md"));
+}
+
+function loadKnowledgeSources(cwd: string) {
+  const raw = JSON.parse(
+    readUtf8(cwd, "publishing/knowledge/sources/eu-era-core.json"),
+  ) as unknown;
+  return KnowledgeSourceSchema.array().parse(raw);
 }
 
 function registrySummary(entries: readonly ProgrammeRegistryEntry[]) {
@@ -125,6 +136,85 @@ export async function runCli(args: readonly string[], io: PublishingCliIo): Prom
           2,
         ),
       );
+      return 0;
+    }
+
+    if (command === "knowledge-validate") {
+      const sources = loadKnowledgeSources(io.cwd);
+      const registry = await loadKnowledgeRegistry(io.cwd);
+      const findings = [...validateSourceRegistry(sources)];
+      for (const packId of registry.orderedPackIds) {
+        findings.push(...validateKnowledgePack(getKnowledgePack(registry, packId), sources));
+      }
+      io.stdout(
+        JSON.stringify(
+          {
+            valid: findings.length === 0,
+            packCount: registry.orderedPackIds.length,
+            sourceCount: sources.length,
+            findings,
+          },
+          null,
+          2,
+        ),
+      );
+      return findings.length === 0 ? 0 : 1;
+    }
+
+    if (command === "knowledge-list") {
+      const registry = await loadKnowledgeRegistry(io.cwd);
+      io.stdout(
+        JSON.stringify(
+          {
+            version: registry.version,
+            count: registry.orderedPackIds.length,
+            packs: registry.orderedPackIds.map((packId) => {
+              const loaded = registry.packs[packId];
+              if (!loaded) throw new Error(`Unknown knowledge pack id: ${packId}`);
+              return {
+                packId,
+                title: loaded.pack.title,
+                domain: loaded.pack.domain,
+                revision: loaded.pack.revision,
+                status: loaded.pack.status,
+                sha256: loaded.sha256,
+              };
+            }),
+          },
+          null,
+          2,
+        ),
+      );
+      return 0;
+    }
+
+    if (command === "knowledge-context") {
+      const rawLevel = getFlag(args, "--level");
+      const rawPacks = getFlag(args, "--packs");
+      if (!rawLevel || !rawPacks) {
+        io.stderr("knowledge-context requires --level <level> --packs <pack-a,pack-b>");
+        return 2;
+      }
+      const parsedLevel = QualificationLevelSchema.safeParse(rawLevel);
+      if (!parsedLevel.success) {
+        io.stderr(`Unknown qualification level: ${rawLevel}`);
+        return 2;
+      }
+      const packIds = rawPacks
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean);
+      if (packIds.length === 0) {
+        io.stderr("knowledge-context requires at least one knowledge pack id");
+        return 2;
+      }
+      const registry = await loadKnowledgeRegistry(io.cwd);
+      const context = assembleKnowledgeContext({
+        packIds,
+        level: parsedLevel.data,
+        registry,
+      });
+      io.stdout(JSON.stringify(context, null, 2));
       return 0;
     }
 
