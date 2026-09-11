@@ -96,7 +96,6 @@ begin
     duration_seconds,
     checksum,
     generating_job_id,
-    scene_id,
     status,
     created_at,
     updated_at
@@ -109,7 +108,6 @@ begin
     _duration_seconds,
     _checksum,
     _job_id,
-    v_attempt.scene_id,
     'ACTIVE',
     v_now,
     v_now
@@ -120,7 +118,6 @@ begin
     duration_seconds = excluded.duration_seconds,
     checksum = excluded.checksum,
     generating_job_id = excluded.generating_job_id,
-    scene_id = excluded.scene_id,
     status = 'ACTIVE',
     updated_at = v_now
   returning id into v_media_id;
@@ -142,10 +139,12 @@ begin
   update public.jobs
   set
     state = 'COMPLETED',
-    progress = 100,
     result_payload = jsonb_build_object(
       'mediaAssetId', v_media_id,
-      'storagePath', _storage_path
+      'storagePath', _storage_path,
+      'planVersionId', v_attempt.plan_version_id,
+      'scenePlanSceneId', v_attempt.scene_id,
+      'scenePlanShotId', v_attempt.shot_id
     ),
     failure_metadata = null,
     completed_at = coalesce(completed_at, v_now),
