@@ -62,6 +62,9 @@ const blueprint = {
   ],
 };
 
+const firstChapter = blueprint.chapters[0]!;
+const secondChapter = blueprint.chapters[1]!;
+
 describe("book blueprint contract", () => {
   it("accepts a governed blueprint matching the book job", () => {
     const parsed = BookBlueprintSchema.parse(blueprint);
@@ -72,7 +75,7 @@ describe("book blueprint contract", () => {
     const parsed = BookBlueprintSchema.parse({
       ...blueprint,
       subjectCode: "D01-999",
-      chapters: [blueprint.chapters[0], { ...blueprint.chapters[1], number: 3 }],
+      chapters: [firstChapter, { ...secondChapter, number: 3 }],
     });
     expect(validateBookBlueprintForJob(job, parsed).join("\n")).toMatch(
       /subject code|contiguous/i,
@@ -83,10 +86,7 @@ describe("book blueprint contract", () => {
     const parsed = BookBlueprintSchema.parse({
       ...blueprint,
       knowledgePackIds: ["railway-systems", "railway-systems"],
-      chapters: [
-        blueprint.chapters[0],
-        { ...blueprint.chapters[1], id: blueprint.chapters[0].id },
-      ],
+      chapters: [firstChapter, { ...secondChapter, id: firstChapter.id }],
     });
     expect(validateBookBlueprintForJob(job, parsed).join("\n")).toMatch(
       /duplicate/i,
@@ -96,10 +96,7 @@ describe("book blueprint contract", () => {
   it("rejects a safety-critical chapter without reference sources", () => {
     const parsed = BookBlueprintSchema.parse({
       ...blueprint,
-      chapters: [
-        blueprint.chapters[0],
-        { ...blueprint.chapters[1], referenceSourceIds: [] },
-      ],
+      chapters: [firstChapter, { ...secondChapter, referenceSourceIds: [] }],
     });
     expect(validateBookBlueprintForJob(job, parsed).join("\n")).toMatch(
       /safety-critical.*source/i,
@@ -110,11 +107,8 @@ describe("book blueprint contract", () => {
     const parsed = BookBlueprintSchema.parse({
       ...blueprint,
       chapters: [
-        {
-          ...blueprint.chapters[0],
-          requiredKnowledgePackIds: ["not-selected"],
-        },
-        blueprint.chapters[1],
+        { ...firstChapter, requiredKnowledgePackIds: ["not-selected"] },
+        secondChapter,
       ],
     });
     expect(validateBookBlueprintForJob(job, parsed).join("\n")).toMatch(
