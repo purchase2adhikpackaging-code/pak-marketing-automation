@@ -220,7 +220,7 @@ Books do **not** copy a master pack verbatim. The book compiler adapts depth, ma
 
 Manuscripts are generated from approved blueprints and knowledge packs into structured source, not directly into PDF.
 
-Recommended source format: Markdown plus validated front-matter metadata and structured sidecar JSON.
+Canonical source format: Markdown with validated YAML-compatible front-matter metadata plus a JSON sidecar for machine-only build/QA data.
 
 Mandatory textbook sections follow the PAK print-ready standard, including controlled front matter, chapter content, back matter, glossary/reference material, and revision metadata.
 
@@ -268,7 +268,11 @@ Critical technical labels must be typeset by the publishing renderer whenever po
 
 Generated imagery should normally be text-free and unbranded. Exact labels, captions, programme data, and PAK identity are overlaid deterministically.
 
-### 9.3 Visual QA
+### 9.3 Visual Provider Boundary
+
+Image generation is accessed through a provider adapter. The provider may change without changing curriculum or book schemas. Provider output is always considered an untrusted visual input until it passes the visual QA gates below.
+
+### 9.4 Visual QA
 
 Every visual asset must pass:
 
@@ -285,7 +289,7 @@ Every visual asset must pass:
 
 ## 10. Typesetting and PDF Production
 
-The renderer must generate deterministic A4 book layouts from structured source.
+The canonical renderer is **HTML/CSS rendered through Playwright-controlled Chromium**, with print CSS and deterministic page templates. This choice uses the repository's existing Playwright stack and provides DOM-level geometry inspection before final PDF export.
 
 Required capabilities:
 
@@ -305,7 +309,7 @@ Required capabilities:
 - metadata;
 - digital and print-master outputs from the same approved source.
 
-The implementation should prefer HTML/CSS + headless Chromium/Paged Media style rendering or an equivalent deterministic layout engine because it enables programmatic measurement of boxes, DOM-level overflow detection, print CSS, and automated screenshot comparison.
+A post-processing step may add or validate PDF metadata/bookmarks only where Chromium output does not provide the required controlled feature. Post-processing may not modify substantive page content.
 
 ## 11. QA Architecture
 
@@ -327,7 +331,7 @@ Detect or reject:
 - broken chapter/figure/table numbering;
 - unsupported safety-critical values;
 - uncited regulatory claims where citation is mandatory;
-- placeholders such as TODO/TBD;
+- unresolved placeholder markers;
 - accidental instructor-only content in student books;
 - inconsistent programme/subject identity.
 
@@ -418,13 +422,13 @@ Repair routing:
 
 A repaired artifact receives a new revision hash and reruns all downstream checks, not only the failed detector.
 
-Default maximum automatic repair attempts should be bounded. Persistent failures become `BLOCKED` and must not be released.
+The automatic repair budget is **three attempts per unique finding**. If the same finding remains after the third repair attempt, the book transitions to `BLOCKED`; it cannot be released until a new source revision or explicit corrective intervention resolves the finding.
 
 ## 13. Parallel Execution Model
 
 Throughput comes from independent queues rather than one giant agent.
 
-Recommended worker pools:
+Worker pools:
 
 - curriculum architecture workers;
 - blueprint workers;
@@ -438,9 +442,9 @@ Recommended worker pools:
 - repair workers;
 - release/manifest worker.
 
-Workers consume immutable job payloads and write stage outputs. Queue concurrency must be configurable so execution can scale to available compute/API limits without changing academic logic.
+Workers consume immutable job payloads and write stage outputs. Queue concurrency is runtime-configurable so execution can scale to available compute/API limits without changing academic logic.
 
-Initial production order should prioritize D01 because it is the validated pilot programme, while architecture workers simultaneously unlock other families.
+Initial production order prioritizes D01 because it is the validated pilot programme, while architecture workers simultaneously unlock other families.
 
 ## 14. Batch/Wave Strategy
 
@@ -533,7 +537,7 @@ This allows throughput measurement, failure-rate tracking, and deterministic rep
 
 No service-role/API secret is committed to GitHub.
 
-Secrets are injected through runtime environment/CI secret stores. Generated prompts and logs must avoid exposing secrets. External model/provider calls must be isolated behind provider adapters so providers can be changed without rewriting curriculum logic.
+Secrets are injected through runtime environment/CI secret stores. Generated prompts and logs must avoid exposing secrets. External model/provider calls are isolated behind provider adapters so providers can be changed without rewriting curriculum logic.
 
 ## 19. Testing Strategy
 
@@ -589,7 +593,7 @@ A book is release-eligible only if:
 3. all visuals pass asset QA;
 4. no detected text/container overflow exists;
 5. no detected overlapping/duplicate text exists;
-6. all raster print assets meet required effective resolution or have explicit approved exception;
+6. all raster print assets meet required effective resolution or have an explicitly recorded approved exception;
 7. all fonts are embedded;
 8. bookmarks/TOC navigation pass;
 9. metadata and filename match the registry;
@@ -649,7 +653,7 @@ The implementation must first establish:
 1. registry ingestion and book-job enumeration;
 2. schemas/state machine;
 3. blueprint/manuscript/visual interfaces;
-4. deterministic renderer;
+4. deterministic HTML/CSS/Chromium renderer;
 5. structural QA;
 6. page rendering and visual-QA interface;
 7. repair loop;
@@ -665,12 +669,12 @@ Success is not "the model generated hundreds of PDFs."
 Success is a reproducible PAK publishing system capable of reporting:
 
 ```text
-PLANNED:   N
-GENERATED: N
-QA PASSED: N
-RELEASED:  N
-FAILED:    0
-BLOCKED:   0
+PLANNED:    N
+GENERATED:  N
+QA PASSED:  N
+RELEASED:   N
+FAILED:     0
+BLOCKED:    0
 UNRESOLVED: 0
 ```
 
