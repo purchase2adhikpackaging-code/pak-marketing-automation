@@ -35,6 +35,34 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Focused blueprint tests
+        continue-on-error: true
+        run: npx vitest run tests/vitest/publishing-factory/blueprint.test.ts
+
+      - name: Focused knowledge-selection tests
+        continue-on-error: true
+        run: npx vitest run tests/vitest/publishing-factory/knowledge-selection.test.ts
+
+      - name: Focused manuscript-domain tests
+        continue-on-error: true
+        run: npx vitest run tests/vitest/publishing-factory/manuscript-domain.test.ts
+
+      - name: Focused manuscript-writer tests
+        continue-on-error: true
+        run: npx vitest run tests/vitest/publishing-factory/manuscript-writer.test.ts
+
+      - name: Focused manuscript-serializer tests
+        continue-on-error: true
+        run: npx vitest run tests/vitest/publishing-factory/manuscript-serializer.test.ts
+
+      - name: Focused checkpoint-store tests
+        continue-on-error: true
+        run: npx vitest run tests/vitest/publishing-factory/checkpoint-store.test.ts
+
+      - name: Focused worker-queue tests
+        continue-on-error: true
+        run: npx vitest run tests/vitest/publishing-factory/worker-queue.test.ts
+
       - name: Unit tests
         run: npm run test:run
 
