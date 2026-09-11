@@ -12,7 +12,6 @@ import {
   runScenePlanQcAction,
   saveScenePlanningBriefAction,
   saveVisualBibleAction,
-  submitScenePlanForReviewAction,
 } from "./workflow-actions";
 
 const EDIT_ROLES: readonly AppRole[] = ["OWNER", "ADMIN", "EDITOR"];
@@ -192,16 +191,6 @@ export function ScenePlanningWorkspace({ organizationId, actorRole, project, vis
     });
   }
 
-  function submitForReview() {
-    if (!plan) return;
-    setError(null);
-    setNotice(null);
-    startTransition(async () => {
-      const result = await submitScenePlanForReviewAction({ organizationId, planVersionId: plan.id });
-      completeAction(result, "Scene Plan submitted for review.");
-    });
-  }
-
   function approvePlan() {
     if (!plan) return;
     setError(null);
@@ -284,7 +273,6 @@ export function ScenePlanningWorkspace({ organizationId, actorRole, project, vis
         {plan?.findings.length ? <div className="mt-5 space-y-3">{plan.findings.map((finding) => <div key={finding.id} className="rounded-xl border border-slate-800 bg-slate-950 p-4"><div className="flex flex-wrap items-center gap-2"><span className="text-xs font-semibold text-slate-300">{finding.severity}</span><span className="font-mono text-xs text-slate-500">{finding.code}</span>{finding.acknowledged ? <span className="text-xs text-emerald-300">Acknowledged</span> : null}</div><p className="mt-2 text-sm leading-6 text-slate-300">{finding.message}</p></div>)}</div> : <p className="mt-5 text-sm text-slate-400">No QC findings are recorded for the current plan.</p>}
         {plan && warningCount > 0 && canApprove ? <label className="mt-5 flex items-start gap-3 text-sm text-slate-300"><input type="checkbox" aria-label="Acknowledge outstanding QC warnings" checked={acknowledgeWarnings} onChange={(event) => setAcknowledgeWarnings(event.target.checked)} className="mt-1" /><span>Acknowledge outstanding QC warnings</span></label> : null}
         <div className="mt-5 flex flex-wrap gap-3">
-          {plan && EDIT_ROLES.includes(actorRole) && ["DRAFT", "QC_REQUIRED"].includes(plan.status) ? <button type="button" onClick={submitForReview} disabled={isPending || !plan.sourceFresh || blockerCount > 0} className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Submit for review</button> : null}
           {plan && canApprove ? <button type="button" onClick={approvePlan} disabled={approvalDisabled} className="rounded-xl bg-emerald-200 px-4 py-2 text-sm font-semibold text-emerald-950 disabled:opacity-40">Approve Scene Plan</button> : null}
           {plan?.status === "APPROVED" && EDIT_ROLES.includes(actorRole) ? <button type="button" onClick={cloneForEdit} disabled={isPending} className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Create editable version</button> : null}
         </div>
