@@ -27,7 +27,7 @@ describe("generated video media import SQL", () => {
 
   it("matches the existing media/jobs schema instead of forcing Phase 6 scene IDs into legacy media lineage", () => {
     const sql = readFileSync(migrationPath, "utf8");
-    const mediaInsert = sql.match(/insert into public\.media_assets\s*\(([^)]*)\)\s*values/is)?.[1] ?? "";
+    const mediaInsert = sql.match(/insert into public\.media_assets\s*\(([^)]*)\)\s*values/i)?.[1] ?? "";
     const mediaConflictUpdate = sql.match(/on conflict \(organization_id, storage_path\) do update\s*set([\s\S]*?)returning id into v_media_id;/i)?.[1] ?? "";
 
     expect(mediaInsert).not.toMatch(/\bscene_id\b/i);
