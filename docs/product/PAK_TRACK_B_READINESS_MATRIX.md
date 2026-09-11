@@ -1,8 +1,8 @@
 # PAK Track B — Production Readiness Matrix
 
 **Workstream:** Track B — Production-Readiness Reconciliation  
-**Slice:** B3 — Partial and Future Route Reconciliation  
-**Baseline:** 10 September 2026  
+**Slice:** B4 — Full Cross-Route Release Verification  
+**Baseline:** 11 September 2026  
 **Authority:** `PAK_MASTER_PRD.md`, `PAK_MASTER_TRD.md`, `PAK_UI_UX_SPEC.md`, `PAK_DEVELOPMENT_ROADMAP.md`, `PAK_TRACEABILITY_MATRIX.md`, `PAK_EXISTING_IMPLEMENTATION_GAP_AUDIT.md`, and the approved Track B design.
 
 ## Summary classification
@@ -82,8 +82,25 @@ B3 implementation was verified before this matrix update on branch head `141c41a
 - B3 route entry surfaces expose no domain mutation buttons, fabricated counts, jobs, provider health, publishing IDs, analytics values, or placeholder destinations.
 - No Supabase schema/migration, authentication, Vault/provider, dependency, or Lovable change was introduced by B3.
 
-The final release gate is the CI result on the exact PR head that includes this matrix. That result is intentionally retained in PR checks rather than embedded here, avoiding self-referential evidence-only commit churn.
+## B4 verification evidence
+
+B4 pre-matrix release verification was completed on branch head `a091c04a4de6f7e8084d5a6a15876ef2e2051b09` by CI run #443 (`34552068616`):
+
+- TypeScript typecheck: PASS.
+- ESLint: PASS with 0 errors; the same 10 pre-existing warnings remain non-blocking and outside B4 scope.
+- Vitest: PASS — 233/233 tests across 48 test files.
+- Production build: PASS.
+- Playwright/E2E: PASS — 17/17 tests.
+- The real unauthenticated `/dashboard` boundary redirects to `/login`; the E2E authorization bypass requires a non-production runtime, explicit `E2E_AUTH_BYPASS=true`, and the exact `x-pak-e2e-auth-bypass: allow` request header.
+- Desktop release traversal uses the rendered primary navigation across all fourteen routes and verifies exactly one `aria-current="page"` link after every transition.
+- Mobile release traversal at 390 × 844 uses the disclosure navigation across all fourteen routes, verifies collapse/reopen semantics and the current-route marker, and verifies no horizontal overflow at every destination.
+- Future and foundation-only routes preserve truthful `Planned` / `Foundation only` boundaries with no fabricated operational actions.
+- Vercel preview deployment for the B4 branch reached Ready state during PR #24 verification.
+
+The final B4 release gate is the CI result on the exact PR head that includes this matrix update. That final check is intentionally referenced from PR checks rather than embedded here, avoiding self-referential evidence-only commit churn.
 
 ## Matrix completeness rule
 
-This matrix contains exactly fourteen unique primary routes. No route is marked fully production-ready solely because `page.tsx` exists. B3 reconciles the entry surfaces for the partial/future modules so users see truthful readiness boundaries and valid recovery paths; it does not implement those future domain workflows. Their underlying capabilities remain governed by the roadmap phases shown above. B4 remains responsible for full cross-route release verification and final Track B release readiness.
+This matrix contains exactly fourteen unique primary routes. No route is marked fully production-ready solely because `page.tsx` exists. Track B now reconciles the implemented, partial, and future entry surfaces so users see truthful readiness boundaries and valid recovery paths. B4 adds cross-route desktop/mobile release verification and a real unauthenticated boundary test; it does not implement Phase 6+ domain workflows. Those capabilities remain governed by the roadmap phases shown above.
+
+There are no unresolved P0 production-readiness blockers in the fourteen-route Track B matrix. Final Track B closure still requires integration into the production branch, exact-green production integration checks, Vercel production deployment verification, and live production smoke as defined by the B4 release plan.
