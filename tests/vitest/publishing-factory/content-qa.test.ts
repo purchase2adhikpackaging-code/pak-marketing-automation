@@ -48,6 +48,29 @@ describe("deterministic manuscript content QA", () => {
     expect(findings.some((f) => f.defectClass === "identity-mismatch")).toBe(true);
   });
 
+  it("accepts HTML-escaped identity text from rendered publication output", () => {
+    const escapedIdentity = {
+      programmeCode: "PAK-D01",
+      subjectCode: "D01-102",
+      subjectTitle: "Applied Engineering Mathematics & Physics for Railways",
+    } as const;
+    const manuscript = [
+      "<!doctype html>",
+      '<html><head><title>PAK-D01 — D01-102 Applied Engineering Mathematics &amp; Physics for Railways</title></head>',
+      '<body><main data-book-id="PAK-D01-S1-D01-102-TEXTBOOK">',
+      '<h1>D01-102 — Applied Engineering Mathematics &amp; Physics for Railways</h1>',
+      '<p>Substantive student-facing railway engineering teaching content.</p>',
+      "</main></body></html>",
+    ].join("\n");
+
+    const findings = runContentQa({
+      manuscript,
+      expectedIdentity: escapedIdentity,
+    });
+
+    expect(findings.some((f) => f.defectClass === "identity-mismatch")).toBe(false);
+  });
+
   it("detects instructor-only content in a student publication", () => {
     const manuscript = [
       "# PAK-D01 — D01-101 Railway Fundamentals",

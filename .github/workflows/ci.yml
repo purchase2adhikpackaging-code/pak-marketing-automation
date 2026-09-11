@@ -47,6 +47,9 @@ jobs:
       - name: Canonical knowledge lock audit
         run: npm run publishing:knowledge-list
 
+      - name: Publishing manuscript factory smoke
+        run: npm run publishing:book-write -- --programme PAK-D01 --subject D01-102 --provider fake --state-root artifacts/publishing/ci-manuscript
+
       - name: Publishing deterministic QA fixture
         run: npm run publishing:qa-fixture
 

@@ -9,12 +9,21 @@ import { KnowledgeSourceSchema } from "./knowledge-domain";
 import { validateKnowledgePack, validateSourceRegistry } from "./knowledge-validation";
 import { getKnowledgePack, loadKnowledgeRegistry } from "./knowledge-registry";
 import { assembleKnowledgeContext } from "./knowledge-context";
+import { runProductionCli } from "./production-cli";
 
 export interface PublishingCliIo {
   cwd: string;
   stdout: (message: string) => void;
   stderr: (message: string) => void;
 }
+
+const PRODUCTION_COMMANDS = new Set([
+  "book-plan",
+  "book-write",
+  "workers",
+  "resume",
+  "production-status",
+]);
 
 function readUtf8(cwd: string, relativePath: string): string {
   return readFileSync(resolve(cwd, relativePath), "utf8");
@@ -103,6 +112,10 @@ export async function runCli(args: readonly string[], io: PublishingCliIo): Prom
   const command = args[0];
 
   try {
+    if (command && PRODUCTION_COMMANDS.has(command)) {
+      return runProductionCli(args, io);
+    }
+
     if (command === "registry") {
       io.stdout(JSON.stringify(registrySummary(loadRegistry(io.cwd)), null, 2));
       return 0;

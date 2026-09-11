@@ -14,7 +14,12 @@
     "publishing:knowledge-validate": "tsx src/modules/publishing-factory/cli.ts knowledge-validate",
     "publishing:knowledge-list": "tsx src/modules/publishing-factory/cli.ts knowledge-list",
     "publishing:knowledge-context": "tsx src/modules/publishing-factory/cli.ts knowledge-context",
-    "publishing:qa-fixture": "tsx src/modules/publishing-factory/cli.ts qa-fixture --fixture good"
+    "publishing:qa-fixture": "tsx src/modules/publishing-factory/cli.ts qa-fixture --fixture good",
+    "publishing:book-plan": "tsx src/modules/publishing-factory/cli.ts book-plan",
+    "publishing:book-write": "tsx src/modules/publishing-factory/cli.ts book-write",
+    "publishing:workers": "tsx src/modules/publishing-factory/cli.ts workers",
+    "publishing:resume": "tsx src/modules/publishing-factory/cli.ts resume",
+    "publishing:status": "tsx src/modules/publishing-factory/cli.ts production-status"
   },
   "dependencies": {
     "@supabase/ssr": "^0.7.0",
