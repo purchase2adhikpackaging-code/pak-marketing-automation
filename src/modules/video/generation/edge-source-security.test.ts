@@ -29,11 +29,11 @@ describe("video-generation Edge security boundary", () => {
     expect(source).not.toMatch(/durationSeconds\?:/);
   });
 
-  it("uses current async V2 LTX 2.5 Pro and explicit silent generation", () => {
+  it("uses verified async V2 LTX 2.3 Pro and explicit silent generation", () => {
     expect(source).toContain('https://api.ltx.io/v2/text-to-video');
-    expect(source).toContain('"ltx-2-5-pro"');
+    expect(source).toContain('"ltx-2-3-pro"');
     expect(source).toContain('generate_audio: false');
-    expect(source).not.toMatch(/ltx-2-pro|ltx-2-fast/);
+    expect(source).not.toMatch(/ltx-2-pro|ltx-2-fast|ltx-2-5/);
   });
 
   it("never returns the LTX key, authorization header, or provider video URL", () => {
