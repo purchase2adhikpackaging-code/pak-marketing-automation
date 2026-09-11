@@ -40,6 +40,53 @@ function service(repo: ScenePlanningRepository = repository()) {
   });
 }
 
+function validGeneratedPlan() {
+  return {
+    scenes: [
+      {
+        ordinal: 1,
+        title: "Opening",
+        narrativeRole: "HOOK" as const,
+        durationSeconds: 5,
+        creativeDirection: "Open credibly.",
+        continuityContext: {},
+        shots: [
+          {
+            ordinal: 1,
+            durationSeconds: 5,
+            narrationStartChar: 0,
+            narrationEndChar: 5,
+            narrationText: "Exact",
+            creativeDirection: "Railway lab opening.",
+            masterVisualPrompt: "Photorealistic railway lab.",
+            negativeConstraints: [],
+            subjectRefs: [],
+            locationRefs: [],
+            composition: "balanced",
+            shotSize: "wide",
+            cameraAngle: "eye level",
+            lensIntent: "35mm",
+            cameraMotion: "slow push",
+            subjectMotion: "natural",
+            environmentMotion: "subtle",
+            depthOfFieldIntent: "moderate",
+            lighting: "daylight",
+            mood: "credible",
+            transitionIn: "cut",
+            transitionOut: "cut",
+            ambienceIntent: "room tone",
+            sfxIntent: "none",
+            musicIntent: "restrained",
+            aspectRatio: "16:9" as const,
+            continuityState: {},
+            generationRequirements: { preserveNarration: true, providerNeutral: true, generatedDialogue: false },
+          },
+        ],
+      },
+    ],
+  };
+}
+
 describe("ScenePlanningService", () => {
   it("enforces existing edit and approval role boundaries", async () => {
     const analystRepo = repository({ getActorRole: vi.fn().mockResolvedValue("ANALYST") });
@@ -140,50 +187,7 @@ describe("ScenePlanningService", () => {
 
   it("persists a complete generated plan through one atomic repository operation with next version number", async () => {
     const repo = repository();
-    const plan = {
-      scenes: [
-        {
-          ordinal: 1,
-          title: "Opening",
-          narrativeRole: "HOOK" as const,
-          durationSeconds: 5,
-          creativeDirection: "Open credibly.",
-          continuityContext: {},
-          shots: [
-            {
-              ordinal: 1,
-              durationSeconds: 5,
-              narrationStartChar: 0,
-              narrationEndChar: 5,
-              narrationText: "Exact",
-              creativeDirection: "Railway lab opening.",
-              masterVisualPrompt: "Photorealistic railway lab.",
-              negativeConstraints: [],
-              subjectRefs: [],
-              locationRefs: [],
-              composition: "balanced",
-              shotSize: "wide",
-              cameraAngle: "eye level",
-              lensIntent: "35mm",
-              cameraMotion: "slow push",
-              subjectMotion: "natural",
-              environmentMotion: "subtle",
-              depthOfFieldIntent: "moderate",
-              lighting: "daylight",
-              mood: "credible",
-              transitionIn: "cut",
-              transitionOut: "cut",
-              ambienceIntent: "room tone",
-              sfxIntent: "none",
-              musicIntent: "restrained",
-              aspectRatio: "16:9" as const,
-              continuityState: {},
-              generationRequirements: { preserveNarration: true, providerNeutral: true, generatedDialogue: false },
-            },
-          ],
-        },
-      ],
-    };
+    const plan = validGeneratedPlan();
 
     await service(repo).persistGeneratedPlan({
       organizationId: sourceArtifact.organizationId,
@@ -251,7 +255,10 @@ describe("ScenePlanningService", () => {
       status: "APPROVED" as const,
       sourceIntegrityHash: "hash-current-123456",
     };
-    const repo = repository({ loadPlanVersion: vi.fn().mockResolvedValue(current) });
+    const repo = repository({
+      loadPlanVersion: vi.fn().mockResolvedValue(current),
+      getNextVersionNumber: vi.fn().mockResolvedValue(4),
+    });
     await service(repo).cloneForEdit({
       organizationId: sourceArtifact.organizationId,
       actorUserId: "44444444-4444-4444-8444-444444444444",
@@ -282,7 +289,7 @@ describe("ScenePlanningService", () => {
         plannerModel: "gpt-5.6-terra",
         creativeBriefSnapshot: {},
         visualBibleSnapshot: {},
-        plan: { scenes: [] },
+        plan: validGeneratedPlan(),
       }),
     ).rejects.toThrow("atomic persistence failed");
   });
