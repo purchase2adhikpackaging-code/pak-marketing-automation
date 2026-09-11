@@ -41,6 +41,12 @@ jobs:
       - name: Publishing registry smoke test
         run: npm run publishing:registry
 
+      - name: Canonical knowledge validation
+        run: npm run publishing:knowledge-validate
+
+      - name: Canonical knowledge lock audit
+        run: npm run publishing:knowledge-list
+
       - name: Publishing deterministic QA fixture
         run: npm run publishing:qa-fixture
 
