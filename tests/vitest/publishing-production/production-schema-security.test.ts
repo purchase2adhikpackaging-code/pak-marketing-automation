@@ -27,21 +27,23 @@ describe("publishing production schema security contract", () => {
     }
   });
 
-  it("locks stable publication identity and three-attempt ceiling", () => {
+  it("locks stable publication identity and three-failure ceiling", () => {
     const source = sql();
 
     expect(source).toMatch(/unique\s*\(\s*production_run_id\s*,\s*book_id\s*,\s*edition\s*,\s*revision\s*\)/i);
-    expect(source).toMatch(/max_attempts\s+integer\s+not null\s+default\s+3/i);
-    expect(source).toMatch(/check\s*\(\s*max_attempts\s*=\s*3\s*\)/i);
-    expect(source).toMatch(/attempt_count\s+integer\s+not null\s+default\s+0/i);
+    expect(source).toMatch(/claim_count\s+integer\s+not null\s+default\s+0/i);
+    expect(source).toMatch(/failure_attempts\s+integer\s+not null\s+default\s+0/i);
+    expect(source).toMatch(/max_failure_attempts\s+integer\s+not null\s+default\s+3/i);
+    expect(source).toMatch(/check\s*\(\s*max_failure_attempts\s*=\s*3\s*\)/i);
   });
 
-  it("defines lease-aware atomic queue RPCs with skip-locked claiming", () => {
+  it("defines lease-aware atomic queue RPCs with successful yield", () => {
     const source = sql();
 
     for (const fn of [
       "claim_publishing_jobs",
       "heartbeat_publishing_job",
+      "yield_publishing_job",
       "complete_publishing_job",
       "fail_publishing_job",
       "set_publishing_run_state",
@@ -52,7 +54,9 @@ describe("publishing production schema security contract", () => {
     expect(source).toMatch(/for update(?:\s+of\s+\w+)?\s+skip locked/i);
     expect(source).toMatch(/lease_owner/i);
     expect(source).toMatch(/lease_expires_at/i);
-    expect(source).toMatch(/attempt_count\s*\+\s*1/i);
+    expect(source).toMatch(/claim_count\s*=\s*j\.claim_count\s*\+\s*1/i);
+    expect(source).toMatch(/failure_attempts\s*=\s*least\(failure_attempts\s*\+\s*1/i);
+    expect(source).toMatch(/yield_publishing_job[\s\S]*status\s*=\s*'QUEUED'/i);
     expect(source).toMatch(/blocked/i);
   });
 
