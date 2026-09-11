@@ -15,6 +15,15 @@ import { granularReplanScenePlanAction } from "./granular-replan-actions";
 const EDIT_ROLES: readonly AppRole[] = ["OWNER", "ADMIN", "EDITOR"];
 const EDITABLE_STATUSES: readonly ScenePlanStatus[] = ["DRAFT", "QC_REQUIRED", "REVIEW_REQUIRED"];
 
+export type ShotVideoGenerationView = {
+  jobId: string;
+  attemptId: string;
+  state: "QUEUED" | "GENERATING" | "IMPORTING" | "COMPLETED" | "FAILED";
+  mediaAssetId?: string;
+  retryable?: boolean;
+  errorCode?: string;
+};
+
 export type ScenePlanEditorShot = {
   id: string;
   ordinal: number;
@@ -26,6 +35,7 @@ export type ScenePlanEditorShot = {
   masterVisualPrompt: string;
   cameraMotion: string;
   humanModified: boolean;
+  videoGeneration?: ShotVideoGenerationView;
 };
 
 export type ScenePlanEditorScene = {
@@ -91,236 +101,186 @@ export function ScenePlanEditor({
     router.refresh();
   }
 
-  function saveScene(event: React.FormEvent<HTMLFormElement>, scene: ScenePlanEditorScene) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    setError(null);
-    setNotice(null);
+  function updateScene(scene: ScenePlanEditorScene, form: FormData) {
     startTransition(async () => {
       const result = await updateScenePlanSceneDraftAction({
         organizationId,
         planVersionId,
         sceneId: scene.id,
         title: textField(form, "title"),
+        narrativeRole: textField(form, "narrativeRole") as ScenePlanEditorScene["narrativeRole"],
         durationSeconds: numberField(form, "durationSeconds"),
         creativeDirection: textField(form, "creativeDirection"),
       });
-      finish(result, `Scene ${scene.ordinal} changes saved. QC must be rerun.`);
+      finish(result, `Scene ${scene.ordinal} updated.`);
     });
   }
 
-  function saveShot(event: React.FormEvent<HTMLFormElement>, scene: ScenePlanEditorScene, shot: ScenePlanEditorShot) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    setError(null);
-    setNotice(null);
+  function updateShot(sceneId: string, shot: ScenePlanEditorShot, form: FormData) {
     startTransition(async () => {
       const result = await updateScenePlanShotDraftAction({
         organizationId,
         planVersionId,
+        sceneId,
         shotId: shot.id,
         durationSeconds: numberField(form, "durationSeconds"),
         creativeDirection: textField(form, "creativeDirection"),
         masterVisualPrompt: textField(form, "masterVisualPrompt"),
         cameraMotion: textField(form, "cameraMotion"),
       });
-      finish(result, `Shot ${scene.ordinal}.${shot.ordinal} changes saved. QC must be rerun.`);
+      finish(result, `Shot ${shot.ordinal} updated.`);
     });
   }
 
   function moveScene(index: number, direction: -1 | 1) {
-    const next = reordered(scenes, index, direction);
-    if (next === scenes) return;
+    const order = reordered(scenes, index, direction).map((scene) => scene.id);
     startTransition(async () => {
-      const result = await reorderScenePlanScenesAction({
-        organizationId,
-        planVersionId,
-        orderedSceneIds: next.map((scene) => scene.id),
-      });
-      finish(result, "Scene order updated. QC must be rerun.");
+      const result = await reorderScenePlanScenesAction({ organizationId, planVersionId, sceneIds: order });
+      finish(result, "Scene order updated.");
     });
   }
 
   function moveShot(scene: ScenePlanEditorScene, index: number, direction: -1 | 1) {
-    const next = reordered(scene.shots, index, direction);
-    if (next === scene.shots) return;
+    const order = reordered(scene.shots, index, direction).map((shot) => shot.id);
     startTransition(async () => {
-      const result = await reorderScenePlanShotsAction({
-        organizationId,
-        planVersionId,
-        sceneId: scene.id,
-        orderedShotIds: next.map((shot) => shot.id),
-      });
-      finish(result, `Shot order updated in Scene ${scene.ordinal}. QC must be rerun.`);
+      const result = await reorderScenePlanShotsAction({ organizationId, planVersionId, sceneId: scene.id, shotIds: order });
+      finish(result, "Shot order updated.");
     });
   }
 
   function replanScene(scene: ScenePlanEditorScene) {
-    const replaceHumanModifiedShots = replaceHumanByScene[scene.ordinal] === true;
     startTransition(async () => {
       const result = await granularReplanScenePlanAction({
         organizationId,
         planVersionId,
         scope: "SCENE",
-        targetSceneOrdinal: scene.ordinal,
-        replaceHumanModifiedShots,
+        sceneOrdinal: scene.ordinal,
+        replaceHumanModified: replaceHumanByScene[scene.ordinal] ?? false,
       });
-      if (!result.ok) {
-        setNotice(null);
-        setError(result.error);
-        return;
-      }
-      setError(null);
-      setNotice(`Scene ${scene.ordinal} replanned as a new version. QC has been rerun.`);
-      router.refresh();
+      finish(result, `Scene ${scene.ordinal} replanned into a new draft version.`);
     });
   }
 
-  function replanShot(scene: ScenePlanEditorScene, shot: ScenePlanEditorShot) {
-    const replaceHumanModifiedShots = replaceHumanByScene[scene.ordinal] === true;
+  function replanShot(scene: ScenePlanEditorScene, shot: ScenePlanEditorShot, replaceHumanModified: boolean) {
     startTransition(async () => {
       const result = await granularReplanScenePlanAction({
         organizationId,
         planVersionId,
         scope: "SHOT",
-        targetSceneOrdinal: scene.ordinal,
-        targetShotOrdinal: shot.ordinal,
-        replaceHumanModifiedShots,
+        sceneOrdinal: scene.ordinal,
+        shotOrdinal: shot.ordinal,
+        replaceHumanModified,
       });
-      if (!result.ok) {
-        setNotice(null);
-        setError(result.error);
-        return;
-      }
-      setError(null);
-      setNotice(`Shot ${scene.ordinal}.${shot.ordinal} replanned as a new version. QC has been rerun.`);
-      router.refresh();
+      finish(result, `Shot ${shot.ordinal} replanned into a new draft version.`);
     });
   }
 
   return (
-    <div className="space-y-5">
-      {error ? <div role="alert" className="rounded-xl border border-red-900/60 bg-red-950/30 p-3 text-sm text-red-200">{error}</div> : null}
-      {notice ? <div role="status" className="rounded-xl border border-emerald-900/60 bg-emerald-950/30 p-3 text-sm text-emerald-200">{notice}</div> : null}
+    <section className="space-y-4" aria-label="Scene plan editor">
+      {error ? <p role="alert" className="rounded-lg border border-red-900 bg-red-950/40 p-3 text-sm text-red-200">{error}</p> : null}
+      {notice ? <p role="status" className="rounded-lg border border-emerald-900 bg-emerald-950/40 p-3 text-sm text-emerald-200">{notice}</p> : null}
 
-      {scenes.map((scene, sceneIndex) => {
-        const containsHumanEdits = scene.shots.some((shot) => shot.humanModified);
-        const replaceHumanModifiedShots = replaceHumanByScene[scene.ordinal] === true;
-        return (
-          <details key={scene.id} open={sceneIndex === 0} className="rounded-2xl border border-slate-800 bg-slate-950">
-            <summary className="cursor-pointer list-none p-5">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Scene {scene.ordinal} · {scene.narrativeRole}</p>
-                  <h4 className="mt-1 text-lg font-semibold text-white">{scene.title}</h4>
-                  <p className="mt-2 text-sm text-slate-400">{scene.creativeDirection}</p>
-                </div>
-                <span className="text-xs text-slate-400">{scene.durationSeconds}s · {scene.shots.length} shot{scene.shots.length === 1 ? "" : "s"}</span>
+      {scenes.map((scene, sceneIndex) => (
+        <article key={scene.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="font-semibold">Scene {scene.ordinal} · {scene.narrativeRole}</h3>
+              <p className="text-sm text-slate-400">{scene.title} · {scene.durationSeconds}s</p>
+            </div>
+            {editable ? (
+              <div className="flex gap-2">
+                <button type="button" disabled={isPending || sceneIndex === 0} onClick={() => moveScene(sceneIndex, -1)}>Move up</button>
+                <button type="button" disabled={isPending || sceneIndex === scenes.length - 1} onClick={() => moveScene(sceneIndex, 1)}>Move down</button>
               </div>
-            </summary>
+            ) : null}
+          </div>
 
-            <div className="border-t border-slate-800 p-5">
-              {editable ? (
-                <form onSubmit={(event) => saveScene(event, scene)} className="grid gap-4 lg:grid-cols-2">
-                  <label className="text-sm text-slate-300">
-                    Scene title
-                    <input name="title" aria-label={`Scene ${scene.ordinal} title`} defaultValue={scene.title} disabled={isPending} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-50" />
-                  </label>
-                  <label className="text-sm text-slate-300">
-                    Duration seconds
-                    <input name="durationSeconds" aria-label={`Scene ${scene.ordinal} duration`} type="number" min="0.1" step="0.1" defaultValue={scene.durationSeconds} disabled={isPending} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-50" />
-                  </label>
-                  <label className="text-sm text-slate-300 lg:col-span-2">
-                    Creative direction
-                    <textarea name="creativeDirection" aria-label={`Scene ${scene.ordinal} creative direction`} defaultValue={scene.creativeDirection} rows={3} disabled={isPending} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-50" />
-                  </label>
-                  <div className="flex flex-wrap gap-2 lg:col-span-2">
-                    <button type="submit" disabled={isPending} className="rounded-xl border border-slate-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50" aria-label={`Save Scene ${scene.ordinal} changes`}>Save Scene {scene.ordinal} changes</button>
-                    {sceneIndex > 0 ? <button type="button" onClick={() => moveScene(sceneIndex, -1)} disabled={isPending} className="rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-200 disabled:opacity-50" aria-label={`Move Scene ${scene.ordinal} up`}>Move up</button> : null}
-                    {sceneIndex < scenes.length - 1 ? <button type="button" onClick={() => moveScene(sceneIndex, 1)} disabled={isPending} className="rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-200 disabled:opacity-50" aria-label={`Move Scene ${scene.ordinal} down`}>Move down</button> : null}
-                    <button type="button" onClick={() => replanScene(scene)} disabled={isPending} className="rounded-xl border border-slate-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50" aria-label={`Replan Scene ${scene.ordinal}`}>Replan Scene {scene.ordinal}</button>
-                  </div>
-                </form>
-              ) : (
-                <p className="text-sm text-slate-400">This version is read-only. Create an editable version before changing or replanning scenes.</p>
-              )}
+          <p className="mb-4 text-sm text-slate-300"><span className="font-medium text-slate-100">Creative Direction:</span> {scene.creativeDirection}</p>
 
-              {editable && containsHumanEdits ? (
-                <label className="mt-4 flex items-start gap-3 rounded-xl border border-amber-900/40 bg-amber-950/20 p-3 text-sm text-amber-100">
+          {editable ? (
+            <details className="mb-4 rounded-lg border border-slate-800 p-3">
+              <summary className="cursor-pointer font-medium">Edit scene</summary>
+              <form action={(form) => updateScene(scene, form)} className="mt-3 grid gap-3">
+                <label>Title<input name="title" defaultValue={scene.title} /></label>
+                <label>Narrative role<input name="narrativeRole" defaultValue={scene.narrativeRole} /></label>
+                <label>Duration seconds<input name="durationSeconds" type="number" step="0.1" min="0.1" defaultValue={scene.durationSeconds} /></label>
+                <label>Creative Direction<textarea name="creativeDirection" defaultValue={scene.creativeDirection} /></label>
+                <button type="submit" disabled={isPending}>Save scene</button>
+              </form>
+              <div className="mt-4 border-t border-slate-800 pt-3">
+                <label className="flex items-center gap-2 text-sm">
                   <input
                     type="checkbox"
-                    aria-label={`Allow AI to replace human edits in Scene ${scene.ordinal}`}
-                    checked={replaceHumanModifiedShots}
+                    checked={replaceHumanByScene[scene.ordinal] ?? false}
                     onChange={(event) => setReplaceHumanByScene((current) => ({ ...current, [scene.ordinal]: event.target.checked }))}
-                    className="mt-1"
                   />
-                  <span>Allow AI to replace human edits in Scene {scene.ordinal}. Leave unchecked to preserve all human-modified shots.</span>
+                  Allow AI to replace human-modified shots in this scene
                 </label>
-              ) : null}
-
-              <div className="mt-5 space-y-4">
-                {scene.shots.map((shot, shotIndex) => {
-                  const humanTargetProtected = shot.humanModified && !replaceHumanModifiedShots;
-                  return (
-                    <article key={shot.id} className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <p className="text-sm font-semibold text-white">Shot {scene.ordinal}.{shot.ordinal} · {shot.durationSeconds}s</p>
-                        {shot.humanModified ? <span className="rounded-full border border-amber-800 px-2.5 py-1 text-xs text-amber-200">Human modified</span> : null}
-                      </div>
-
-                      <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950/70 p-3">
-                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Locked narration · Characters {shot.narrationStartChar ?? "—"}–{shot.narrationEndChar ?? "—"}</p>
-                        <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-300">{shot.narrationText}</p>
-                      </div>
-
-                      {editable ? (
-                        <form onSubmit={(event) => saveShot(event, scene, shot)} className="mt-4 grid gap-4 lg:grid-cols-2">
-                          <label className="text-sm text-slate-300">
-                            Duration seconds
-                            <input name="durationSeconds" aria-label={`Shot ${scene.ordinal}.${shot.ordinal} duration`} type="number" min="0.1" step="0.1" defaultValue={shot.durationSeconds} disabled={isPending} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-50" />
-                          </label>
-                          <label className="text-sm text-slate-300">
-                            Camera motion
-                            <input name="cameraMotion" aria-label={`Shot ${scene.ordinal}.${shot.ordinal} camera motion`} defaultValue={shot.cameraMotion} disabled={isPending} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-50" />
-                          </label>
-                          <label className="text-sm text-slate-300 lg:col-span-2">
-                            Creative direction
-                            <textarea name="creativeDirection" aria-label={`Shot ${scene.ordinal}.${shot.ordinal} creative direction`} defaultValue={shot.creativeDirection} rows={3} disabled={isPending} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-50" />
-                          </label>
-                          <label className="text-sm text-slate-300 lg:col-span-2">
-                            Generation specification
-                            <textarea name="masterVisualPrompt" aria-label={`Shot ${scene.ordinal}.${shot.ordinal} generation specification`} defaultValue={shot.masterVisualPrompt} rows={4} disabled={isPending} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 font-mono text-sm text-slate-100 disabled:opacity-50" />
-                          </label>
-                          <div className="flex flex-wrap gap-2 lg:col-span-2">
-                            <button type="submit" disabled={isPending} className="rounded-xl border border-slate-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50" aria-label={`Save Shot ${scene.ordinal}.${shot.ordinal} changes`}>Save Shot {scene.ordinal}.{shot.ordinal} changes</button>
-                            {shotIndex > 0 ? <button type="button" onClick={() => moveShot(scene, shotIndex, -1)} disabled={isPending} className="rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-200 disabled:opacity-50" aria-label={`Move Shot ${scene.ordinal}.${shot.ordinal} up`}>Move up</button> : null}
-                            {shotIndex < scene.shots.length - 1 ? <button type="button" onClick={() => moveShot(scene, shotIndex, 1)} disabled={isPending} className="rounded-xl border border-slate-700 px-3 py-2 text-sm text-slate-200 disabled:opacity-50" aria-label={`Move Shot ${scene.ordinal}.${shot.ordinal} down`}>Move down</button> : null}
-                            <button
-                              type="button"
-                              onClick={() => replanShot(scene, shot)}
-                              disabled={isPending || humanTargetProtected}
-                              title={humanTargetProtected ? "Enable explicit human-edit replacement for this scene before replanning this shot." : undefined}
-                              className="rounded-xl border border-slate-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-40"
-                              aria-label={`Replan Shot ${scene.ordinal}.${shot.ordinal}`}
-                            >
-                              Replan Shot {scene.ordinal}.{shot.ordinal}
-                            </button>
-                          </div>
-                        </form>
-                      ) : (
-                        <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                          <div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Creative Direction</p><p className="mt-2 text-sm leading-6 text-slate-200">{shot.creativeDirection}</p></div>
-                          <div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Generation Specification</p><p className="mt-2 text-sm leading-6 text-slate-200">{shot.masterVisualPrompt}</p></div>
-                        </div>
-                      )}
-                    </article>
-                  );
-                })}
+                <button type="button" disabled={isPending} onClick={() => replanScene(scene)}>Replan scene</button>
               </div>
-            </div>
-          </details>
-        );
-      })}
-    </div>
+            </details>
+          ) : null}
+
+          <div className="space-y-3">
+            {scene.shots.map((shot, shotIndex) => (
+              <div key={shot.id} className="rounded-lg border border-slate-800 bg-slate-900/40 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="font-medium">Shot {shot.ordinal} · {shot.durationSeconds}s</p>
+                  {editable ? (
+                    <div className="flex gap-2">
+                      <button type="button" disabled={isPending || shotIndex === 0} onClick={() => moveShot(scene, shotIndex, -1)}>Move shot up</button>
+                      <button type="button" disabled={isPending || shotIndex === scene.shots.length - 1} onClick={() => moveShot(scene, shotIndex, 1)}>Move shot down</button>
+                    </div>
+                  ) : null}
+                </div>
+                <p className="mt-2 text-sm"><span className="font-medium">Narration:</span> {shot.narrationText || "—"}</p>
+                <p className="mt-1 text-xs text-slate-500">Characters {shot.narrationStartChar ?? "—"}–{shot.narrationEndChar ?? "—"}</p>
+                <p className="mt-3 text-sm"><span className="font-medium">Creative Direction:</span> {shot.creativeDirection}</p>
+                <p className="mt-2 text-sm"><span className="font-medium">Generation Specification:</span> {shot.masterVisualPrompt}</p>
+                <p className="mt-2 text-xs text-slate-500">Camera: {shot.cameraMotion || "not specified"}{shot.humanModified ? " · Human modified" : ""}</p>
+
+                {editable ? (
+                  <details className="mt-3 rounded-lg border border-slate-800 p-3">
+                    <summary className="cursor-pointer font-medium">Edit shot</summary>
+                    <form action={(form) => updateShot(scene.id, shot, form)} className="mt-3 grid gap-3">
+                      <label>Duration seconds<input name="durationSeconds" type="number" step="0.1" min="0.1" defaultValue={shot.durationSeconds} /></label>
+                      <label>Creative Direction<textarea name="creativeDirection" defaultValue={shot.creativeDirection} /></label>
+                      <label>Generation Specification<textarea name="masterVisualPrompt" defaultValue={shot.masterVisualPrompt} /></label>
+                      <label>Camera motion<input name="cameraMotion" defaultValue={shot.cameraMotion} /></label>
+                      <button type="submit" disabled={isPending}>Save shot</button>
+                    </form>
+                    <div className="mt-4 border-t border-slate-800 pt-3">
+                      {shot.humanModified ? (
+                        <label className="mb-2 flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            aria-label={`Allow AI to replace human edit for shot ${shot.ordinal}`}
+                            onChange={(event) => {
+                              const checked = event.target.checked;
+                              const button = event.currentTarget.closest("details")?.querySelector<HTMLButtonElement>("button[data-shot-replan]");
+                              if (button) button.dataset.replaceHuman = checked ? "true" : "false";
+                            }}
+                          />
+                          Allow AI to replace this human edit
+                        </label>
+                      ) : null}
+                      <button
+                        type="button"
+                        data-shot-replan
+                        data-replace-human="false"
+                        disabled={isPending || shot.humanModified}
+                        onClick={(event) => replanShot(scene, shot, event.currentTarget.dataset.replaceHuman === "true")}
+                      >
+                        Replan shot
+                      </button>
+                    </div>
+                  </details>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </article>
+      ))}
+    </section>
   );
 }
