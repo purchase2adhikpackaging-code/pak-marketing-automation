@@ -95,6 +95,26 @@ describe("Scene Planning workflow actions", () => {
     expect(dependencies.runAndPersistQc).toHaveBeenCalledWith(planVersionId, context, generatedPlan);
   });
 
+  it("rejects non-editor actors before loading context or spending planner tokens", async () => {
+    const dependencies = {
+      getActor: vi.fn().mockResolvedValue({ id: actorId }),
+      authorize: vi.fn().mockResolvedValue(false),
+      loadGenerationContext: vi.fn().mockResolvedValue(context),
+      generatePlan: vi.fn().mockResolvedValue({ plan: generatedPlan, provider: "openai", model: "gpt-5.6-terra" }),
+      persistPlan: vi.fn().mockResolvedValue({ id: planVersionId }),
+      runAndPersistQc: vi.fn().mockResolvedValue({ blockerCount: 0, warningCount: 0 }),
+    };
+
+    const result = await executeGenerateScenePlanAction({ organizationId, projectId }, dependencies);
+
+    expect(result).toEqual({ ok: false, error: "You do not have permission to generate a Scene Plan for this organization." });
+    expect(dependencies.authorize).toHaveBeenCalledWith(actorId, organizationId);
+    expect(dependencies.loadGenerationContext).not.toHaveBeenCalled();
+    expect(dependencies.generatePlan).not.toHaveBeenCalled();
+    expect(dependencies.persistPlan).not.toHaveBeenCalled();
+    expect(dependencies.runAndPersistQc).not.toHaveBeenCalled();
+  });
+
   it("does not persist or run QC when source integrity is stale", async () => {
     const stale = { ...context, source: { ...context.source, integrityHash: "sha256:new" } };
     const dependencies = {
