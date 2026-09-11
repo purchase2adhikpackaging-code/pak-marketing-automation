@@ -13,10 +13,6 @@ declare
   v_released integer;
   v_current_status text;
 begin
-  if auth.role() <> 'service_role' then
-    raise exception 'service role required';
-  end if;
-
   select
     count(*) filter (where status = 'QUEUED'),
     count(*) filter (where status = 'RUNNING'),
