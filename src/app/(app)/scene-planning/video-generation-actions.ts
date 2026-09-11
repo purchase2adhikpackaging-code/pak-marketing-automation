@@ -126,6 +126,22 @@ export async function executeReconcileShotVideoGenerationAction(
   }
 }
 
+export async function executeRetryShotVideoGenerationAction(
+  input: unknown,
+  dependencies: VideoGenerationActionDependencies,
+): Promise<SafeVideoGenerationActionResult> {
+  const parsed = edgeIdsSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Please check the failed video generation and try again." };
+
+  try {
+    const authorization = await authorizeEditor(parsed.data.organizationId, dependencies);
+    if ("error" in authorization) return { ok: false, error: authorization.error };
+    return normalizeEdgeResult(await dependencies.invokeEdge({ operation: "retry", ...parsed.data }));
+  } catch {
+    return { ok: false, error: "Video generation retry could not be started." };
+  }
+}
+
 async function productionActor(): Promise<Actor | null> {
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase.auth.getUser();
@@ -148,4 +164,8 @@ export async function enqueueShotVideoGenerationAction(input: unknown): Promise<
 
 export async function reconcileShotVideoGenerationAction(input: unknown): Promise<SafeVideoGenerationActionResult> {
   return executeReconcileShotVideoGenerationAction(input, productionDependencies);
+}
+
+export async function retryShotVideoGenerationAction(input: unknown): Promise<SafeVideoGenerationActionResult> {
+  return executeRetryShotVideoGenerationAction(input, productionDependencies);
 }
