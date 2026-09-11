@@ -47,23 +47,37 @@ function normalizeText(value: string): string {
 export async function runPdfQa(input: PdfQaInput): Promise<QaFinding[]> {
   const findings: QaFinding[] = [];
   let findingIndex = 1;
-  let pdf: Awaited<ReturnType<typeof import("pdfjs-dist/legacy/build/pdf.mjs")["getDocument"]>["promise"]> | undefined;
 
+  let getDocument: typeof import("pdfjs-dist/legacy/build/pdf.mjs")["getDocument"];
+  let data: Uint8Array;
   try {
-    const { getDocument } = await import("pdfjs-dist/legacy/build/pdf.mjs");
-    const data = new Uint8Array(await readFile(input.pdfPath));
-    pdf = await getDocument({ data }).promise;
+    ({ getDocument } = await import("pdfjs-dist/legacy/build/pdf.mjs"));
+    data = new Uint8Array(await readFile(input.pdfPath));
   } catch (error) {
     return [
       makeFinding(
         findingIndex,
         "pdf-unreadable",
-        `PDF could not be opened by PDF.js: ${error instanceof Error ? error.message : String(error)}`,
+        `PDF QA could not load its parser or input bytes: ${error instanceof Error ? error.message : String(error)}`,
       ),
     ];
   }
 
+  const loadingTask = getDocument({ data });
   try {
+    let pdf;
+    try {
+      pdf = await loadingTask.promise;
+    } catch (error) {
+      return [
+        makeFinding(
+          findingIndex,
+          "pdf-unreadable",
+          `PDF could not be opened by PDF.js: ${error instanceof Error ? error.message : String(error)}`,
+        ),
+      ];
+    }
+
     if (pdf.numPages < 1) {
       findings.push(makeFinding(findingIndex++, "pdf-unreadable", "PDF contains no pages."));
       return findings;
@@ -159,6 +173,6 @@ export async function runPdfQa(input: PdfQaInput): Promise<QaFinding[]> {
 
     return findings;
   } finally {
-    await pdf.destroy();
+    await loadingTask.destroy();
   }
 }
