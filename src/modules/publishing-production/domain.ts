@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { BookJobSchema } from "@/modules/publishing-factory/domain";
 
 export const ProductionRunStatusSchema = z.enum([
   "QUEUED",
@@ -73,6 +74,8 @@ export const ProductionJobSchema = z.object({
   academicPeriod: z.string().nullish(),
   edition: z.string().min(1),
   revision: z.string().min(1),
+  bookJobPayload: BookJobSchema,
+  curriculumText: z.string().min(1),
   status: ProductionJobStatusSchema,
   claimCount: z.number().int().nonnegative(),
   failureAttempts: z.number().int().min(0).max(3),
