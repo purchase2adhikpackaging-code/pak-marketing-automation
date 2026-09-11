@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   executeEnqueueShotVideoGenerationAction,
   executeReconcileShotVideoGenerationAction,
+  executeRetryShotVideoGenerationAction,
   type VideoGenerationActionDependencies,
 } from "./video-generation-actions";
 
@@ -83,5 +84,26 @@ describe("shot video generation server actions", () => {
       state: "SUBMITTED",
     });
     expect(deps.invokeEdge).toHaveBeenCalledWith({ operation: "reconcile", ...input });
+  });
+
+  it("routes retry through the authenticated Edge boundary", async () => {
+    const deps = dependencies("EDITOR");
+    const input = {
+      organizationId: ids.organizationId,
+      jobId: "55555555-5555-4555-8555-555555555555",
+      attemptId: "66666666-6666-4666-8666-666666666666",
+    };
+    deps.invokeEdge = vi.fn().mockResolvedValue({
+      state: "SUBMITTED",
+      jobId: input.jobId,
+      attemptId: "77777777-7777-4777-8777-777777777777",
+    });
+
+    await expect(executeRetryShotVideoGenerationAction(input, deps)).resolves.toMatchObject({
+      ok: true,
+      state: "SUBMITTED",
+      attemptId: "77777777-7777-4777-8777-777777777777",
+    });
+    expect(deps.invokeEdge).toHaveBeenCalledWith({ operation: "retry", ...input });
   });
 });
