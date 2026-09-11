@@ -26,36 +26,20 @@ function approvedVersion() {
 
 describe("Scene Planning workflow", () => {
   it("requires zero blockers and fresh source for review and approval", () => {
-    expect(() =>
-      assertScenePlanTransition("QC_REQUIRED", "REVIEW_REQUIRED", { blockerCount: 0, sourceFresh: true }),
-    ).not.toThrow();
-    expect(() =>
-      assertScenePlanTransition("QC_REQUIRED", "REVIEW_REQUIRED", { blockerCount: 1, sourceFresh: true }),
-    ).toThrow(/BLOCKER/);
-    expect(() =>
-      assertScenePlanTransition("QC_REQUIRED", "REVIEW_REQUIRED", { blockerCount: 0, sourceFresh: false }),
-    ).toThrow(/stale/i);
-    expect(() =>
-      assertScenePlanTransition("REVIEW_REQUIRED", "APPROVED", { blockerCount: 0, sourceFresh: true }),
-    ).not.toThrow();
+    expect(() => assertScenePlanTransition("QC_REQUIRED", "REVIEW_REQUIRED", { blockerCount: 0, sourceFresh: true })).not.toThrow();
+    expect(() => assertScenePlanTransition("QC_REQUIRED", "REVIEW_REQUIRED", { blockerCount: 1, sourceFresh: true })).toThrow(/BLOCKER/);
+    expect(() => assertScenePlanTransition("QC_REQUIRED", "REVIEW_REQUIRED", { blockerCount: 0, sourceFresh: false })).toThrow(/stale/i);
+    expect(() => assertScenePlanTransition("REVIEW_REQUIRED", "APPROVED", { blockerCount: 0, sourceFresh: true })).not.toThrow();
   });
 
   it("refuses direct draft approval and approved editing", () => {
-    expect(() =>
-      assertScenePlanTransition("DRAFT", "APPROVED", { blockerCount: 0, sourceFresh: true }),
-    ).toThrow(/transition/i);
-    expect(() =>
-      assertScenePlanTransition("APPROVED", "DRAFT", { blockerCount: 0, sourceFresh: true }),
-    ).toThrow(/transition/i);
+    expect(() => assertScenePlanTransition("DRAFT", "APPROVED", { blockerCount: 0, sourceFresh: true })).toThrow(/transition/i);
+    expect(() => assertScenePlanTransition("APPROVED", "DRAFT", { blockerCount: 0, sourceFresh: true })).toThrow(/transition/i);
   });
 
   it("allows approved plans to become stale or superseded", () => {
-    expect(() =>
-      assertScenePlanTransition("APPROVED", "STALE", { blockerCount: 0, sourceFresh: false }),
-    ).not.toThrow();
-    expect(() =>
-      assertScenePlanTransition("APPROVED", "SUPERSEDED", { blockerCount: 0, sourceFresh: true }),
-    ).not.toThrow();
+    expect(() => assertScenePlanTransition("APPROVED", "STALE", { blockerCount: 0, sourceFresh: false })).not.toThrow();
+    expect(() => assertScenePlanTransition("APPROVED", "SUPERSEDED", { blockerCount: 0, sourceFresh: true })).not.toThrow();
   });
 
   it("clones an approved version into the next draft using copy-on-write", () => {
@@ -67,9 +51,9 @@ describe("Scene Planning workflow", () => {
     expect(clone.status).toBe("DRAFT");
     expect(clone.approvedBy).toBeNull();
     expect(clone.approvedAt).toBeNull();
-    expect(clone.scenes[0].shots[0].humanModified).toBe(true);
+    expect(clone.scenes[0]!.shots[0]!.humanModified).toBe(true);
     expect(clone.scenes).not.toBe(source.scenes);
-    expect(clone.scenes[0].shots[0]).not.toBe(source.scenes[0].shots[0]);
+    expect(clone.scenes[0]!.shots[0]).not.toBe(source.scenes[0]!.shots[0]);
   });
 
   it("marks a plan stale without mutating creative payload", () => {
