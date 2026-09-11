@@ -72,6 +72,19 @@ function transport(): PublishingProductionTransport & { calls: Array<{ kind: str
         updated_at: "2026-09-12T00:00:00Z",
       };
     },
+    async insertJobs(payloads) {
+      calls.push({ kind: "insertJobs", payload: payloads });
+      return payloads.map((payload, index) => jobRow({
+        ...payload,
+        id: `22222222-2222-4222-8222-22222222222${index}`,
+        status: "QUEUED",
+        claim_count: 0,
+        failure_attempts: 0,
+        lease_owner: null,
+        lease_expires_at: null,
+        current_stage: null,
+      }));
+    },
     async listRuns(organizationId) {
       calls.push({ kind: "listRuns", payload: organizationId });
       return [];
@@ -132,6 +145,25 @@ describe("PublishingProductionRepository", () => {
     expect(JSON.stringify(call?.payload)).toContain("PAK-D01");
     expect(JSON.stringify(call?.payload)).toContain("D01-102");
     expect((call?.payload as { idempotency_key?: string }).idempotency_key).toMatch(/^[a-f0-9]{64}$/);
+  });
+
+  it("enqueues governed book payload and curriculum text", async () => {
+    const client = transport();
+    const repo = new PublishingProductionRepository(client);
+    const jobs = await repo.enqueueJobs({
+      organizationId: orgId,
+      productionRunId: "11111111-1111-4111-8111-111111111111",
+      jobs: [{ job: governedBookJob, curriculumText: "D01-102 governed curriculum text" }],
+    });
+    expect(jobs).toHaveLength(1);
+    expect(jobs[0]?.bookJobPayload.bookId).toBe(governedBookJob.bookId);
+    expect(client.calls.find((entry) => entry.kind === "insertJobs")?.payload).toEqual([
+      expect.objectContaining({
+        book_id: governedBookJob.bookId,
+        book_job_payload: governedBookJob,
+        curriculum_text: "D01-102 governed curriculum text",
+      }),
+    ]);
   });
 
   it("fails closed when an editor attempts a portfolio run", async () => {
