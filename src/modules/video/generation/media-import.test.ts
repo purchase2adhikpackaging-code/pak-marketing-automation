@@ -14,7 +14,7 @@ describe("generated video media import", () => {
         attemptId: "44444444-4444-4444-8444-444444444444",
       }),
     ).toBe(
-      "11111111-1111-4111-8111-111111111111/generated-video/22222222-2222-4222-8222-222222222222/33333333-3333-4333-8333-333333333333/44444444-4444-4444-8444-444444444444.mp4",
+      "11111111-1111-4111-8111-111111111111/generated-video/22222222-2222-4222-8222-222222222222-33333333-3333-4333-8333-333333333333-44444444-4444-4444-8444-444444444444.mp4",
     );
   });
 
@@ -30,7 +30,7 @@ describe("generated video media import", () => {
     });
   });
 
-  it("rejects non-2xx, non-video, and empty provider downloads", async () => {
+  it("rejects non-2xx, non-video, empty, and oversized provider downloads", async () => {
     await expect(
       assertGeneratedVideoResponse(new Response("provider error", { status: 503 })),
     ).rejects.toThrow(/download/i);
@@ -52,5 +52,15 @@ describe("generated video media import", () => {
         }),
       ),
     ).rejects.toThrow(/empty/i);
+
+    await expect(
+      assertGeneratedVideoResponse(
+        new Response(new Uint8Array(17), {
+          status: 200,
+          headers: { "content-type": "video/mp4" },
+        }),
+        16,
+      ),
+    ).rejects.toThrow(/maximum/i);
   });
 });
