@@ -38,6 +38,15 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Install final assembly worker dependencies
+        run: npm install --prefix workers/video-assembly
+
+      - name: Typecheck final assembly worker
+        run: npm run typecheck --prefix workers/video-assembly
+
+      - name: Test final assembly worker
+        run: npm test --prefix workers/video-assembly
+
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
