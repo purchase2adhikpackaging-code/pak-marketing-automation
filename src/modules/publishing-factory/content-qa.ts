@@ -38,6 +38,29 @@ export function normalizeParagraph(text: string): string {
     .trim();
 }
 
+function decodeHtmlEntities(value: string): string {
+  return value.replace(
+    /&(?:amp|lt|gt|quot|apos|#39|#\d+|#x[0-9a-f]+);/gi,
+    (entity) => {
+      const normalized = entity.toLowerCase();
+      const named: Record<string, string> = {
+        "&amp;": "&",
+        "&lt;": "<",
+        "&gt;": ">",
+        "&quot;": '"',
+        "&apos;": "'",
+        "&#39;": "'",
+      };
+      if (named[normalized] !== undefined) return named[normalized];
+
+      const numeric = normalized.startsWith("&#x")
+        ? Number.parseInt(normalized.slice(3, -1), 16)
+        : Number.parseInt(normalized.slice(2, -1), 10);
+      return Number.isFinite(numeric) ? String.fromCodePoint(numeric) : entity;
+    },
+  );
+}
+
 function tokens(value: string): Set<string> {
   return new Set(normalizeParagraph(value).split(" ").filter(Boolean));
 }
@@ -98,7 +121,9 @@ export function runContentQa(input: ContentQaInput): QaFinding[] {
     }
   }
 
-  const frontMatter = input.manuscript.split(/\r?\n/).slice(0, 30).join("\n");
+  const frontMatter = decodeHtmlEntities(
+    input.manuscript.split(/\r?\n/).slice(0, 30).join("\n"),
+  );
   const programmeCodes = [...frontMatter.matchAll(/\bPAK-(?:C|D|B|PGD|M)\d{2}\b/g)].map(
     (match) => match[0],
   );
