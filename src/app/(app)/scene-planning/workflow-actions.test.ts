@@ -130,6 +130,27 @@ describe("Scene Planning workflow actions", () => {
     expect(dependencies.persistPlan).not.toHaveBeenCalled();
   });
 
+  it("rejects non-reviewer approval before warning acknowledgement mutation", async () => {
+    const dependencies = {
+      getActor: vi.fn().mockResolvedValue({ id: actorId }),
+      authorize: vi.fn().mockResolvedValue(false),
+      countUnacknowledgedWarnings: vi.fn().mockResolvedValue(1),
+      acknowledgeWarnings: vi.fn(),
+      approvePlan: vi.fn(),
+    };
+
+    const result = await executeApproveScenePlanAction(
+      { organizationId, planVersionId, acknowledgeWarnings: true },
+      dependencies,
+    );
+
+    expect(result).toEqual({ ok: false, error: "You do not have permission to approve a Scene Plan for this organization." });
+    expect(dependencies.authorize).toHaveBeenCalledWith(actorId, organizationId);
+    expect(dependencies.countUnacknowledgedWarnings).not.toHaveBeenCalled();
+    expect(dependencies.acknowledgeWarnings).not.toHaveBeenCalled();
+    expect(dependencies.approvePlan).not.toHaveBeenCalled();
+  });
+
   it("requires warning acknowledgement before approval and never performs provider execution", async () => {
     const dependencies = {
       getActor: vi.fn().mockResolvedValue({ id: actorId }),
