@@ -326,6 +326,16 @@ Deno.serve(async (req: Request) => {
     }
 
     const outputPath = deterministicOutputPath(claim);
+    let existingSignedDownloadUrl: string | undefined;
+    if (await outputObjectExists(admin, outputPath)) {
+      const { data: existingOutput, error: existingOutputError } = await admin.storage
+        .from(GENERATED_MEDIA_BUCKET)
+        .createSignedUrl(outputPath, FINAL_ASSEMBLY_SIGNED_URL_TTL_SECONDS);
+      if (!existingOutputError && existingOutput?.signedUrl) {
+        existingSignedDownloadUrl = existingOutput.signedUrl;
+      }
+    }
+
     const { data: uploadData, error: uploadError } = await admin.storage
       .from(GENERATED_MEDIA_BUCKET)
       .createSignedUploadUrl(outputPath, { upsert: true });
@@ -354,6 +364,7 @@ Deno.serve(async (req: Request) => {
         expiresAt,
         output: {
           signedUploadUrl: uploadData.signedUrl,
+          ...(existingSignedDownloadUrl ? { existingSignedDownloadUrl } : {}),
           bucket: GENERATED_MEDIA_BUCKET,
           path: outputPath,
         },
