@@ -20,8 +20,8 @@ The post-Phase 7 baseline has a production-grade content/knowledge/scene-plannin
 - **PRD-GEN-004 — Multilingual first.** Canonical content and translations support EN, PL and HI in the initial product baseline.
 - **PRD-GEN-005 — Tenant isolation.** Every organization-owned resource is organization-scoped and protected by database authorization.
 - **PRD-GEN-006 — Server-side secrets.** Provider credentials must never be exposed back to browser clients after storage.
-- **PRD-GEN-007 — Durable workflows.** Long-running generation, media, publishing and synchronization operations use durable jobs with retry/failure states.
-- **PRD-GEN-008 — Evidence-based release.** A feature is complete only when implementation, automated tests and required runtime/security verification are green.
+- **PRD-GEN-007 — Durable workflows.** Long-running generation, video, publishing and synchronization operations use durable jobs with retry/failure states.
+- **PRD-GEN-008 — Evidence-based release.** Features are complete only when implementation, automated tests and required runtime verification are green.
 - **PRD-GEN-009 — Authoritative state.** Browser state never overrides authoritative database workflow, approval, source-integrity or tenant state.
 
 ## 3. Current implementation snapshot
@@ -45,7 +45,7 @@ The post-Phase 7 baseline has a production-grade content/knowledge/scene-plannin
 | AI Representative / Podcast / Campus / Testimonials | Missing — Phases 13–16 |
 | Manual Generation completion | Partial foundation — Phase 17 |
 
-This table reports implementation maturity only. Requirements below remain normative even when their roadmap implementation is pending.
+This table reports implementation maturity only. Requirements below remain normative even when roadmap implementation is pending.
 
 ## 4. User roles
 
@@ -84,16 +84,16 @@ The current application shell contains 15 primary modules:
 14. Analytics
 15. Settings
 
-Routes for roadmap modules may exist as truthful readiness surfaces before their product workflows are enabled. A rendered route alone does not satisfy a module requirement.
+Routes for roadmap modules may exist as truthful readiness surfaces before workflows are enabled. A rendered route alone does not satisfy a module requirement.
 
 ## 6. Dashboard
 
 - **PRD-DASH-001** Show current organization and user role.
-- **PRD-DASH-002** Show actionable workflow counts: drafts, pending review, failed/retrying jobs and scheduled publications where those workflows exist.
-- **PRD-DASH-003** Surface recent content, generation activity and integration health.
+- **PRD-DASH-002** Show actionable workflow counts: drafts, pending review, failed jobs, scheduled publications.
+- **PRD-DASH-003** Surface recent content, recent generation activity and integration health.
 - **PRD-DASH-004** Never surface data from another organization.
 
-**Current maturity:** Partial. Shell/context exists; full cross-workflow operational cards depend on later Approval, Publishing and Calendar data.
+**Current maturity:** Partial. Shell/context exists; full cross-workflow cards depend on later Approval, Publishing and Calendar data.
 
 ## 7. Knowledge Base
 
@@ -143,38 +143,42 @@ Routes for roadmap modules may exist as truthful readiness surfaces before their
 
 ## 10. Scene Planning and video production
 
-### Scene Planning
+The original video requirements keep their IDs and meanings; Phases 6–7 add new IDs rather than reusing old ones.
 
-- **PRD-VID-001** Long-form video projects are scene-based; target final durations are normally 90–180 seconds unless content format specifies otherwise.
-- **PRD-VID-002** A Scene Plan derives from a GENERATED script artifact and stores a source-integrity snapshot so later source changes can invalidate the plan.
-- **PRD-VID-003** Planning uses a versioned hierarchy: Video Project → Visual Bible → Scene Plan Version → Scenes → Shots. Canonical narration remains authoritative and is mapped to scenes/shots without provider rewriting.
-- **PRD-VID-004** Video-provider integration is provider-neutral. LTX is the first production adapter but provider-specific payloads must not become domain state.
-- **PRD-VID-005** Planning requires deterministic QC covering source freshness, narration coverage, ordering, timing, prompt/reference requirements and blocker/warning states before approval.
-- **PRD-VID-006** Approved Scene Plan versions are immutable. Subsequent edits/replans use a new draft/version and approval is invalidated by material source/plan changes.
-- **PRD-VID-007** OWNER/ADMIN/EDITOR may create/edit/replan within authorized scope; approval is restricted to explicitly authorized review roles and database rules.
+### Original video requirements
 
-### Per-shot provider generation
+- **PRD-VID-001** Long-form videos are scene-based; target final durations are 90–180 seconds unless content format specifies otherwise.
+- **PRD-VID-002** Scene plan derives from an approved/generated script artifact.
+- **PRD-VID-003** Scene/planning entities collectively retain ordered sequence, narration/source text, visual direction, duration, provider-generation state and media lineage. In the current normalized architecture those responsibilities are split across Scene Plan scenes/shots, generation attempts/jobs and media assets rather than one overloaded row.
+- **PRD-VID-004** Video-provider integration is provider-neutral; LTX is the first production provider and is not hard-coded into domain contracts.
+- **PRD-VID-005** Final render may start only when required components are successful and readiness/QA passes.
+- **PRD-VID-006** Scene/shot/provider failures use durable retryable jobs where safe and explicit terminal failure when retry is unsafe/exhausted.
+- **PRD-VID-007** Generated media assets are organization-scoped and traceable to source content/plans/scenes/shots/jobs.
 
-- **PRD-VID-008** Paid/provider generation may start only for an APPROVED, source-current, blocker-free Scene Plan shot and only after server/database authorization revalidates organization, role and lineage.
-- **PRD-VID-009** The browser submits identifiers only. Provider model, prompt, duration, aspect ratio and generation policy are reconstructed from authoritative approved data.
-- **PRD-VID-010** Per-shot generation is represented by durable jobs plus immutable/append-only attempt lineage with explicit submit, processing, import, retry, terminal failure and submission-unknown states.
-- **PRD-VID-011** Retry is bounded and idempotent. Ambiguous submissions are never blindly re-submitted when duplicate provider spend may occur.
-- **PRD-VID-012** Provider result URLs are transport-only. Successful output must be copied promptly into private PAK-controlled organization storage and linked to `media_assets`; provider URLs are not durable media identity.
-- **PRD-VID-013** Unattended reconciliation continues without an open browser using a privileged worker/dispatcher that normal browser roles cannot invoke directly.
-- **PRD-VID-014** LTX/API credentials use Integration Vault and are never returned to browser state. Credential testing should avoid paid generation where the provider supports a safe validation operation.
+### Phase 6 Scene Planning requirements
 
-### Final assembly
+- **PRD-VID-008** Planning uses a versioned hierarchy: Video Project → Visual Bible → Scene Plan Version → Scenes → Shots.
+- **PRD-VID-009** Canonical narration remains authoritative and is mapped to scenes/shots without provider/planner rewriting.
+- **PRD-VID-010** Deterministic QC covers source freshness, narration coverage, ordering, timing, references, generation requirements and blocker/warning states before approval.
+- **PRD-VID-011** Approved Scene Plan versions are immutable; later edits/replans use copy-on-write/new version semantics and source changes invalidate approval/currentness.
 
-- **PRD-VID-015** Final video assembly is a separate durable job from per-shot generation.
-- **PRD-VID-016** Final assembly readiness is false when there are zero required shots/scenes, any required media is incomplete/failed, source/approval is stale, or final QA requirements are not met.
-- **PRD-VID-017** Final assembled media is an organization-scoped `media_assets` record with lineage back to approved plan/version and component generation jobs.
+### Phase 7 per-shot provider generation requirements
 
-**Current maturity:** Scene Planning and per-shot provider generation implemented. Final assembly/readiness/final-video workflow remains Phase 8.
+- **PRD-VID-012** Paid/provider generation may start only for an APPROVED, source-current, blocker-free Scene Plan shot after organization/role/lineage validation.
+- **PRD-VID-013** Browser submits identifiers only. Provider model, prompt, duration, aspect ratio and policy are reconstructed from authoritative approved state.
+- **PRD-VID-014** Per-shot generation uses durable jobs plus append-only attempt lineage with submit, processing, import, retry, terminal and submission-unknown states.
+- **PRD-VID-015** Retry is bounded and idempotent. Ambiguous submission outcomes are never blindly re-submitted when duplicate provider spend may occur.
+- **PRD-VID-016** Provider result URLs are transport-only; successful output must be copied into private PAK organization storage and linked to `media_assets` before completion.
+- **PRD-VID-017** Unattended reconciliation continues without an open browser using a privileged dispatcher that browser roles cannot invoke directly.
+- **PRD-VID-018** LTX credentials use Integration Vault, never return to browser state, and support non-billable credential validation where provider semantics permit.
+- **PRD-VID-019** Final video assembly is a separate durable job from per-shot generation and produces an organization-scoped final media asset with component lineage.
+
+**Current maturity:** Scene Planning and per-shot provider generation implemented. PRD-VID-005 and PRD-VID-019 final assembly/readiness remain Phase 8.
 
 ## 11. AI Representative
 
 - **PRD-AIR-001** Provide an AI-presenter workflow for approved PAK messaging.
-- **PRD-AIR-002** Use approved content/Knowledge inputs, not unrestricted institutional claims.
+- **PRD-AIR-002** Must use approved content/Knowledge inputs, not unrestricted institutional claims.
 - **PRD-AIR-003** Avatar/voice/provider credentials remain server-side.
 - **PRD-AIR-004** Outputs enter the same review/publishing governance path as other content.
 
@@ -183,7 +187,7 @@ Routes for roadmap modules may exist as truthful readiness surfaces before their
 ## 12. Campus / Locations
 
 - **PRD-CAMP-001** Maintain structured campus/location content and reusable approved facts.
-- **PRD-CAMP-002** Location-specific generation may reference Knowledge records and approved campus metadata.
+- **PRD-CAMP-002** Location-specific generation can reference Knowledge Base records and approved campus metadata.
 - **PRD-CAMP-003** Public-facing addresses/contact details require explicit source records and review.
 
 **Current maturity:** Missing; truthful readiness route only.
@@ -199,7 +203,7 @@ Routes for roadmap modules may exist as truthful readiness surfaces before their
 ## 14. Manual Generation
 
 - **PRD-MAN-001** Allow users to create content without AI provider calls.
-- **PRD-MAN-002** Manual content uses the same organization, artifact, approval and publishing model.
+- **PRD-MAN-002** Manual content must use the same organization, artifact, approval and publishing model.
 - **PRD-MAN-003** Manual edits preserve audit and revision state.
 
 **Current maturity:** Partial foundation/readiness route. Dedicated workflow remains Phase 17.
@@ -216,12 +220,12 @@ Routes for roadmap modules may exist as truthful readiness surfaces before their
 
 - **PRD-MEDIA-001** Media assets are organization-scoped.
 - **PRD-MEDIA-002** Support images, video, audio and documents with metadata, origin and lifecycle.
-- **PRD-MEDIA-003** Media may link to content, legacy scene references, provider jobs and Scene Planning generation lineage.
+- **PRD-MEDIA-003** Media may link to content items, legacy scene references and current generation/job/Scene Planning lineage.
 - **PRD-MEDIA-004** Upload/read/delete authorization follows explicit roles and storage policies.
-- **PRD-MEDIA-005** Provider-generated assets retain safe job/provider lineage where operationally necessary without persisting raw provider result URLs or secrets.
+- **PRD-MEDIA-005** Provider-generated assets retain safe provider/job metadata where operationally necessary.
 - **PRD-MEDIA-006** Generated-video objects are stored in private organization-scoped paths before a generation job is considered successfully imported.
 
-**Current maturity:** Backend/storage/generated-video foundation implemented; full operator catalogue, uploads, previews, detail and lifecycle UX remain Phase 8.
+**Current maturity:** Backend/storage/generated-video foundation implemented; full operator catalogue/upload/preview/detail/lifecycle UX remains Phase 8.
 
 ## 17. Approval Center
 
@@ -231,7 +235,7 @@ Routes for roadmap modules may exist as truthful readiness surfaces before their
 - **PRD-APR-004** Publication may enforce approval prerequisites by channel/content policy.
 - **PRD-APR-005** Revisions after approval invalidate prior approval when substantive content changes.
 
-**Current maturity:** Generic Approval Center missing. Scene Planning has its own implemented review/approval lifecycle but does not replace the product-wide approval domain.
+**Current maturity:** Generic Approval Center missing. Scene Planning has its own implemented domain approval lifecycle but does not replace product-wide approval.
 
 ## 18. Content Calendar
 
@@ -257,33 +261,33 @@ Routes for roadmap modules may exist as truthful readiness surfaces before their
 - **PRD-AN-001** Provide content, channel, campaign and publication performance metrics.
 - **PRD-AN-002** Metrics ingestion is organization-scoped.
 - **PRD-AN-003** Store normalized metrics plus source/provider timestamps.
-- **PRD-AN-004** Analytics UI distinguishes fresh, delayed and unavailable data.
+- **PRD-AN-004** Analytics UI must distinguish fresh, delayed and unavailable data.
 - **PRD-AN-005** ANALYST role is read-only.
 
 **Current maturity:** Missing.
 
 ## 21. Settings and Integration Vault
 
-- **PRD-SET-001** Settings contains organization, members, integrations and operational configuration. Integrations are the currently implemented Settings section; the remaining Settings sections may be phased.
-- **PRD-SET-002** Integration UI supports OpenAI and LTX in the current baseline and uses generic provider metadata schemas for future providers such as Meta.
+- **PRD-SET-001** Settings contains organization, members, integrations and operational configuration. Integrations are the currently implemented Settings section; remaining sections may be phased.
+- **PRD-SET-002** Integration UI supports OpenAI first and generic provider credential schemas thereafter; LTX is now the second implemented organization provider.
 - **PRD-SET-003** Credentials are written only through authenticated server-side/Edge actions and narrowly scoped privileged RPCs.
 - **PRD-SET-004** Raw secret values are never returned after storage.
-- **PRD-SET-005** UI shows `Not configured`, `Configured`, `Invalid`, `Disabled` or equivalent health state without revealing the value.
-- **PRD-SET-006** OWNER/ADMIN may create/replace/delete integration credentials; EDITOR may use configured integrations but cannot retrieve or administer secrets.
+- **PRD-SET-005** UI shows `Not configured`, `Configured`, `Invalid`, `Disabled` or equivalent health without revealing value.
+- **PRD-SET-006** OWNER/ADMIN may create/replace/delete credentials; EDITOR may use configured integrations but cannot retrieve/administer secrets.
 - **PRD-SET-007** Credential use is organization-scoped and auditable.
-- **PRD-SET-008** OpenAI key is usable by Content Studio without a Vercel redeploy after being saved in PAK Settings.
-- **PRD-SET-009** LTX key is usable by approved-shot generation without a redeploy and supports no-spend credential validation where possible.
-- **PRD-SET-010** Future Meta credentials may contain app ID, app secret, access token, page/business/account IDs and webhook metadata as provider-specific fields.
+- **PRD-SET-008** OpenAI key must be usable by Content Studio without a Vercel redeploy after being saved in PAK Settings.
+- **PRD-SET-009** Future Meta credentials may contain app ID, app secret, access token, page/business/account IDs and webhook metadata as provider-specific fields.
+- **PRD-SET-010** LTX key is usable by approved-shot generation without a redeploy and supports no-spend credential validation where possible.
 
-**Current maturity:** Integrations/Vault implemented for OpenAI and LTX; organization/member/operational configuration UI remains partial.
+**Current maturity:** Integrations/Vault implemented for OpenAI and LTX; Organization/Members/Operational Configuration UI remains partial.
 
 ## 22. Durable jobs
 
-- **PRD-JOB-001** Core states are `QUEUED`, `PROCESSING`, `COMPLETED`, `FAILED`, `RETRYING`, `CANCELLED`; domain-specific attempt state may be more granular while mapping safely to the core job state.
+- **PRD-JOB-001** States: `QUEUED`, `PROCESSING`, `COMPLETED`, `FAILED`, `RETRYING`, `CANCELLED`.
 - **PRD-JOB-002** Worker claim is not callable by anonymous/authenticated browser roles.
 - **PRD-JOB-003** Jobs support idempotency keys, attempt count and lease/claim semantics.
 - **PRD-JOB-004** Provider errors are normalized before persistence/UI display.
-- **PRD-JOB-005** Provider-spend jobs must have a single validated creation boundary that re-derives trusted execution input from authoritative domain state.
+- **PRD-JOB-005** Provider-spend jobs have a single validated creation boundary that derives trusted execution input from authoritative domain state.
 
 **Current maturity:** Implemented foundation; exercised by Phase 7 video generation.
 
@@ -291,13 +295,13 @@ Routes for roadmap modules may exist as truthful readiness surfaces before their
 
 - **PRD-NFR-001 Security:** strict organization isolation, least privilege, server-only provider secrets, no secret logging.
 - **PRD-NFR-002 Reliability:** durable long-running jobs, idempotent external actions, recoverable failure states.
-- **PRD-NFR-003 Performance:** normal interactive pages target responsive server/client interaction; large media and AI operations do not block request lifetimes unnecessarily.
+- **PRD-NFR-003 Performance:** normal interactive pages target responsive server/client interaction; large media and AI operations must not block request lifetimes unnecessarily.
 - **PRD-NFR-004 Accessibility:** keyboard-usable forms, semantic labels, visible focus, readable status/error text.
-- **PRD-NFR-005 Responsive UX:** core administration workflows work on modern desktop and mobile browsers.
-- **PRD-NFR-006 Observability:** operational logs include request/job/provider correlation identifiers where available while redacting secrets/PII.
+- **PRD-NFR-005 Responsive UX:** core administration workflows must work on modern desktop and mobile browsers.
+- **PRD-NFR-006 Observability:** operational logs include request/job/provider correlation IDs where available while redacting secrets/PII.
 - **PRD-NFR-007 Testing:** typecheck, lint, unit/integration, build and applicable E2E are mandatory release gates.
 - **PRD-NFR-008 Data integrity:** database constraints/triggers/RLS are authoritative for security-critical invariants, not browser validation alone.
-- **PRD-NFR-009 Cost safety:** external paid-provider execution must not be triggerable through an unvalidated browser-controlled payload or unconstrained retry loop.
+- **PRD-NFR-009 Cost safety:** paid-provider execution cannot be triggered through an unvalidated browser-controlled payload or unconstrained retry loop.
 
 ## 24. Operational core baseline after Phase 7
 
@@ -309,11 +313,11 @@ The current operational core consists of:
 4. Knowledge Base lifecycle and authorization
 5. Content Studio grounded canonical generation
 6. EN/PL/HI artifact workflow
-7. Immutable Knowledge provenance snapshots
+7. immutable Knowledge provenance snapshots
 8. Scene Planning with Video Project, Visual Bible, versioned scenes/shots, deterministic QC and approval
-9. Durable approved-shot LTX generation with bounded retry/reconciliation
-10. Private generated-video import into organization-scoped storage and `media_assets`
-11. Unattended video-generation dispatcher
+9. durable approved-shot LTX generation with bounded retry/reconciliation
+10. private generated-video import into organization-scoped storage and `media_assets`
+11. unattended video-generation dispatcher
 12. GitHub CI / release verification discipline
 
 This operational core is not the full product. Phase 8 onward completes final assembly/media operations, generic approvals, publishing, scheduling, analytics and specialized modules.
@@ -331,4 +335,4 @@ This operational core is not the full product. Phase 8 onward completes final as
 
 ## 26. Product acceptance principle
 
-Every implemented requirement must be traceable through the project traceability matrix to its UX surface, backend ownership, authorization rule, automated verification and release phase. A rendered route or database table alone does not make a requirement implemented. New work with no PRD/TRD requirement ID must first update the baseline documentation.
+Every implemented requirement must be traceable through the project traceability matrix to its UX surface, backend ownership, authorization rule, automated verification and release phase. Existing requirement IDs retain their original semantic meaning; new behavior receives new IDs. A rendered route or database table alone does not make a requirement implemented.
