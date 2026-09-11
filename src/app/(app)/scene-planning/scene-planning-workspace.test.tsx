@@ -114,7 +114,10 @@ describe("ScenePlanningWorkspace", () => {
     render(<ScenePlanningWorkspace {...props()} />);
     fireEvent.click(screen.getByRole("button", { name: "Generate Scene Plan" }));
     await waitFor(() => expect(generateScenePlanAction).toHaveBeenCalledWith({ organizationId: props().organizationId, projectId: props().project.id }));
-    fireEvent.click(screen.getByRole("button", { name: "Run QC" }));
+    await screen.findByText("Scene Plan generated with 0 blockers and 0 warnings.");
+    const runQc = screen.getByRole("button", { name: "Run QC" }) as HTMLButtonElement;
+    await waitFor(() => expect(runQc.disabled).toBe(false));
+    fireEvent.click(runQc);
     await waitFor(() => expect(runScenePlanQcAction).toHaveBeenCalled());
     expect(refresh).toHaveBeenCalled();
   });
