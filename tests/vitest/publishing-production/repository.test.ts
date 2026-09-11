@@ -4,17 +4,35 @@ import {
   type PublishingProductionTransport,
 } from "@/modules/publishing-production/repository";
 
+const governedBookJob = {
+  bookId: "PAK-D01-S1-D01-102-TEXTBOOK",
+  programmeCode: "PAK-D01",
+  programmeTitle: "Diploma in Railway Rolling Stock Engineering & Maintenance",
+  level: "diploma",
+  academicPeriod: "S1",
+  subjectCode: "D01-102",
+  subjectTitle: "Applied Engineering Mathematics & Physics for Railways",
+  publicationType: "textbook",
+  edition: "2026",
+  revision: "0.1.0",
+  curriculumSourcePaths: ["docs/academic/diplomas/D01/S1.md"],
+  status: "PLANNED",
+  repairAttempts: {},
+} as const;
+
 function jobRow(overrides: Record<string, unknown> = {}) {
   return {
     id: "22222222-2222-4222-8222-222222222222",
     organization_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
     production_run_id: "11111111-1111-4111-8111-111111111111",
-    book_id: "PAK-D01-S1-D01-102-TEXTBOOK",
-    programme_code: "PAK-D01",
-    subject_code: "D01-102",
-    academic_period: "S1",
-    edition: "2026",
-    revision: "0.1.0",
+    book_id: governedBookJob.bookId,
+    programme_code: governedBookJob.programmeCode,
+    subject_code: governedBookJob.subjectCode,
+    academic_period: governedBookJob.academicPeriod,
+    edition: governedBookJob.edition,
+    revision: governedBookJob.revision,
+    book_job_payload: governedBookJob,
+    curriculum_text: "D01-102 governed curriculum text",
     status: "RUNNING",
     claim_count: 7,
     failure_attempts: 1,
@@ -147,6 +165,7 @@ describe("PublishingProductionRepository", () => {
     expect(jobs).toHaveLength(1);
     expect(jobs[0]?.claimCount).toBe(7);
     expect(jobs[0]?.failureAttempts).toBe(1);
+    expect(jobs[0]?.bookJobPayload.bookId).toBe(governedBookJob.bookId);
     expect(client.calls.find((entry) => entry.kind === "rpc:claim_publishing_jobs")?.payload).toEqual({
       p_worker_id: "worker-1",
       p_limit: 4,
