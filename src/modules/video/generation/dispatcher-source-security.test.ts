@@ -12,12 +12,17 @@ const migrationPath = join(
 );
 
 describe("unattended video generation dispatcher", () => {
-  it("accepts no caller-supplied organization/job/attempt selection", () => {
+  it("accepts no caller-supplied organization/job/attempt selection and authenticates from Vault", () => {
     const source = readFileSync(dispatcherPath, "utf8");
-    expect(source).toContain('Deno.env.get("VIDEO_GENERATION_DISPATCHER_SECRET")');
+    const sql = readFileSync(migrationPath, "utf8");
     expect(source).toContain('req.headers.get("x-pak-dispatch-token")');
+    expect(source).toContain('admin.rpc("read_video_generation_dispatch_secret")');
     expect(source).not.toMatch(/organizationId\?:|jobId\?:|attemptId\?:/);
     expect(source).not.toMatch(/await req\.json\(\)/);
+    expect(sql).toContain("vault.create_secret");
+    expect(sql).toContain("pak/video-generation/dispatcher");
+    expect(sql).toContain("create or replace function public.read_video_generation_dispatch_secret()");
+    expect(sql).toContain("grant execute on function public.read_video_generation_dispatch_secret() to service_role");
   });
 
   it("claims a bounded batch from a service-role-only database RPC", () => {
@@ -40,6 +45,9 @@ describe("unattended video generation dispatcher", () => {
     }
     expect(sql).toContain("retryable is true");
     expect(sql).toContain("attempt_number < 4");
+    expect(sql).toContain("5 seconds");
+    expect(sql).toContain("15 seconds");
+    expect(sql).toContain("45 seconds");
   });
 
   it("keeps dispatcher claims service-role-only and releases leases after each item", () => {
@@ -48,8 +56,8 @@ describe("unattended video generation dispatcher", () => {
     expect(sql).toContain("revoke all on function public.claim_due_video_generation_dispatch");
     expect(sql).toContain("grant execute on function public.claim_due_video_generation_dispatch");
     expect(sql).toContain("to service_role");
-    expect(source).toContain('lease_owner: null');
-    expect(source).toContain('lease_expires_at: null');
+    expect(source).toContain("lease_owner: null");
+    expect(source).toContain("lease_expires_at: null");
   });
 
   it("dispatches only internal submit/reconcile/retry operations without returning provider payloads", () => {
