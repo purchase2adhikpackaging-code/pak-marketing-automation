@@ -30,6 +30,16 @@ describe("Phase 8 media library foundation schema", () => {
 
     expect(backfill).toBeGreaterThan(-1);
     expect(notNull).toBeGreaterThan(backfill);
+    expect(sql).toContain("alter column storage_bucket set default 'generated-media'");
+  });
+
+  it("keeps Phase 7 generated-video import compatible with bucket-aware uniqueness", () => {
+    const sql = readFileSync(migrationPath, "utf8");
+
+    expect(sql).toContain("create or replace function public.complete_generated_video_import");
+    expect(sql).toMatch(/insert into public\.media_assets \([\s\S]*storage_bucket/);
+    expect(sql).toContain("'generated-media'");
+    expect(sql).toContain("on conflict (organization_id, storage_bucket, storage_path) do update");
   });
 
   it("adds organization-scoped catalogue indexes", () => {
