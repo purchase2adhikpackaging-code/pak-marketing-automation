@@ -31,7 +31,8 @@ function releaseIdentity(job: BookJob): string {
 }
 
 function architectureReady(programme: ProgrammeRegistryEntry): boolean {
-  return programme.chapterStatus.trim().toLowerCase() !== "pending";
+  const status = programme.curriculumStatus.trim().toLowerCase();
+  return status.includes("architecture complete") && !status.includes("catalogue only");
 }
 
 function programmeFor(
