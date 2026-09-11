@@ -1,14 +1,14 @@
 # PAK Marketing Automation — Development Roadmap
 
 **Document ID:** PAK-RM-001  
-**Version:** 1.0  
-**Status:** Baseline for review
+**Version:** 1.1  
+**Status:** Current roadmap after Phase 7
 
 ## Governance rule
 
-No new feature slice starts without mapped PRD/TRD/UX/DB requirements and acceptance criteria. Each slice uses: design/spec → implementation plan → TDD → CI → runtime verification where applicable → PR review → merge.
+No new feature slice starts without mapped PRD/TRD/UX/DB requirements and acceptance criteria. Each slice uses: design/spec where architecture changes → implementation plan → TDD → CI → runtime verification where applicable → PR review → merge.
 
-## Phase 0 — Master baseline and implementation audit
+## Phase 0 — Master baseline and implementation audit — IMPLEMENTED
 
 Deliverables:
 - Master PRD
@@ -21,10 +21,7 @@ Deliverables:
 - Traceability matrix
 - Existing implementation gap audit
 
-Exit criteria:
-- documentation reviewed as one baseline;
-- requirement IDs stable enough for implementation mapping;
-- existing code classified Implemented / Partial / Missing / Redesign.
+Post-Phase 7 note: governing PRD/TRD/DB/UX/traceability documents were synchronized to the actual merged architecture before Phase 8.
 
 ## Phase 1 — Platform foundation — IMPLEMENTED
 
@@ -38,8 +35,6 @@ Scope:
 - errors/logging
 - CI/E2E baseline
 
-Status: implemented and merged; must still be reconciled against this master baseline.
-
 ## Phase 2 — AI Content Studio foundation — IMPLEMENTED
 
 Scope:
@@ -47,9 +42,7 @@ Scope:
 - OpenAI adapter
 - fake provider
 - content item persistence
-- initial Content Studio generation UI/action
-
-Status: implemented and merged.
+- Content Studio generation UI/action
 
 ## Phase 3 — Multilingual artifacts — IMPLEMENTED
 
@@ -59,8 +52,6 @@ Scope:
 - translation source revision
 - stale translation model
 - regeneration controls
-
-Status: implemented and merged.
 
 ## Phase 4 — Knowledge Base grounding — IMPLEMENTED
 
@@ -73,133 +64,145 @@ Scope:
 - immutable provenance snapshots
 - live Supabase RLS/runtime verification
 
-Status: implemented and merged after review hardening.
-
-## Phase 5 — Integration Vault & real staging deployment — NEXT
+## Phase 5 — Integration Vault & hosted runtime foundation — IMPLEMENTED
 
 Requirements:
-- PRD-SET-001..009
-- TRD-SEC-001..009
-- INT-GEN-001..007
-- INT-OAI-001..007
+- PRD-SET-001..010
+- TRD-SEC-001..010
+- integration provider requirements
 
-Deliverables:
-- integration_connections
-- encrypted integration_secrets
-- immutable integration_audit_events
-- server-only credential resolver
-- Settings → Integrations UI
+Delivered:
+- `integration_connections`
+- `integration_secrets` metadata/reference layer
+- Supabase Vault-backed secret values
+- immutable `integration_audit_events`
+- authenticated `integration-vault` Edge Function
 - OpenAI configure/replace/remove/test flow
-- Content Studio runtime resolver uses saved organization OpenAI key
-- Next.js staging deployment connected to PAK Supabase
-- real Chrome manual verification
+- safe connection metadata and masked hints
+- organization-scoped OpenAI runtime credential resolution
+- transactional config/test/audit mutations
+- security hardening that prevents browser secret retrieval
+- Settings → Integrations operator surface
 
-Exit criteria:
-- user can open hosted PAK Settings in Chrome;
-- OWNER/ADMIN can save OpenAI key without exposing it back to browser;
-- Content Studio generates using the stored credential;
-- no secret appears in HTML/client state/logs;
-- staging smoke test and live RLS/security probes pass.
+Later Phase 7 extension:
+- LTX write-only credential management and no-spend credential verification reuses the same Vault architecture.
+
+Current operational note:
+- provider secrets do not require a Vercel redeploy after saving;
+- Vercel hosting quota/rate-limit is treated as an external deployment constraint, not an application correctness failure.
 
 ## Phase 6 — Scene Planning — IMPLEMENTED
 
 Requirements:
-- PRD-VID-001..003
-- UX-SCENE-001..003
-- TRD-VID-002/006
+- PRD-VID-001..007
+- UX-SCENE requirements
+- TRD-SCENE requirements
 
 Delivered:
-- persisted Content Studio script-artifact handoff into Scene Planning
-- tenant-scoped video projects and versioned Visual Bible state
-- versioned scene/shot plan graph with exact canonical narration linkage
-- provider-neutral structured planner with strict server-side validation
-- deterministic QC for source freshness, narration coverage, timing, references, and generation requirements
+- persisted Content Studio script-artifact handoff
+- tenant-scoped `video_projects`
+- versioned Visual Bible state
+- versioned Scene Plan / Scene / Shot graph
+- exact canonical narration linkage
+- provider-neutral structured planner with strict validation
+- deterministic QC for source freshness, narration coverage, timing, references and generation requirements
 - manual scene/shot editing and reordering with QC invalidation
-- granular one-scene / one-shot replanning with human-modified protection
-- role-gated review, warning acknowledgement, approval, and copy-on-write editing
-- database RLS, parent-organization guards, lifecycle guards, approved-version immutability, and reviewer mutation constraints
-- immutable provider-neutral handoff contract for Phase 7
-- no video-provider execution, provider URLs, or provider job IDs in Phase 6
+- granular scene/shot replanning with human-modified protection
+- role-gated review, warning acknowledgement and approval
+- copy-on-write continuation from approved plans
+- database RLS, parent-organization guards, lifecycle guards and approved immutability
+- provider-neutral Phase 7 handoff
 
 Verification:
-- exact-head typecheck, lint, unit, production build, and Playwright release gate
+- exact-head typecheck, lint, unit, production build and Playwright
 - live PAK Supabase migrations and RLS/function privilege probes
-- live anonymous negative visibility probe
-- Supabase security/performance advisor review with Phase 6 advisor findings hardened before release
-
-Exit criteria:
-- persisted generated artifacts can create, edit, replan, QC, review, and approve deterministic scene/shot plans;
-- approved plans are immutable and source-bound;
-- only approved, current plans expose a Phase 7-ready provider-neutral handoff.
+- advisor review/hardening
 
 ## Phase 7 — Video generation provider integration — IMPLEMENTED
 
 Requirements:
-- PRD-VID-004..007
-- INT-VID-001..005
-- TRD-JOB/VID requirements
+- PRD-VID-008..014
+- TRD-VID/JOB/MEDIA provider execution requirements
 
 Delivered:
-- real LTX 2.3 Pro provider adapter with provider-neutral interfaces, capability normalization, and safe error mapping
-- approved-shot generation controls with server-side organization/role validation
-- hardened authenticated enqueue RPC that requires approved, source-current, blocker-free scene plans and supported shot parameters
-- tenant-scoped `video_generation_attempts` lineage with idempotent durable `VIDEO_SHOT_GENERATION` jobs
-- submit, reconcile, bounded retry, submission-unknown, and terminal state handling
-- generated-video import into private organization-scoped storage plus `media_assets` lineage
-- unattended 10-second Supabase `pg_cron` dispatcher with leased work claiming
-- `video-generation`, `video-generation-retry`, and `video-generation-dispatcher` Edge workers with internal dispatcher-token authentication and explicit user authorization where applicable
-- Settings → Integrations LTX credential workflow using the existing write-only Integration Vault boundary
-- no-spend LTX credential verification using an authenticated read-only lookup rather than a generation submission
+- LTX 2.3 Pro adapter behind provider-neutral interface
+- approved-shot generation controls
+- hardened authenticated enqueue/spend boundary
+- `VIDEO_SHOT_GENERATION` durable jobs
+- `video_generation_attempts` lineage
+- submit/reconcile/bounded retry/submission-unknown/terminal handling
+- four-attempt maximum with 5/15/45 retry eligibility
+- private generated-video import into PAK Storage + `media_assets`
+- unattended 10-second dispatcher using `pg_cron`, `pg_net`, leases and Vault-held internal token
+- active `video-generation`, `video-generation-retry`, `video-generation-dispatcher` Edge workers
+- Settings → Integrations LTX credential workflow
+- no-spend LTX credential test
+- browser cannot directly create attempts or paid generation jobs
 
 Verification:
-- TDD RED/GREEN coverage for provider adapter, spend boundary, jobs/attempts, retry, reconciliation, media import, dispatcher security, Scene Planning controls, Integration Vault, and LTX Settings
-- exact-head typecheck, lint, unit, production build, and Playwright E2E release gate
-- live PAK Supabase migrations `202609110008` through `202609110012`
-- live Phase 7 Edge workers plus Integration Vault LTX support deployed and active
-- scheduled dispatcher HTTP calls verified successful; missing dispatcher token verified `401`
-- live RLS/function-privilege probes confirm browser roles cannot directly create provider attempts or paid-generation jobs
-- Supabase security/performance advisor review completed; the authenticated SECURITY DEFINER enqueue remains an intentional, constrained spend boundary
-- no organization LTX credential/credits are currently configured, so a paid provider render was intentionally not fabricated or triggered
+- TDD RED/GREEN coverage across adapter, spend boundary, retry, reconciliation, import, dispatcher and UI
+- exact-head typecheck, lint, unit, production build and Playwright
+- live migrations `202609110008` through `202609110012`
+- live Edge/runtime/security probes
+- scheduled dispatcher requests verified 200; missing internal token verified 401
+- security/performance advisors reviewed
 
-Release status:
-- Phase 7 implementation and infrastructure release gates are complete;
-- the first paid end-to-end LTX render is an external operational acceptance check and must be executed when an organization supplies a valid LTX credential/credits, before relying on paid rendering in production;
-- provider failure/retry behavior is covered deterministically and the live dispatcher/security boundary is verified without provider spend;
-- no provider secret is exposed to browser state or returned from Vault.
+External operational acceptance:
+- no organization LTX credential/credits are currently configured in production;
+- therefore the first real paid end-to-end LTX render remains a controlled acceptance step to run when a valid organization credential/credits are supplied;
+- this deferred paid smoke does not represent missing engineering, but paid rendering must not be relied on operationally until that check succeeds.
 
-## Phase 8 — Final video assembly & Media Library expansion
+## Phase 8 — Final video assembly & Media Library expansion — NEXT
+
+Requirements:
+- PRD-VID-015..017
+- PRD-MEDIA-001..006
+- UX-MEDIA requirements
 
 Deliverables:
-- final assembly job
-- scene ordering and media readiness validation
-- final video asset
-- Media Library previews/lineage
-- download/access authorization
+- final assembly durable job
+- component shot/media readiness validation
+- final video composition/order pipeline
+- final QA/readiness state
+- final organization-scoped video asset
+- Media Library operator catalogue/list
+- generated/uploaded/imported asset visibility
+- preview/detail/lineage
+- controlled upload flow
+- archive/delete/storage authorization
+- signed/authorized access where required
+
+Exit criteria:
+- approved current plan with successful required shots can produce one final PAK-owned video asset;
+- no final render can start with missing/failed/stale required components;
+- generated Phase 7 assets are visible and traceable in Media Library;
+- Media Library critical workflows pass desktop/mobile and storage/RLS verification.
 
 ## Phase 9 — Approval Center
 
 Requirements:
 - PRD-APR-001..005
-- UX-APR-001..003
+- UX-APR requirements
 
 Deliverables:
-- approval_requests
-- immutable approval_events
-- exact artifact/revision review
+- `approval_requests`
+- immutable `approval_events`
+- exact artifact/revision/media review
 - approve/request-changes/reject
-- supersede approval after content revision
+- supersede approval after substantive revision
+- integration with existing Scene Planning approval rather than replacement of domain rules
 
 ## Phase 10 — Publishing foundation + Meta
 
 Requirements:
 - PRD-PUB-001..006
-- INT-META-001..007
-- UX-PUB-001..003
+- Meta integration requirements
+- UX-PUB requirements
 
 Deliverables:
-- Meta integration credential schema/forms
-- publication_targets
-- publication_attempts
+- Meta integration credential/config schema/forms using existing Vault
+- `publication_targets`
+- `publication_attempts`
 - durable publish jobs
 - idempotency/reconciliation
 - initial Facebook/Instagram publishing path
@@ -235,12 +238,12 @@ Deliverables:
 
 Deliverables:
 - episode workspace
-- script/knowledge flow
+- script/Knowledge flow
 - audio provider abstraction
 - media output
 - approval/publishing linkage
 
-## Phase 15 — Campus Locations
+## Phase 15 — Campus / Locations
 
 Deliverables:
 - structured campus/location records
@@ -252,26 +255,27 @@ Deliverables:
 Deliverables:
 - testimonial records
 - consent/publication state
-- restricted data boundary
+- restricted-data boundary
 - media linkage
 - adapted-content governance
 
 ## Phase 17 — Manual Generation completion
 
 Deliverables:
-- rich manual authoring path using shared artifact/revision/approval model
+- rich manual authoring using shared artifact/revision/approval model
 - no AI dependency
 
 ## Release policy
 
 For every phase:
 1. create feature branch;
-2. write/approve slice design if architecture changes;
-3. write implementation plan;
+2. write/approve slice design when architecture changes;
+3. write implementation plan for multi-step work;
 4. TDD RED/GREEN for behavior changes;
 5. run typecheck/lint/unit/build/E2E;
 6. run live Supabase RLS/runtime probes for auth/schema/security changes;
-7. resolve all review threads;
+7. resolve review threads;
 8. merge only exact green head;
-9. deploy to staging;
-10. manual Chrome verification for user-visible workflows before production promotion.
+9. verify deployment/runtime according to environment policy;
+10. perform controlled live-provider smoke when credentials/credits and safety permit it;
+11. never fabricate provider acceptance or weaken security to work around external quota/credential constraints.
