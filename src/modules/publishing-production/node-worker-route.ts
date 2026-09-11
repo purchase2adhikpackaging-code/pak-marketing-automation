@@ -22,7 +22,7 @@ export async function handlePublishingWorkerRequest(
     run(input: { workerId: string; concurrency?: number }): Promise<NodePublishingWorkerResult>;
   },
 ): Promise<Response> {
-  if (request.method !== "POST") return json(405, { error: "METHOD_NOT_ALLOWED" });
+  if (!new Set(["GET", "POST"]).has(request.method)) return json(405, { error: "METHOD_NOT_ALLOWED" });
   if (!dependencies.secret) return json(503, { error: "WORKER_NOT_CONFIGURED" });
 
   const authorization = request.headers.get("authorization") ?? "";
@@ -31,11 +31,13 @@ export async function handlePublishingWorkerRequest(
   }
 
   let body: Record<string, unknown> = {};
-  try {
-    const text = await request.text();
-    body = text.trim() ? (JSON.parse(text) as Record<string, unknown>) : {};
-  } catch {
-    return json(400, { error: "INVALID_REQUEST" });
+  if (request.method === "POST") {
+    try {
+      const text = await request.text();
+      body = text.trim() ? (JSON.parse(text) as Record<string, unknown>) : {};
+    } catch {
+      return json(400, { error: "INVALID_REQUEST" });
+    }
   }
 
   if (hasForbiddenKey(body)) return json(400, { error: "CREDENTIAL_FIELDS_FORBIDDEN" });
