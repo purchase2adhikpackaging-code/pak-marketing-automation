@@ -16,20 +16,25 @@ type SafeProviderError = {
 };
 
 type GenerationInput = {
+  planVersionId: string;
+  sceneId: string;
+  shotId: string;
   prompt: string;
   cameraMotion?: string;
   aspectRatio: "16:9" | "9:16";
   durationSeconds: number;
   generateAudio: false;
   provider: "LTX";
-  providerModel: "ltx-2-5-pro";
+  providerModel: "ltx-2-3-pro";
 };
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const LTX_ENDPOINT = "https://api.ltx.io/v2/text-to-video";
-const LTX_MODEL = "ltx-2-5-pro";
+const LTX_MODEL = "ltx-2-3-pro";
 const LTX_FPS = 24;
+const GENERATED_MEDIA_BUCKET = "generated-media";
+const MAX_GENERATED_VIDEO_BYTES = 256 * 1024 * 1024;
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
@@ -54,13 +59,20 @@ function asRecord(value: unknown): Record<string, unknown> | null {
 function parseGenerationInput(value: unknown): GenerationInput | null {
   const input = asRecord(value);
   if (!input) return null;
+  if (typeof input.planVersionId !== "string" || !UUID_RE.test(input.planVersionId)) return null;
+  if (typeof input.sceneId !== "string" || !UUID_RE.test(input.sceneId)) return null;
+  if (typeof input.shotId !== "string" || !UUID_RE.test(input.shotId)) return null;
   if (typeof input.prompt !== "string" || !input.prompt.trim()) return null;
   if (input.aspectRatio !== "16:9" && input.aspectRatio !== "9:16") return null;
   if (typeof input.durationSeconds !== "number" || !Number.isFinite(input.durationSeconds)) return null;
   if (input.durationSeconds < 4 || input.durationSeconds > 12) return null;
   if (input.generateAudio !== false || input.provider !== "LTX" || input.providerModel !== LTX_MODEL) return null;
   if (input.cameraMotion !== undefined && typeof input.cameraMotion !== "string") return null;
+
   return {
+    planVersionId: input.planVersionId,
+    sceneId: input.sceneId,
+    shotId: input.shotId,
     prompt: input.prompt,
     aspectRatio: input.aspectRatio,
     durationSeconds: input.durationSeconds,
@@ -123,7 +135,6 @@ function providerError(status: number, payload: unknown): SafeProviderError {
   const nested = asRecord(record?.error);
   const providerType = typeof nested?.type === "string" ? nested.type : "";
   const providerMessage = typeof nested?.message === "string" ? nested.message : "LTX provider request failed.";
-
   const typed: Record<string, { code: string; retryable: boolean }> = {
     invalid_request_error: { code: "LTX_INVALID_REQUEST", retryable: false },
     authentication_error: { code: "LTX_AUTHENTICATION", retryable: false },
@@ -151,6 +162,56 @@ async function safeJson(response: Response): Promise<unknown> {
   } catch {
     return null;
   }
+}
+
+function generatedObjectPath(input: GenerationInput, organizationId: string, attemptId: string): string {
+  return `${organizationId}/generated-video/${input.planVersionId}-${input.shotId}-${attemptId}.mp4`;
+}
+
+async function readVideoBytes(response: Response): Promise<{ bytes: Uint8Array; mimeType: string }> {
+  if (!response.ok) throw new Error("PROVIDER_RESULT_DOWNLOAD_FAILED");
+  const mimeType = (response.headers.get("content-type") ?? "").split(";", 1)[0]!.trim().toLowerCase();
+  if (!mimeType.startsWith("video/")) throw new Error("PROVIDER_RESULT_INVALID_MIME");
+  const declaredLength = Number(response.headers.get("content-length"));
+  if (Number.isFinite(declaredLength) && declaredLength > MAX_GENERATED_VIDEO_BYTES) {
+    throw new Error("PROVIDER_RESULT_TOO_LARGE");
+  }
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error("PROVIDER_RESULT_EMPTY");
+
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (!value?.byteLength) continue;
+    total += value.byteLength;
+    if (total > MAX_GENERATED_VIDEO_BYTES) {
+      await reader.cancel();
+      throw new Error("PROVIDER_RESULT_TOO_LARGE");
+    }
+    chunks.push(value);
+  }
+  if (total === 0) throw new Error("PROVIDER_RESULT_EMPTY");
+
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return { bytes, mimeType };
+}
+
+async function sha256(bytes: Uint8Array): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return `sha256:${Array.from(new Uint8Array(digest)).map((value) => value.toString(16).padStart(2, "0")).join("")}`;
+}
+
+function isDuplicateStorageError(error: unknown): boolean {
+  const record = asRecord(error);
+  const message = `${String(record?.message ?? "")} ${String(record?.statusCode ?? "")} ${String(record?.error ?? "")}`;
+  return /already exists|duplicate|409/i.test(message);
 }
 
 Deno.serve(async (req: Request) => {
@@ -204,7 +265,7 @@ Deno.serve(async (req: Request) => {
 
   const { data: attempt, error: attemptError } = await admin
     .from("video_generation_attempts")
-    .select("id,organization_id,job_id,provider,provider_model,provider_job_id,state,attempt_number")
+    .select("id,organization_id,job_id,plan_version_id,scene_id,shot_id,provider,provider_model,provider_job_id,state,attempt_number,effective_duration_seconds,media_asset_id")
     .eq("id", body.attemptId)
     .eq("organization_id", body.organizationId)
     .eq("job_id", body.jobId)
@@ -213,9 +274,23 @@ Deno.serve(async (req: Request) => {
   if (!attempt || attempt.provider !== "LTX" || attempt.provider_model !== LTX_MODEL) {
     return json(404, { error: "ATTEMPT_NOT_FOUND" });
   }
+  if (attempt.state === "COMPLETED" && typeof attempt.media_asset_id === "string") {
+    return json(200, {
+      state: "COMPLETED",
+      jobId: body.jobId,
+      attemptId: body.attemptId,
+      mediaAssetId: attempt.media_asset_id,
+    });
+  }
 
   const input = parseGenerationInput(job.input_payload);
-  if (!input || job.resource_id !== (asRecord(job.input_payload)?.shotId ?? null)) {
+  if (
+    !input ||
+    job.resource_id !== input.shotId ||
+    attempt.plan_version_id !== input.planVersionId ||
+    attempt.scene_id !== input.sceneId ||
+    attempt.shot_id !== input.shotId
+  ) {
     return json(409, { error: "GENERATION_INPUT_INVALID" });
   }
 
@@ -239,7 +314,6 @@ Deno.serve(async (req: Request) => {
 
   if (body.operation === "submit") {
     if (attempt.state !== "QUEUED") return json(409, { error: "ATTEMPT_NOT_QUEUED" });
-
     const effectiveDuration = normalizeDuration(input.durationSeconds);
     const resolution = resolutionFor(input.aspectRatio);
     const cameraMotion = cameraMotionFor(input.cameraMotion);
@@ -273,7 +347,7 @@ Deno.serve(async (req: Request) => {
         },
         body: JSON.stringify({
           prompt: input.prompt,
-          model: "ltx-2-5-pro",
+          model: "ltx-2-3-pro",
           duration: effectiveDuration,
           resolution,
           fps: LTX_FPS,
@@ -282,6 +356,7 @@ Deno.serve(async (req: Request) => {
         }),
       });
     } catch {
+      const now = new Date().toISOString();
       await admin
         .from("video_generation_attempts")
         .update({
@@ -289,8 +364,8 @@ Deno.serve(async (req: Request) => {
           error_code: "LTX_SUBMISSION_UNKNOWN",
           error_message: "LTX submission outcome is unknown after a transport failure.",
           retryable: false,
-          terminal_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          terminal_at: now,
+          updated_at: now,
         })
         .eq("id", body.attemptId)
         .eq("organization_id", body.organizationId);
@@ -299,8 +374,8 @@ Deno.serve(async (req: Request) => {
         .update({
           state: "FAILED",
           failure_metadata: { code: "LTX_SUBMISSION_UNKNOWN", retryable: false },
-          completed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          completed_at: now,
+          updated_at: now,
         })
         .eq("id", body.jobId)
         .eq("organization_id", body.organizationId);
@@ -310,6 +385,7 @@ Deno.serve(async (req: Request) => {
     const payload = await safeJson(response);
     if (!response.ok) {
       const error = providerError(response.status, payload);
+      const now = new Date().toISOString();
       await admin
         .from("video_generation_attempts")
         .update({
@@ -317,8 +393,8 @@ Deno.serve(async (req: Request) => {
           error_code: error.code,
           error_message: error.message,
           retryable: error.retryable,
-          terminal_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          terminal_at: now,
+          updated_at: now,
         })
         .eq("id", body.attemptId)
         .eq("organization_id", body.organizationId);
@@ -327,8 +403,8 @@ Deno.serve(async (req: Request) => {
         .update({
           state: "FAILED",
           failure_metadata: { code: error.code, retryable: error.retryable },
-          completed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          completed_at: now,
+          updated_at: now,
         })
         .eq("id", body.jobId)
         .eq("organization_id", body.organizationId);
@@ -338,6 +414,7 @@ Deno.serve(async (req: Request) => {
     const submitted = asRecord(payload);
     const providerJobId = typeof submitted?.id === "string" ? submitted.id.trim() : "";
     if (!providerJobId) {
+      const now = new Date().toISOString();
       await admin
         .from("video_generation_attempts")
         .update({
@@ -345,8 +422,8 @@ Deno.serve(async (req: Request) => {
           error_code: "LTX_RESPONSE_INVALID",
           error_message: "LTX accepted submission without a usable job identifier.",
           retryable: false,
-          terminal_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          terminal_at: now,
+          updated_at: now,
         })
         .eq("id", body.attemptId)
         .eq("organization_id", body.organizationId);
@@ -367,7 +444,6 @@ Deno.serve(async (req: Request) => {
       .eq("id", body.attemptId)
       .eq("organization_id", body.organizationId);
     if (submittedError) return json(500, { error: "STATE_UPDATE_FAILED" });
-
     return json(200, { state: "SUBMITTED", jobId: body.jobId, attemptId: body.attemptId });
   }
 
@@ -390,6 +466,32 @@ Deno.serve(async (req: Request) => {
 
   const statusPayload = await safeJson(statusResponse);
   if (!statusResponse.ok) {
+    if (attempt.state === "IMPORT_PENDING" && statusResponse.status === 404) {
+      const now = new Date().toISOString();
+      await admin
+        .from("video_generation_attempts")
+        .update({
+          state: "FAILED",
+          error_code: "PROVIDER_RESULT_EXPIRED",
+          error_message: "Provider result is no longer available for import.",
+          retryable: false,
+          terminal_at: now,
+          updated_at: now,
+        })
+        .eq("id", body.attemptId)
+        .eq("organization_id", body.organizationId);
+      await admin
+        .from("jobs")
+        .update({
+          state: "FAILED",
+          failure_metadata: { code: "PROVIDER_RESULT_EXPIRED", retryable: false },
+          completed_at: now,
+          updated_at: now,
+        })
+        .eq("id", body.jobId)
+        .eq("organization_id", body.organizationId);
+      return json(422, { error: "PROVIDER_RESULT_EXPIRED" });
+    }
     const error = providerError(statusResponse.status, statusPayload);
     return json(error.retryable ? 503 : 422, { error: error.code });
   }
@@ -450,14 +552,68 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  if (providerStatus === "completed") {
-    await admin
-      .from("video_generation_attempts")
-      .update({ state: "IMPORT_PENDING", last_polled_at: now, terminal_at: now, updated_at: now })
-      .eq("id", body.attemptId)
-      .eq("organization_id", body.organizationId);
-    return json(200, { state: "IMPORT_PENDING", jobId: body.jobId, attemptId: body.attemptId });
+  if (providerStatus !== "completed") {
+    return json(502, { error: "LTX_RESPONSE_INVALID" });
   }
 
-  return json(502, { error: "LTX_RESPONSE_INVALID" });
+  const result = asRecord(statusRecord?.result);
+  const providerVideoUrl = typeof result?.video_url === "string" ? result.video_url.trim() : "";
+  if (!providerVideoUrl) return json(502, { error: "LTX_RESPONSE_INVALID" });
+
+  await admin
+    .from("video_generation_attempts")
+    .update({ state: "IMPORT_PENDING", last_polled_at: now, updated_at: now })
+    .eq("id", body.attemptId)
+    .eq("organization_id", body.organizationId);
+
+  let videoResponse: Response;
+  try {
+    videoResponse = await fetch(providerVideoUrl, { method: "GET" });
+  } catch {
+    return json(503, { error: "PROVIDER_RESULT_DOWNLOAD_FAILED" });
+  }
+
+  let media: { bytes: Uint8Array; mimeType: string };
+  try {
+    media = await readVideoBytes(videoResponse);
+  } catch (error) {
+    const code = error instanceof Error ? error.message : "PROVIDER_RESULT_DOWNLOAD_FAILED";
+    return json(code === "PROVIDER_RESULT_TOO_LARGE" ? 422 : 503, { error: code });
+  }
+
+  const objectPath = generatedObjectPath(input, body.organizationId, body.attemptId);
+  const checksum = await sha256(media.bytes);
+  const { error: uploadError } = await admin.storage
+    .from(GENERATED_MEDIA_BUCKET)
+    .upload(objectPath, media.bytes, {
+      contentType: media.mimeType,
+      upsert: false,
+      cacheControl: "31536000",
+    });
+  if (uploadError && !isDuplicateStorageError(uploadError)) {
+    return json(503, { error: "MEDIA_STORAGE_UPLOAD_FAILED" });
+  }
+
+  const effectiveDuration = typeof attempt.effective_duration_seconds === "number"
+    ? attempt.effective_duration_seconds
+    : normalizeDuration(input.durationSeconds);
+  const { data: mediaAssetId, error: completionError } = await admin.rpc("complete_generated_video_import", {
+    _organization_id: body.organizationId,
+    _job_id: body.jobId,
+    _attempt_id: body.attemptId,
+    _storage_path: objectPath,
+    _mime_type: media.mimeType,
+    _duration_seconds: effectiveDuration,
+    _checksum: checksum,
+  });
+  if (completionError || typeof mediaAssetId !== "string") {
+    return json(503, { error: "MEDIA_IMPORT_FINALIZE_FAILED" });
+  }
+
+  return json(200, {
+    state: "COMPLETED",
+    jobId: body.jobId,
+    attemptId: body.attemptId,
+    mediaAssetId,
+  });
 });
