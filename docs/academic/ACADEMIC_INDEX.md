@@ -6,7 +6,7 @@
 **Migration status:** Complete for PAK-C01–C12 and PAK-D01–D05  
 **Defined Certificate module placements:** 126  
 **Preserved Diploma semester subject placements:** 120  
-**Next Controlled Target: PAK-B01 — Bachelor's-Level Railway Engineering — 3 Years / 6 Semesters**
+**Next Controlled Target: PAK-B02 — Bachelor's-Level Rolling Stock Engineering — 3 Years / 6 Semesters**
 
 ## Source-of-Truth Relationship
 
@@ -49,7 +49,7 @@ The master PRD remains the **consolidated governance and audit authority**. The 
 | PAK-D03 | Diploma in Railway Electrical & Control Systems | Diploma | 2 Years | 4 semesters | `diplomas/D03/PAK-D03-OVERVIEW.md` + `S1.md`–`S4.md` | Subject Architecture Complete | Pending | Not Started | Not Started | §19 |
 | PAK-D04 | Diploma in Railway Operations & Transport Management | Diploma | 2 Years | 4 semesters | `diplomas/D04/PAK-D04-OVERVIEW.md` + `S1.md`–`S4.md` | Subject Architecture Complete | Pending | Not Started | Not Started | §20 |
 | PAK-D05 | Diploma in Railway Manufacturing, Welding & Quality | Diploma | 2 Years | 4 semesters | `diplomas/D05/PAK-D05-OVERVIEW.md` + `S1.md`–`S4.md` | Subject Architecture Complete | Pending | Not Started | Not Started | §21 |
-| PAK-B01 | B.Sc./B.Eng. in Railway Engineering | Bachelor's-level | 3 Years | 6 semesters | `bachelors/B01/PAK-B01-OVERVIEW.md` + `S1.md`–`S6.md` | Catalogue Only | Pending | Not Started | Not Started | §4.3 |
+| PAK-B01 | B.Sc./B.Eng. in Railway Engineering | Bachelor's-level | 3 Years | 6 semesters | `bachelors/B01/PAK-B01-OVERVIEW.md` + `S1.md`–`S6.md` | Subject Architecture Complete | Pending | Not Started | Not Started | §4.3 |
 | PAK-B02 | B.Sc./B.Eng. in Rolling Stock Engineering | Bachelor's-level | 3 Years | 6 semesters | `bachelors/B02/PAK-B02-OVERVIEW.md` + `S1.md`–`S6.md` | Catalogue Only | Pending | Not Started | Not Started | §4.3 |
 | PAK-B03 | B.Sc./B.Eng. in Railway Electrical, Signalling & Control Systems | Bachelor's-level | 3 Years | 6 semesters | `bachelors/B03/PAK-B03-OVERVIEW.md` + `S1.md`–`S6.md` | Catalogue Only | Pending | Not Started | Not Started | §4.3 |
 | PAK-B04 | B.Sc. in Railway Operations, Logistics & Transport Management | Bachelor's-level | 3 Years | 6 semesters | `bachelors/B04/PAK-B04-OVERVIEW.md` + `S1.md`–`S6.md` | Catalogue Only | Pending | Not Started | Not Started | §4.3 |
@@ -73,6 +73,8 @@ The master PRD remains the **consolidated governance and audit authority**. The 
 - Completed Certificate module placements: **126**
 - Completed Diploma programmes: **5 of 5**
 - Completed Diploma semester subject placements: **120**
+- Completed Bachelor's-level programmes: **1 of 5**
+- Completed Bachelor's-level semester subject placements: **36**
 - Chapter architecture: **not yet started**
 - Full study-material writing: **not yet started**
 
@@ -86,10 +88,14 @@ The master PRD remains the **consolidated governance and audit authority**. The 
 - Diploma subject placements preserved: **120**
 - Certificate architecture batch: **complete**
 - Master PRD Certificate batch synchronization: **complete at v0.2.0 — PAK-C05 through PAK-C12 synchronized into §§31–38**
+- Bachelor's-level programme files complete for: **PAK-B01**
+- B01 modular files created: **7**
+- B01 semester subject placements defined: **36**
+- Bachelor's batch master synchronization: **deferred until PAK-B01–B05 architecture is complete**
 - Global print-ready governance: **mirrored and mandatory**
 
 ## Immediate Working Target
 
-**PAK-B01 — Bachelor's-Level Railway Engineering — 3 Years / 6 Semesters**
+**PAK-B02 — Bachelor's-Level Rolling Stock Engineering — 3 Years / 6 Semesters**
 
-The Certificate programme architecture and its controlled master synchronization are complete. The next portfolio-development target is the six-semester subject architecture for PAK-B01. Chapter architecture and full study-material writing remain gated and must not begin ahead of the approved architecture sequence. Formal degree naming/award claims remain subject to the master PRD qualification-and-awarding caveat.
+PAK-B01 subject architecture is complete at 36 semester subject placements. Chapter architecture and full study-material writing remain gated and must not begin ahead of the approved architecture sequence. The next portfolio-development target is PAK-B02. The consolidated master PRD remains at v0.2.0 and the Bachelor's-level batch will be synchronized only after PAK-B01 through PAK-B05 architectures are complete. Formal degree naming/award claims remain subject to the master PRD qualification-and-awarding caveat.
