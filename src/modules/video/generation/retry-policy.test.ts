@@ -5,15 +5,15 @@ describe("video generation retry policy", () => {
   it("retries transient provider failures before the expensive-attempt cap", () => {
     expect(classifyRetry({ code: "LTX_RATE_LIMITED", retryable: true }, 1)).toEqual({
       retry: true,
-      delaySeconds: 15,
+      delaySeconds: 5,
     });
     expect(classifyRetry({ code: "LTX_API_ERROR", retryable: true }, 2)).toEqual({
       retry: true,
-      delaySeconds: 30,
+      delaySeconds: 15,
     });
     expect(classifyRetry({ code: "LTX_SERVICE_UNAVAILABLE", retryable: true }, 3)).toEqual({
       retry: true,
-      delaySeconds: 60,
+      delaySeconds: 45,
     });
   });
 
