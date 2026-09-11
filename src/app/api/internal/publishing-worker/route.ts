@@ -4,9 +4,12 @@ import { runConfiguredPublishingWorker } from "@/modules/publishing-production/n
 export const runtime = "nodejs";
 export const maxDuration = 1800;
 
-export async function POST(request: Request): Promise<Response> {
+async function handle(request: Request): Promise<Response> {
   return handlePublishingWorkerRequest(request, {
     secret: process.env.CRON_SECRET ?? process.env.PUBLISHING_WORKER_SECRET,
     run: runConfiguredPublishingWorker,
   });
 }
+
+export const GET = handle;
+export const POST = handle;
