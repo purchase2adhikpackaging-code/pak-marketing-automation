@@ -38,6 +38,12 @@ jobs:
       - name: Unit tests
         run: npm run test:run
 
+      - name: Publishing registry smoke test
+        run: npm run publishing:registry
+
+      - name: Publishing deterministic QA fixture
+        run: npm run publishing:qa-fixture
+
       - name: Build
         run: npm run build
 
