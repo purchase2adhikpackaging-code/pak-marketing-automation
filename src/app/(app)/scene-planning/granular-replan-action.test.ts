@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { ScenePlanGeneration } from "@/modules/scene-planning/schema";
-import { executeGranularReplanAction, type ScenePlanningGenerationContext } from "./workflow-actions";
+import { executeGranularReplanAction, type ScenePlanningGenerationContext } from "./granular-replan-actions";
 
 const organizationId = "11111111-1111-4111-8111-111111111111";
 const projectId = "22222222-2222-4222-8222-222222222222";
