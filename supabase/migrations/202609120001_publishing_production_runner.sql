@@ -40,6 +40,8 @@ create table if not exists public.publishing_production_jobs (
   academic_period text,
   edition text not null,
   revision text not null,
+  book_job_payload jsonb not null,
+  curriculum_text text not null,
   status text not null default 'QUEUED' check (status in ('QUEUED','RUNNING','QA_PASSED','BLOCKED','CANCELLED')),
   claim_count integer not null default 0 check (claim_count >= 0),
   failure_attempts integer not null default 0 check (failure_attempts >= 0),
