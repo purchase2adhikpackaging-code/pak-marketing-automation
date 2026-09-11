@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <style>
+    @page { size: A4; margin: 18mm 16mm 18mm 20mm; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.4; }
+    [data-pak-box] { overflow: visible; box-sizing: border-box; }
+    .box { width: 150mm; border: 1px solid #60758a; padding: 5mm; }
+    figure { margin: 5mm 0; }
+    svg { width: 120mm; height: 35mm; display: block; }
+  </style>
+</head>
+<body>
+  <main data-pak-publication-root>
+    <h1>PAK-D01 — D01-101 Railway Fundamentals</h1>
+    <section class="box" data-pak-box="learning-outcomes">
+      <h2>Learning outcomes</h2>
+      <p>Explain how infrastructure, rolling stock, signalling, energy, operations and maintenance interact as one railway system.</p>
+    </section>
+    <figure data-pak-figure="figure-1">
+      <svg viewBox="0 0 600 160" role="img" aria-label="Simplified railway system relationship diagram">
+        <rect x="10" y="35" width="160" height="70" fill="none" stroke="black" />
+        <rect x="220" y="35" width="160" height="70" fill="none" stroke="black" />
+        <rect x="430" y="35" width="160" height="70" fill="none" stroke="black" />
+        <text x="90" y="75" text-anchor="middle">Infrastructure</text>
+        <text x="300" y="75" text-anchor="middle">Rolling Stock</text>
+        <text x="510" y="75" text-anchor="middle">Operations</text>
+      </svg>
+      <figcaption>Figure 1.1 — Simplified railway system interfaces.</figcaption>
+    </figure>
+  </main>
+</body>
+</html>
