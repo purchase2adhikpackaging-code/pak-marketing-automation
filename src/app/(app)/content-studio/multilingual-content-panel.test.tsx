@@ -39,11 +39,7 @@ function artifact(overrides: Partial<ScriptArtifact> = {}): ScriptArtifact {
 
 function renderPanel(artifacts: ScriptArtifact[]) {
   return render(
-    <MultilingualContentPanel
-      organizationId={organizationId}
-      contentItemId={contentItemId}
-      artifacts={artifacts}
-    />,
+    <MultilingualContentPanel organizationId={organizationId} contentItemId={contentItemId} artifacts={artifacts} />,
   );
 }
 
@@ -68,20 +64,8 @@ describe("MultilingualContentPanel", () => {
   it("shows Create Scene Plan only for persisted GENERATED artifacts", () => {
     renderPanel([
       artifact(),
-      artifact({
-        id: "44444444-4444-4444-8444-444444444444",
-        language: "PL",
-        isSource: false,
-        status: "STALE",
-        scriptText: "Old Polish translation.",
-      }),
-      artifact({
-        id: "55555555-5555-4555-8555-555555555555",
-        language: "HI",
-        isSource: false,
-        status: "FAILED",
-        scriptText: undefined,
-      }),
+      artifact({ id: "44444444-4444-4444-8444-444444444444", language: "PL", isSource: false, status: "STALE", scriptText: "Old Polish translation." }),
+      artifact({ id: "55555555-5555-4555-8555-555555555555", language: "HI", isSource: false, status: "FAILED" }),
     ]);
     expect(screen.getAllByRole("button", { name: /Create Scene Plan from/ })).toHaveLength(1);
     expect(screen.getByRole("button", { name: "Create Scene Plan from English" })).toBeTruthy();
@@ -94,10 +78,7 @@ describe("MultilingualContentPanel", () => {
     renderPanel([artifact()]);
     fireEvent.click(screen.getByRole("button", { name: "Create Scene Plan from English" }));
     await waitFor(() => {
-      expect(createScenePlanningProjectAction).toHaveBeenCalledWith({
-        organizationId,
-        sourceArtifactId: "33333333-3333-4333-8333-333333333333",
-      });
+      expect(createScenePlanningProjectAction).toHaveBeenCalledWith({ organizationId, sourceArtifactId: "33333333-3333-4333-8333-333333333333" });
       expect(push).toHaveBeenCalledWith("/scene-planning?project=project-1");
     });
     expect(createScenePlanningProjectAction).not.toHaveBeenCalledWith(expect.objectContaining({ scriptText: expect.anything() }));
