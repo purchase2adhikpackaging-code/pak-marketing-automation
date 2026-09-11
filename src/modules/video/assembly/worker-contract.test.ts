@@ -18,6 +18,7 @@ const manifest: FinalAssemblyRenderManifest = {
   expiresAt: "2026-09-12T02:30:00.000Z",
   output: {
     signedUploadUrl: "https://storage.example/upload/final",
+    uploadToken: "signed-upload-token-value",
     bucket: "generated-media",
     path: "33333333-3333-4333-8333-333333333333/final-video/11111111-final.mp4",
   },
@@ -42,10 +43,11 @@ describe("final assembly worker contract", () => {
     expect(FINAL_ASSEMBLY_SIGNED_URL_TTL_SECONDS).toBeLessThanOrEqual(3600);
   });
 
-  it("accepts a safe immutable manifest shape", () => {
+  it("accepts a safe immutable manifest shape with a signed upload token", () => {
     const parsed = parseFinalAssemblyRenderManifest(manifest);
     expect(parsed).toEqual(manifest);
     expect(parsed.output.bucket).toBe("generated-media");
+    expect(parsed.output.uploadToken).toBe("signed-upload-token-value");
   });
 
   it("can carry a signed existing output for callback-loss reconciliation", () => {
