@@ -23,6 +23,13 @@ vi.mock("./workflow-actions", () => ({
   saveVisualBibleAction: vi.fn(),
   submitScenePlanForReviewAction: vi.fn(),
 }));
+vi.mock("./draft-edit-actions", () => ({
+  reorderScenePlanScenesAction: vi.fn(),
+  reorderScenePlanShotsAction: vi.fn(),
+  updateScenePlanSceneDraftAction: vi.fn(),
+  updateScenePlanShotDraftAction: vi.fn(),
+}));
+vi.mock("./granular-replan-actions", () => ({ granularReplanScenePlanAction: vi.fn() }));
 
 function props(overrides: Partial<ScenePlanningWorkspaceProps> = {}): ScenePlanningWorkspaceProps {
   return {
@@ -92,8 +99,9 @@ describe("ScenePlanningWorkspace", () => {
     expect(screen.getByText("Scene 1 · HOOK")).toBeTruthy();
     expect(screen.getByText("Creative Direction")).toBeTruthy();
     expect(screen.getByText("Generation Specification")).toBeTruthy();
-    expect(screen.getByText("Characters 0–31")).toBeTruthy();
+    expect(screen.getByText(/Characters 0–31/)).toBeTruthy();
     expect(screen.getByText("Railway excellence begins here.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Save Scene 1 changes" })).toBeTruthy();
   });
 
   it("saves the brief and Visual Bible through server actions", async () => {
@@ -146,6 +154,7 @@ describe("ScenePlanningWorkspace", () => {
     render(<ScenePlanningWorkspace {...props({ plan: { ...props().plan!, status: "APPROVED" } })} />);
     expect(screen.getByText("Approved versions are immutable.")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Run QC" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Save Scene 1 changes" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Create editable version" }));
     await waitFor(() => expect(cloneScenePlanForEditAction).toHaveBeenCalled());
   });
