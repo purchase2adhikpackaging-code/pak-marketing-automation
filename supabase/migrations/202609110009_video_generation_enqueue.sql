@@ -185,9 +185,8 @@ begin
     0,
     4,
     jsonb_build_object(
-      'strategy', 'EXPONENTIAL',
-      'baseDelaySeconds', 15,
-      'maxDelaySeconds', 300
+      'strategy', 'BOUNDED',
+      'delaysSeconds', jsonb_build_array(5, 15, 45)
     ),
     jsonb_build_object(
       'schemaVersion', 'video-shot-generation-v1',
