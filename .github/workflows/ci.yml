@@ -26,6 +26,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
       - name: Typecheck
         run: npm run typecheck
 
@@ -37,9 +40,6 @@ jobs:
 
       - name: Build
         run: npm run build
-
-      - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
 
       - name: E2E smoke test
         run: npm run test:e2e
