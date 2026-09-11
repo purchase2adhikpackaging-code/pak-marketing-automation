@@ -48,6 +48,20 @@ describe("final assembly worker contract", () => {
     expect(parsed.output.bucket).toBe("generated-media");
   });
 
+  it("can carry a signed existing output for callback-loss reconciliation", () => {
+    const parsed = parseFinalAssemblyRenderManifest({
+      ...manifest,
+      output: {
+        ...manifest.output,
+        existingSignedDownloadUrl: "https://storage.example/download/existing-final",
+      },
+    });
+
+    expect(parsed.output.existingSignedDownloadUrl).toBe(
+      "https://storage.example/download/existing-final",
+    );
+  });
+
   it("rejects unbounded component lists", () => {
     expect(() => parseFinalAssemblyRenderManifest({
       ...manifest,
