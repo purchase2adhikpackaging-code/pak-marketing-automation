@@ -33,7 +33,7 @@ const shot = {
   musicIntent: "restrained institutional underscore",
   aspectRatio: "16:9",
   continuityState: { wardrobe: "navy technical uniform" },
-  generationRequirements: { preserveNarration: true, providerNeutral: true },
+  generationRequirements: { preserveNarration: true, providerNeutral: true, generatedDialogue: false },
 };
 
 const validPlan = {
