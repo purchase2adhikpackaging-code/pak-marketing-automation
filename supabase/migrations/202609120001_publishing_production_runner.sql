@@ -41,11 +41,13 @@ create table if not exists public.publishing_production_jobs (
   edition text not null,
   revision text not null,
   status text not null default 'QUEUED' check (status in ('QUEUED','RUNNING','QA_PASSED','BLOCKED','CANCELLED')),
-  attempt_count integer not null default 0 check (attempt_count >= 0),
-  max_attempts integer not null default 3 check (max_attempts = 3),
+  claim_count integer not null default 0 check (claim_count >= 0),
+  failure_attempts integer not null default 0 check (failure_attempts >= 0),
+  max_failure_attempts integer not null default 3 check (max_failure_attempts = 3),
   lease_owner text,
   lease_expires_at timestamptz,
   last_error text,
+  current_stage text,
   checkpoint_root text,
   qa_status text,
   pdf_artifact_path text,
@@ -164,14 +166,14 @@ begin
     where r.status in ('QUEUED','RUNNING')
       and j.status in ('QUEUED','RUNNING')
       and (j.status = 'QUEUED' or j.lease_expires_at <= now())
-      and j.attempt_count < j.max_attempts
+      and j.failure_attempts < j.max_failure_attempts
     order by j.created_at asc
     for update of j skip locked
     limit p_limit
   ), claimed as (
     update public.publishing_production_jobs j
     set status = 'RUNNING',
-        attempt_count = j.attempt_count + 1,
+        claim_count = j.claim_count + 1,
         lease_owner = p_worker_id,
         lease_expires_at = now() + make_interval(secs => greatest(p_lease_seconds, 30)),
         started_at = coalesce(j.started_at, now()),
@@ -228,6 +230,44 @@ begin
 end;
 $$;
 
+create or replace function public.yield_publishing_job(
+  p_job_id uuid,
+  p_worker_id text,
+  p_checkpoint_root text,
+  p_current_stage text
+)
+returns public.publishing_production_jobs
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_job public.publishing_production_jobs;
+begin
+  if auth.role() <> 'service_role' then
+    raise exception 'service role required';
+  end if;
+
+  update public.publishing_production_jobs
+  set status = 'QUEUED',
+      checkpoint_root = p_checkpoint_root,
+      current_stage = p_current_stage,
+      lease_owner = null,
+      lease_expires_at = null,
+      last_error = null,
+      updated_at = now()
+  where id = p_job_id
+    and status = 'RUNNING'
+    and lease_owner = p_worker_id
+  returning * into v_job;
+
+  if v_job.id is null then
+    raise exception 'publishing job lease is unavailable';
+  end if;
+  return v_job;
+end;
+$$;
+
 create or replace function public.complete_publishing_job(
   p_job_id uuid,
   p_worker_id text,
@@ -255,6 +295,7 @@ begin
 
   update public.publishing_production_jobs
   set status = 'QA_PASSED',
+      current_stage = 'QA_PASSED',
       qa_status = p_qa_status,
       pdf_artifact_path = p_pdf_artifact_path,
       manifest_artifact_path = p_manifest_artifact_path,
@@ -295,11 +336,12 @@ begin
   end if;
 
   update public.publishing_production_jobs
-  set status = case when attempt_count >= max_attempts then 'BLOCKED' else 'QUEUED' end,
+  set failure_attempts = least(failure_attempts + 1, max_failure_attempts),
+      status = case when failure_attempts + 1 >= max_failure_attempts then 'BLOCKED' else 'QUEUED' end,
       last_error = left(coalesce(p_error, 'Unknown publishing failure'), 4000),
       lease_owner = null,
       lease_expires_at = null,
-      completed_at = case when attempt_count >= max_attempts then now() else completed_at end,
+      completed_at = case when failure_attempts + 1 >= max_failure_attempts then now() else completed_at end,
       updated_at = now()
   where id = p_job_id
     and status = 'RUNNING'
@@ -372,6 +414,11 @@ revoke execute on function public.heartbeat_publishing_job(uuid, text, integer) 
 revoke execute on function public.heartbeat_publishing_job(uuid, text, integer) from anon;
 revoke execute on function public.heartbeat_publishing_job(uuid, text, integer) from authenticated;
 grant execute on function public.heartbeat_publishing_job(uuid, text, integer) to service_role;
+
+revoke execute on function public.yield_publishing_job(uuid, text, text, text) from public;
+revoke execute on function public.yield_publishing_job(uuid, text, text, text) from anon;
+revoke execute on function public.yield_publishing_job(uuid, text, text, text) from authenticated;
+grant execute on function public.yield_publishing_job(uuid, text, text, text) to service_role;
 
 revoke execute on function public.complete_publishing_job(uuid, text, text, text, text, text, text, jsonb) from public;
 revoke execute on function public.complete_publishing_job(uuid, text, text, text, text, text, text, jsonb) from anon;
