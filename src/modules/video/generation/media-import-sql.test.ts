@@ -27,11 +27,15 @@ describe("generated video media import SQL", () => {
 
   it("matches the existing media/jobs schema instead of forcing Phase 6 scene IDs into legacy media lineage", () => {
     const sql = readFileSync(migrationPath, "utf8");
+    const mediaInsert = sql.match(/insert into public\.media_assets\s*\(([^)]*)\)\s*values/is)?.[1] ?? "";
+    const mediaConflictUpdate = sql.match(/on conflict \(organization_id, storage_path\) do update\s*set([\s\S]*?)returning id into v_media_id;/i)?.[1] ?? "";
 
-    expect(sql).not.toMatch(/\bscene_id\b/i);
+    expect(mediaInsert).not.toMatch(/\bscene_id\b/i);
+    expect(mediaConflictUpdate).not.toMatch(/\bscene_id\b/i);
     expect(sql).not.toMatch(/\bprogress\s*=/i);
     expect(sql).toContain("generating_job_id");
     expect(sql).toContain("v_attempt.shot_id");
+    expect(sql).toContain("'scenePlanSceneId', v_attempt.scene_id");
   });
 
   it("keeps completion service-role-only and idempotent", () => {
