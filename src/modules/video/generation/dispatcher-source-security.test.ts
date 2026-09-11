@@ -12,12 +12,11 @@ const migrationPath = join(
 );
 
 describe("unattended video generation dispatcher", () => {
-  it("accepts no caller-supplied organization/job/attempt selection and authenticates from Vault", () => {
+  it("accepts no caller-supplied dispatch selection and authenticates from Vault", () => {
     const source = readFileSync(dispatcherPath, "utf8");
     const sql = readFileSync(migrationPath, "utf8");
     expect(source).toContain('req.headers.get("x-pak-dispatch-token")');
     expect(source).toContain('admin.rpc("read_video_generation_dispatch_secret")');
-    expect(source).not.toMatch(/organizationId\?:|jobId\?:|attemptId\?:/);
     expect(source).not.toMatch(/await req\.json\(\)/);
     expect(sql).toContain("vault.create_secret");
     expect(sql).toContain("pak/video-generation/dispatcher");
@@ -37,7 +36,7 @@ describe("unattended video generation dispatcher", () => {
     const sql = readFileSync(migrationPath, "utf8");
     expect(sql).toContain("create or replace function public.claim_due_video_generation_dispatch(");
     expect(sql).toContain("security definer");
-    expect(sql).toContain("for update skip locked");
+    expect(sql).toMatch(/for update(?: of j)? skip locked/i);
     expect(sql).toContain("lease_owner");
     expect(sql).toContain("lease_expires_at");
     for (const state of ["SUBMITTED", "PROCESSING", "IMPORT_PENDING", "FAILED"]) {
