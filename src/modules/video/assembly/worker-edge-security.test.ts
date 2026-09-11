@@ -70,7 +70,8 @@ describe("final assembly worker security boundary", () => {
   });
 
   it("checks deterministic final output during claim so callback loss does not force a blind rerender", () => {
-    const claimBranch = edgeSource.match(/if \(body\.operation === "claim"\)[\s\S]*?if \(body\.operation === "complete"\)/)?.[0] ?? "";
+    const runtimeSource = edgeSource.slice(edgeSource.indexOf("const body = parseBody(parsedJson);"));
+    const claimBranch = runtimeSource.match(/if \(body\.operation === "claim"\)[\s\S]*?if \(body\.operation === "complete"\)/)?.[0] ?? "";
 
     expect(claimBranch).toContain("outputObjectExists");
     expect(claimBranch).toContain("existingSignedDownloadUrl");
