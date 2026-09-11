@@ -203,18 +203,18 @@ const dependencies: DraftEditDependencies = {
   reorderShots,
 };
 
-export function updateScenePlanSceneDraftAction(input: unknown): Promise<ActionResult> {
+export async function updateScenePlanSceneDraftAction(input: unknown): Promise<ActionResult> {
   return executeUpdateSceneDraftAction(input, dependencies);
 }
 
-export function updateScenePlanShotDraftAction(input: unknown): Promise<ActionResult> {
+export async function updateScenePlanShotDraftAction(input: unknown): Promise<ActionResult> {
   return executeUpdateShotDraftAction(input, dependencies);
 }
 
-export function reorderScenePlanScenesAction(input: unknown): Promise<ActionResult> {
+export async function reorderScenePlanScenesAction(input: unknown): Promise<ActionResult> {
   return executeReorderSceneDraftAction(input, dependencies);
 }
 
-export function reorderScenePlanShotsAction(input: unknown): Promise<ActionResult> {
+export async function reorderScenePlanShotsAction(input: unknown): Promise<ActionResult> {
   return executeReorderShotDraftAction(input, dependencies);
 }
