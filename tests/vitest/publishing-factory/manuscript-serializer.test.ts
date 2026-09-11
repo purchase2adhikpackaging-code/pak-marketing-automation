@@ -80,7 +80,7 @@ describe("manuscript serialization", () => {
     expect(html).toContain(job.bookId);
     expect(html).toContain(job.programmeCode);
     expect(html).toContain(job.subjectCode);
-    expect(html.match(/class="learning-outcomes"/g)).toHaveLength(1);
+    expect(html.match(/class="[^"]*\blearning-outcomes\b[^"]*"/g)).toHaveLength(1);
   });
 
   it("escapes model-provided HTML and marks bounded callouts for layout QA", () => {
