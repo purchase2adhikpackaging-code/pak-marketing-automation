@@ -68,4 +68,12 @@ describe("final assembly worker security boundary", () => {
     expect(edgeSource).toContain('"fail"');
     expect(edgeSource).not.toContain('"enqueue"');
   });
+
+  it("checks deterministic final output during claim so callback loss does not force a blind rerender", () => {
+    const claimBranch = edgeSource.match(/if \(body\.operation === "claim"\)[\s\S]*?if \(body\.operation === "complete"\)/)?.[0] ?? "";
+
+    expect(claimBranch).toContain("outputObjectExists");
+    expect(claimBranch).toContain("existingSignedDownloadUrl");
+    expect(claimBranch).toContain("createSignedUrl(outputPath");
+  });
 });
