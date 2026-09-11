@@ -56,6 +56,7 @@ as $$
 declare
   v_job public.jobs%rowtype;
   v_assembly public.video_assemblies%rowtype;
+  v_now timestamptz := now();
 begin
   if _worker_id is null or btrim(_worker_id) = '' or length(_worker_id) > 128 then
     raise exception 'worker id is required';
@@ -65,6 +66,40 @@ begin
     raise exception 'assembly lease must be between 60 and 3600 seconds';
   end if;
 
+  with exhausted as (
+    update public.jobs j
+    set state = 'FAILED',
+        failure_metadata = jsonb_build_object(
+          'code', 'WORKER_LEASE_EXHAUSTED',
+          'message', 'Final assembly worker lease expired after the maximum attempt count.',
+          'retryable', false
+        ),
+        completed_at = v_now,
+        lease_owner = null,
+        lease_expires_at = null,
+        updated_at = v_now
+    from public.video_assemblies a
+    where a.job_id = j.id
+      and a.organization_id = j.organization_id
+      and j.job_type = 'FINAL_VIDEO_ASSEMBLY'
+      and j.state = 'PROCESSING'
+      and a.state = 'PROCESSING'
+      and j.lease_expires_at is not null
+      and j.lease_expires_at <= v_now
+      and j.attempt_count >= j.max_attempts
+    returning j.id, j.organization_id
+  )
+  update public.video_assemblies a
+  set state = 'FAILED',
+      failure_code = 'WORKER_LEASE_EXHAUSTED',
+      failure_message = 'Final assembly worker lease expired after the maximum attempt count.',
+      retryable = false,
+      completed_at = v_now,
+      updated_at = v_now
+  from exhausted e
+  where a.job_id = e.id
+    and a.organization_id = e.organization_id;
+
   select j.* into v_job
   from public.jobs j
   join public.video_assemblies a
@@ -72,16 +107,23 @@ begin
    and a.organization_id = j.organization_id
   where j.job_type = 'FINAL_VIDEO_ASSEMBLY'
     and j.resource_type = 'SCENE_PLAN_VERSION'
-    and j.state in ('QUEUED', 'RETRYING')
-    and a.state = 'QUEUED'
+    and j.state in ('QUEUED', 'RETRYING', 'PROCESSING')
     and j.attempt_count < j.max_attempts
     and (j.lease_expires_at is null or j.lease_expires_at <= now())
     and (
+      (j.state in ('QUEUED', 'RETRYING') and a.state = 'QUEUED')
+      or (j.state = 'PROCESSING' and a.state = 'PROCESSING' and j.lease_expires_at <= now())
+    )
+    and (
       j.state = 'QUEUED'
-      or j.updated_at <= now() - case
-        when j.attempt_count <= 1 then interval '15 seconds'
-        else interval '60 seconds'
-      end
+      or j.state = 'PROCESSING'
+      or (
+        j.state = 'RETRYING'
+        and j.updated_at <= now() - case
+          when j.attempt_count <= 1 then interval '15 seconds'
+          else interval '60 seconds'
+        end
+      )
     )
   order by j.created_at asc
   for update of j skip locked
