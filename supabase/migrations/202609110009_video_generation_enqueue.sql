@@ -1,3 +1,28 @@
+drop policy if exists jobs_insert_editor on public.jobs;
+drop policy if exists jobs_update_editor on public.jobs;
+
+create policy jobs_insert_editor
+on public.jobs
+for insert
+to authenticated
+with check (
+  public.has_org_role(organization_id, array['OWNER','ADMIN','EDITOR'])
+  and job_type <> 'VIDEO_SHOT_GENERATION'
+);
+
+create policy jobs_update_editor
+on public.jobs
+for update
+to authenticated
+using (
+  public.has_org_role(organization_id, array['OWNER','ADMIN','EDITOR'])
+  and job_type <> 'VIDEO_SHOT_GENERATION'
+)
+with check (
+  public.has_org_role(organization_id, array['OWNER','ADMIN','EDITOR'])
+  and job_type <> 'VIDEO_SHOT_GENERATION'
+);
+
 create or replace function public.enqueue_video_shot_generation(
   _organization_id uuid,
   _plan_version_id uuid,
@@ -6,7 +31,7 @@ create or replace function public.enqueue_video_shot_generation(
 )
 returns jsonb
 language plpgsql
-security invoker
+security definer
 set search_path = public, extensions
 as $$
 declare
@@ -250,4 +275,5 @@ $$;
 
 revoke all on function public.enqueue_video_shot_generation(uuid, uuid, uuid, text) from public;
 revoke all on function public.enqueue_video_shot_generation(uuid, uuid, uuid, text) from anon;
+revoke all on function public.enqueue_video_shot_generation(uuid, uuid, uuid, text) from authenticated;
 grant execute on function public.enqueue_video_shot_generation(uuid, uuid, uuid, text) to authenticated;
