@@ -176,7 +176,7 @@ begin
     from public.video_generation_attempts a
     where a.organization_id = _organization_id
       and a.job_id = v_existing_job_id
-    order by a.attempt_number asc
+    order by a.attempt_number desc
     limit 1;
 
     if v_existing_attempt_id is null then
