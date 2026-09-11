@@ -47,4 +47,14 @@ describe("integration-vault Edge security boundary", () => {
     expect(branch).not.toContain('.from("integration_connections").update');
     expect(branch).not.toContain('.from("integration_audit_events").insert');
   });
+
+  it("tests LTX credentials without submitting a paid generation", () => {
+    expect(vaultSource).toContain('input.provider === "LTX"');
+    expect(vaultSource).toContain("https://api.ltx.io/v2/text-to-video/00000000-0000-4000-8000-000000000000");
+    const ltxTestBranch = vaultSource.match(/if \(input\.provider === "LTX"\)[\s\S]*?if \(input\.provider !== "OPENAI"\)/)?.[0] ?? "";
+    expect(ltxTestBranch).toContain('method: "GET"');
+    expect(ltxTestBranch).not.toContain('method: "POST"');
+    expect(ltxTestBranch).toContain('_provider: "LTX"');
+    expect(ltxTestBranch).toContain("record_integration_test_result");
+  });
 });
