@@ -3,9 +3,9 @@
 # Academic Curriculum & Study Material Blueprint
 
 **Product Requirements Document (PRD)**  
-**Version:** 0.1.9  
+**Version:** 0.2.0  
 **Status:** Living Master Blueprint  
-**Baseline Date:** 10 September 2026  
+**Baseline Date:** 11 September 2026  
 **Language:** English  
 **Scope:** New PAK academic portfolio, curricula, subject architecture, chapters and study-material production system  
 **Change Rule:** Append and version this master PRD as curriculum development progresses
@@ -236,8 +236,9 @@ This PRD defines curriculum architecture only. It does not itself confer degree-
 | v0.1.6 | PAK-C01 12-week Railway Fundamentals certificate module architecture | COMPLETE |
 | v0.1.7 | PAK-C02 6-month Railway Vehicle Maintenance certificate module architecture | COMPLETE |
 | v0.1.8 | Global print-ready academic publishing standard + PAK-C03 Freight Wagon Maintenance certificate module architecture | COMPLETE |
-| v0.1.9 | PAK-C04 6-month Locomotive Maintenance certificate module architecture | **CURRENT** |
-| v0.2 | Complete programme/module and year/semester-wise subject architecture for all programmes | IN PROGRESS |
+| v0.1.9 | PAK-C04 6-month Locomotive Maintenance certificate module architecture | COMPLETE |
+| v0.2.0 | Certificate architecture batch synchronization — PAK-C05 through PAK-C12; Certificate portfolio complete at 12/12 programmes and 126 module placements | **CURRENT** |
+| v0.2 | Complete programme/module and year/semester-wise subject architecture for all programmes; continue with Bachelor’s-level, PGD and Master’s-level architectures | IN PROGRESS |
 | v0.3 | Complete subject-wise chapter architecture | PLANNED |
 | v0.4 | Learning outcomes, contact hours/credits, theory/practical mapping and prerequisites | PLANNED |
 | v0.5 | Assessment, examination, instructor and study-material production standards | PLANNED |
@@ -261,11 +262,13 @@ The GitHub Markdown file is the canonical working copy for subsequent curriculum
 
 ## 14. Next Controlled Work Item
 
-With PAK-D01 through PAK-D05 and PAK-C01 through PAK-C04 now mapped at subject/module level, the next controlled curriculum work item is:
+PAK-D01 through PAK-D05 and the full Certificate portfolio PAK-C01 through PAK-C12 are now mapped at subject/module level and synchronized into this consolidated master PRD.
 
-### `PAK-C05 — Certificate in Wheelset & Bogie Technology`
+The next controlled portfolio-development work item is:
 
-The next revision must define the complete 4-month module/block architecture for PAK-C05, including wheelset construction, wheels/axles/bearings/axleboxes, bogie frames, suspension, running gear, measurement and inspection, common defects, maintenance practice, safety-critical boundaries, traceability and final applied assessment.
+### `PAK-B01 — Bachelor's-Level Railway Engineering`
+
+The next revision must define the complete 3-year / 6-semester subject architecture for PAK-B01 before any Bachelor's-level textbook prose begins. The formal-degree naming and awarding caveat in Section 11 remains mandatory: curriculum architecture does not itself confer Polish degree-awarding authority or accreditation.
 
 All future curriculum development and textbook production must comply with Section 26 — Global Print-Ready Academic Publishing & Book Production Standard.
 
@@ -284,7 +287,8 @@ All future curriculum development and textbook production must comply with Secti
 | 0.1.6 | 10 Sep 2026 | Added complete 12-week module architecture for PAK-C01 and generalized academic-period governance for certificate programmes | Superseded |
 | 0.1.7 | 10 Sep 2026 | Added complete 24-week / 12-module architecture for PAK-C02 Railway Vehicle Maintenance | Superseded |
 | 0.1.8 | 10 Sep 2026 | Added global print-ready textbook/workbook/journal publishing standard and complete 24-week / 12-module architecture for PAK-C03 Freight Wagon Maintenance | Superseded |
-| 0.1.9 | 10 Sep 2026 | Added complete 24-week / 12-module architecture for PAK-C04 Locomotive Maintenance with print-publication and technical-visual requirements | Active |
+| 0.1.9 | 10 Sep 2026 | Added complete 24-week / 12-module architecture for PAK-C04 Locomotive Maintenance with print-publication and technical-visual requirements | Superseded |
+| 0.2.0 | 11 Sep 2026 | Synchronized approved PAK-C05–C12 modular architectures into the consolidated master; Certificate portfolio architecture complete at 12/12 programmes and 126 module placements | Active |
 
 ---
 
@@ -3073,3 +3077,2782 @@ Subject/module architecture completed so far:
 **Section 26 remains mandatory across every completed and future programme:** course material must be publication-aware, print-ready, visually complete and capable of producing the required textbook/module PDFs, practical manuals, workbooks, journals/logbooks, instructor guides and assessment publications.
 
 **Next controlled curriculum target: `PAK-C05 — Certificate in Wheelset & Bogie Technology` (4 months).**
+
+---
+
+# 31. PAK-C05 — Certificate in Wheelset & Bogie Technology
+
+**Synchronization record:** Approved modular architecture synchronized from `docs/academic/certificates/C05/PAK-C05.md` into master PRD v0.2.0 on 11 September 2026. Curriculum substance is preserved; the modular file remains the day-to-day working source and this section is the consolidated governance/audit copy.
+
+## 31.1 Programme Identity
+
+**Programme Code:** `PAK-C05`  
+**Programme Title:** Certificate in Wheelset & Bogie Technology  
+**Duration:** 4 Months / 16 Weeks  
+**Academic Structure:** 8 sequential modules, normally delivered in two-week blocks  
+**Primary Language:** English  
+**Orientation:** Specialist practical foundation in bogie structures, wheelsets, axles, wheels, bearings, axleboxes, suspension, inspection, metrology, defect recognition, maintenance, reliability, traceability and safety-critical competence boundaries
+
+## 31.2 Programme Purpose
+
+PAK-C05 develops focused technical knowledge and supervised practical competence for learners working with or preparing to work around railway wheelsets, bogies, running gear and associated maintenance/inspection activities.
+
+The programme is narrower and more technically concentrated than general rolling-stock maintenance certificates. Learners progress from bogie/wheelset architecture and safety into bogie structures and suspension, wheel/axle geometry, axleboxes and bearings, inspection/metrology, defect recognition, maintenance/reprofiling/overhaul principles, reliability/ECM/traceability and a final integrated practical competency assessment.
+
+The certificate supports maintenance trainees, workshop technicians, inspectors, production personnel, fleet-maintenance staff and learners progressing toward PAK-D01, PAK-D02 or related specialist certificates.
+
+Completion of PAK-C05 does **not** itself authorize independent wheelset release, axle acceptance, bearing acceptance, bogie structural release, reprofiling approval, machining acceptance, safety-critical repair approval, formal NDT sign-off, calibrated release measurement approval, or return-to-service decisions that require separate competence, certification, approved procedures or employer/statutory authorization.
+
+## 31.3 Curriculum Design Principles
+
+1. **Safety-critical context from the start:** wheelsets, axles, bearings, axleboxes, bogie frames and suspension interfaces are treated as safety-relevant components whose acceptance depends on approved technical data.
+2. **Architecture before inspection:** learners understand load paths, interfaces and component functions before evaluating condition.
+3. **Measure before judging:** visual inspection is integrated with metrology, measurement uncertainty, calibrated tools and controlled acceptance sources.
+4. **Defect recognition before repair:** students learn to identify, describe and escalate degradation before studying maintenance or repair intervention.
+5. **Practical-heavy delivery:** training emphasizes component identification, measurement, inspection, controlled assembly/disassembly demonstrations and technical records.
+6. **Approved limits govern decisions:** generic textbook values must never replace vehicle-/component-/ECM-/manufacturer-specific acceptance criteria.
+7. **Traceability is part of maintenance:** component identity, measurement records, defect evidence, parts/materials, tooling/calibration and work completion records are technical outputs.
+8. **NDT boundaries remain explicit:** method awareness and interpretation may be taught; certification/sign-off requires the applicable qualification route.
+9. **Publication-ready design:** chapter planning must include detailed wheelset/bogie drawings, section views, wear/defect graphics, measurement-point diagrams, process flows and practical-journal pages.
+
+---
+
+## 31.4 Sixteen-Week / Eight-Module Architecture
+
+| Weeks | Code | Module | Classification | Orientation | Prerequisite |
+|---|---|---|---|---|---|
+| 1–2 | C05-101 | Wheelset & Bogie Fundamentals, Safety & Technical Documentation | Foundation / Safety Core | Theory + Component Identification + Workshop Induction | None |
+| 3–4 | C05-102 | Bogie Frames, Structures, Suspension & Load Paths | Structural / Mechanical Core | Theory + Visual Inspection + Component Demonstration | C05-101 |
+| 5–6 | C05-103 | Wheelsets, Wheels, Axles, Profiles, Geometry & Track Interface | Safety-Critical Core | Theory + Geometry + Controlled Measurement | C05-101, C05-102 |
+| 7–8 | C05-104 | Axleboxes, Bearings, Lubrication & Condition Indicators | Safety-Critical Mechanical Core | Theory + Component Study + Condition Inspection | C05-101, C05-103 |
+| 9–10 | C05-105 | Inspection, Metrology, Wear & Defect Recognition | Inspection / Metrology Core | Theory + Measurement Lab + Defect Classification | C05-102 to C05-104 |
+| 11–12 | C05-106 | NDT Awareness, Maintenance, Reprofiling, Repair & Overhaul Principles | Maintenance / Inspection Core | Theory + Controlled Demonstration + Workshop Practice | C05-103 to C05-105 |
+| 13–14 | C05-107 | Failure Analysis, Reliability, ECM, Traceability & EU Compliance Awareness | Reliability / Quality / Compliance Core | Theory + Case Study + Maintenance Records | C05-101 to C05-106 |
+| 15–16 | C05-108 | Integrated Wheelset & Bogie Practicum & Final Competency Assessment | Integrative / Capstone | Workshop + Measurement + Inspection + Documentation + Final Assessment | Completion of C05-101 to C05-107 |
+
+---
+
+## 31.5 Module Progression Logic
+
+### Weeks 1–2 — C05-101 Wheelset & Bogie Fundamentals, Safety & Technical Documentation
+
+Learners build the vocabulary and system model needed for the specialist certificate. They identify bogie frames, wheelsets, wheels, axles, axleboxes, bearings, suspension elements, dampers, brake interfaces, traction links and other running-gear components relevant to representative railway vehicles.
+
+The module establishes safe workshop access, lifting/jacking awareness, pinch/crush hazards, stored energy in suspension components, heavy-component handling, rotating machinery awareness, isolation boundaries, PPE, housekeeping and technical documentation.
+
+Students begin using component identity records, work orders, inspection sheets, measurement records, controlled drawings and maintenance instructions. The key principle is that no measurement or visual finding becomes an acceptance decision without the applicable approved criterion.
+
+### Weeks 3–4 — C05-102 Bogie Frames, Structures, Suspension & Load Paths
+
+This module explains how bogie structures transfer vertical, lateral, longitudinal, braking and traction loads. Learners study bogie frames, bolsters where applicable, pivots/centres, links, spring systems, dampers, suspension interfaces and body-to-bogie connections at certificate depth.
+
+Practical activity focuses on component identification, load-path tracing, visible distortion/crack/corrosion indicators, fastening condition, suspension damage, displaced components and systematic defect description.
+
+Structural repair design, weld acceptance and bogie-frame release remain outside generic certificate authority.
+
+### Weeks 5–6 — C05-103 Wheelsets, Wheels, Axles, Profiles, Geometry & Track Interface
+
+Learners study wheelset construction and the mechanical interface between wheel and rail. Topics include wheel/axle arrangement, wheel profiles, flange/tread concepts, back-to-back or equivalent geometry concepts, wheel diameter and wear, axle geometry, mounted components and the relationship between geometry, running behaviour and maintenance.
+
+Controlled practical work may include measurement of training wheelsets/components using appropriate gauges and instruments. Students learn how to record readings and compare them with a named controlled source.
+
+Any actual in-service limit, machining criterion or release value must be taken from the governing approved documentation applicable to the exact vehicle/component.
+
+### Weeks 7–8 — C05-104 Axleboxes, Bearings, Lubrication & Condition Indicators
+
+Students learn the role of axleboxes and bearings in load transfer, guidance and reliable wheelset operation. The module introduces common bearing arrangements, seals, lubrication principles, contamination risks, fit/mounting awareness, temperature indicators and common deterioration mechanisms.
+
+Case work may include bearing distress, overheating, lubrication loss, contamination, abnormal noise/vibration and damage examples. Practical activity should focus on identification, controlled inspection, condition evidence and correct escalation rather than unauthorized bearing acceptance or overhaul.
+
+### Weeks 9–10 — C05-105 Inspection, Metrology, Wear & Defect Recognition
+
+This is the main measurement and inspection module. Learners develop a repeatable inspection method: confirm component identity, review applicable documentation, prepare and check instruments, inspect visually, measure specified features, record evidence, compare results with approved limits and escalate out-of-scope findings.
+
+Training may include dimensional gauges, calipers, micrometers, wheel-profile measurement equipment or representative digital measurement systems where available. Measurement uncertainty, calibration status, repeatability and record quality are introduced at an applied level.
+
+Defect recognition includes visible cracking indicators, wear, flats, shelling/spalling examples, material loss, corrosion, impact damage, overheating evidence, bearing/axlebox distress and suspension/bogie deterioration as appropriate to the training assets.
+
+### Weeks 11–12 — C05-106 NDT Awareness, Maintenance, Reprofiling, Repair & Overhaul Principles
+
+Students receive an applied introduction to how NDT supports wheelset and bogie maintenance and why method selection, personnel competence, equipment, procedure and acceptance criteria matter. Visual, magnetic-particle, penetrant, ultrasonic and other relevant methods may be introduced according to component/material context.
+
+Maintenance content covers controlled cleaning, disassembly/reassembly awareness, wheel reprofiling concepts, machining process awareness, bearing/axlebox maintenance principles, suspension-component replacement, bogie overhaul flow and post-maintenance verification.
+
+Reprofiling dimensions, machining allowances, press fits, bearing mounting parameters, NDT acceptance criteria and repair limits are not generic teaching values. They must always come from approved component/vehicle/ECM/manufacturer documentation.
+
+### Weeks 13–14 — C05-107 Failure Analysis, Reliability, ECM, Traceability & EU Compliance Awareness
+
+Learners connect observed defects to plausible failure mechanisms such as wear, fatigue, overload, impact, lubrication failure, contamination, overheating, corrosion, misalignment, material/process defects and maintenance error.
+
+The module introduces basic reliability and condition-trend thinking, safety-critical component management, ECM responsibilities, maintenance-file discipline, calibration/tool control, component traceability, nonconformity/escalation and release/return-to-operation boundaries.
+
+European interoperability context is introduced at awareness level through the applicable rolling-stock and freight-wagon TSI frameworks and current ECM requirements. Final books must verify the exact consolidated versions and applicability at publication time.
+
+### Weeks 15–16 — C05-108 Integrated Wheelset & Bogie Practicum & Final Competency Assessment
+
+The final block integrates the specialist certificate. Using representative bogie/wheelset assemblies, training components, rigs or approved workshop assets, learners receive a controlled task package and must perform a safety review, identify components, trace load paths, conduct selected inspections and measurements, record findings, identify possible defects, interpret approved technical data, complete maintenance/inspection records and explain escalation/release boundaries.
+
+The assessment must reward safe process, accurate identification, measurement discipline, evidence quality, defect reasoning, traceability and recognition of authorization limits. Speed must never override technical accuracy or safety.
+
+---
+
+## 31.6 Module Inventory
+
+PAK-C05 contains **8 modules over 16 weeks**:
+
+- 1 foundation/safety/documentation module;
+- 1 bogie structure/suspension/load-path module;
+- 2 wheelset/axlebox/bearing specialist modules;
+- 1 inspection/metrology/defect-recognition module;
+- 1 NDT/maintenance/reprofiling/overhaul module;
+- 1 reliability/ECM/traceability/compliance module;
+- 1 integrated practicum/final competency module.
+
+Exact contact hours, workshop hours, guided-learning hours and independent-study hours remain intentionally unassigned until the dedicated workload-mapping phase.
+
+---
+
+## 31.7 Practical Competency Baseline
+
+Subject to facility capability, approved assets, controlled procedures and instructor authorization, practical learning should progressively include:
+
+1. bogie/wheelset/component identification;
+2. controlled work-order and drawing interpretation;
+3. workshop hazard review and safe task preparation;
+4. bogie frame/suspension visual inspection;
+5. load-path and interface identification;
+6. wheelset geometry and profile measurement exercises;
+7. axle/axlebox/bearing condition inspection awareness;
+8. use of selected calibrated measuring instruments;
+9. measurement recording and repeatability checks;
+10. defect photography and structured defect description;
+11. NDT method awareness and sample-result interpretation;
+12. maintenance/reprofiling/overhaul process-flow exercises;
+13. controlled component handling/disassembly/reassembly demonstrations where appropriate;
+14. traceability and maintenance-record completion;
+15. failure-analysis case studies;
+16. final integrated wheelset/bogie inspection and documentation scenario.
+
+**Practical competency remains bounded by the exact training asset, approved procedure, facility risk assessment, instructor competence and applicable employer/legal authorization framework.**
+
+---
+
+## 31.8 Safety-Critical & Specialist Boundaries
+
+Future C05 textbooks, manuals, workbooks and journals must explicitly flag and control:
+
+- wheel and axle integrity;
+- wheel profile and geometry acceptance;
+- axlebox and bearing condition;
+- bogie-frame integrity;
+- suspension/load-path components;
+- cracks, fatigue indications and material damage;
+- wheel reprofiling and machining;
+- press fits and mounted components;
+- safety-critical welding or structural repair;
+- formal NDT used for acceptance;
+- calibrated measurements used as release criteria;
+- lifting/jacking and heavy-component handling;
+- release to service / return to operation.
+
+PAK-C05 may teach principles and supervised exercises, but course completion alone must not be represented as authorization to independently accept or release safety-critical wheelset/bogie components.
+
+---
+
+## 31.9 Shared-Module & Pathway Strategy
+
+C05 may reuse/adapt selected content from C02, C03, C04, D01 and D02 where learning outcomes and level match, especially:
+
+- workshop safety and documentation;
+- bogie/running-gear fundamentals;
+- wheelset/axle/bearing fundamentals;
+- metrology and inspection principles;
+- defect reporting;
+- NDT awareness;
+- maintenance quality and traceability;
+- ECM awareness.
+
+C05 nevertheless requires independent specialist depth for:
+
+- bogie structural load paths;
+- suspension and running-gear interfaces;
+- wheel/axle geometry and wheel-rail interface;
+- wheel-profile measurement;
+- axlebox and bearing condition;
+- wheelset/bogie defect patterns;
+- reprofiling/overhaul process awareness;
+- safety-critical component management case studies.
+
+Possible progression includes PAK-C06 Railway Braking Systems, PAK-C09 Railway Inspection & NDT, PAK-D01 Railway Rolling Stock Engineering & Maintenance and PAK-D02 Railway Mechanical Engineering.
+
+---
+
+## 31.10 Technical & Regulatory Reference Baseline for Future Chapter Development
+
+Future C05 chapter and book development must verify the current authoritative sources appropriate to the vehicle/component/process, including where applicable:
+
+- Directive (EU) 2016/797 on railway interoperability;
+- Directive (EU) 2016/798 on railway safety;
+- the current consolidated LOC&PAS TSI, including applicable requirements concerning bogie structures, wheelsets, wheels, axles and running behaviour;
+- the current consolidated WAG TSI for freight-wagon running gear, bogie frames, wheelsets, wheels, axles and axleboxes/bearings where applicable;
+- Commission Implementing Regulation (EU) 2019/779 concerning ECM certification and safety-critical component management;
+- current ERA guidance and technical documentation;
+- approved vehicle/component manufacturer, keeper and ECM maintenance files, drawings and work instructions;
+- applicable EN/ISO standards for wheelsets, wheels, axles, bearings, bogies, suspension, metrology, NDT, maintenance, quality and occupational safety;
+- relevant Polish railway and workplace-safety requirements.
+
+**Control rule:** educational diagrams and exercises may explain principles, but actual dimensions, tolerances, wear limits, wheel-profile limits, axle criteria, bearing limits, press-fit parameters, machining allowances, NDT acceptance criteria and release requirements must be traceable to the governing approved source for the exact component/process.
+
+The regulatory/reference register for every future C05 publication must record the edition, amendment or consolidated version actually checked and its applicability.
+
+---
+
+## 31.11 Assessment Architecture Placeholder
+
+The eventual assessment system should include:
+
+- module knowledge checks;
+- bogie/wheelset/component identification;
+- technical drawing and load-path interpretation;
+- wheelset geometry/profile exercises;
+- metrology and measurement practicals;
+- defect-recognition exercises;
+- bearing/axlebox condition case studies;
+- NDT method/application awareness questions;
+- maintenance/reprofiling/overhaul process tasks;
+- failure-analysis scenarios;
+- traceability/documentation exercises;
+- final theory assessment;
+- final integrated workshop practical;
+- oral questioning on escalation and release boundaries.
+
+Unsafe handling, unsupported acceptance decisions, use of unverified limits, incorrect measurement technique, falsified/incomplete records or missing traceability must be treated as serious assessment failures.
+
+---
+
+## 31.12 Chapter-Decomposition & Publication Readiness
+
+For each of the 8 C05 modules, chapter design must define:
+
+- module purpose and scope;
+- chapter titles and sequence;
+- terminology and component identification content;
+- required theory depth;
+- workshop/practical allocation;
+- tools, gauges and measurement equipment;
+- controlled practical exercises;
+- workbook and practical-journal activities;
+- learning-outcome placeholders;
+- assessment links;
+- regulatory/technical source families;
+- safety-critical flags;
+- authorization/certification boundaries;
+- required publication outputs under the global print-ready standard.
+
+### Mandatory C05 Technical Visual Plan
+
+At chapter-design stage, the publication plan must allocate appropriate print-ready visuals including where relevant:
+
+1. bogie general-arrangement diagrams;
+2. bogie frame and load-path illustrations;
+3. primary/secondary suspension schematics;
+4. wheelset exploded and sectional views;
+5. wheel, axle, bearing and axlebox component drawings;
+6. wheel/rail contact and profile terminology diagrams;
+7. dimensional measurement-point illustrations;
+8. wheel-profile and wear graphics;
+9. axlebox/bearing condition and lubrication diagrams;
+10. common defect graphics and annotated photographs;
+11. NDT method/application diagrams;
+12. reprofiling and machining process-flow diagrams;
+13. bogie/wheelset overhaul flowcharts;
+14. inspection decision trees;
+15. traceability and maintenance-documentation flows;
+16. safety and heavy-component handling illustrations.
+
+All technical visuals must use figure numbering/captions, remain legible at final print size, prefer vector line art where appropriate, meet print-resolution requirements, retain source/licence records and clearly label non-controlled educational drawings **Illustrative / Training Use Only** where confusion is possible.
+
+No full C05 textbook, workbook, practical manual or journal should enter production until the chapter/publication architecture and visual plan are approved.
+
+---
+
+# 32. PAK-C06 — Certificate in Railway Braking Systems
+
+**Synchronization record:** Approved modular architecture synchronized from `docs/academic/certificates/C06/PAK-C06.md` into master PRD v0.2.0 on 11 September 2026. Curriculum substance is preserved; the modular file remains the day-to-day working source and this section is the consolidated governance/audit copy.
+
+## 32.1 Programme Identity
+
+**Programme Code:** `PAK-C06`  
+**Programme Title:** Certificate in Railway Braking Systems  
+**Duration:** 4 Months / 16 Weeks  
+**Academic Structure:** 8 sequential modules, normally delivered in two-week blocks  
+**Primary Language:** English  
+**Orientation:** Specialist practical foundation in railway braking principles, pneumatic and mechanical brake equipment, brake control, friction braking, electropneumatic and dynamic-braking interfaces, wheel-slide protection, inspection, testing, diagnostics, maintenance, braking-performance awareness, ECM traceability and safety-critical competence boundaries
+
+## 32.2 Programme Purpose
+
+PAK-C06 develops focused technical knowledge and supervised practical competence for learners working with, inspecting, maintaining or supporting railway braking systems on freight wagons, locomotives, coaches and multiple-unit rolling stock.
+
+The programme progresses from braking purpose, safety and documentation into compressed-air and pneumatic architecture, control/distribution equipment, mechanical and friction brake hardware, modern electropneumatic and adhesion-management interfaces, inspection/testing/maintenance, braking-performance and degraded-condition awareness, and a final integrated practical competency assessment.
+
+The certificate supports maintenance trainees, workshop technicians, rolling-stock inspectors, production personnel, fleet-maintenance staff and learners progressing toward PAK-D01, PAK-D02, PAK-D03 or related specialist certificates.
+
+Completion of PAK-C06 does **not** itself authorize independent brake-system release, statutory brake testing, brake-performance certification, acceptance of safety-critical components, alteration of brake settings, software/configuration changes, train brake-test sign-off, return-to-service decisions or any task requiring separate competence, certification, approved procedures or employer/statutory authorization.
+
+## 32.3 Curriculum Design Principles
+
+1. **Braking is treated as safety-critical:** every module distinguishes educational understanding from authorized maintenance, testing and release activity.
+2. **System architecture before troubleshooting:** learners understand energy source, command path, control logic, actuators and friction interfaces before diagnosing faults.
+3. **Pneumatic and mechanical foundations remain central:** certificate learners must understand how compressed air, valves, cylinders, rigging, discs/blocks and wheel/rail adhesion interact.
+4. **Modern systems are included without overclaiming competence:** electropneumatic control, wheel-slide protection, dynamic/regenerative braking and blended braking are taught at system-awareness and supervised diagnostic level.
+5. **Approved data governs every limit:** generic teaching values must never replace vehicle-, brake-system-, ECM-, manufacturer- or rulebook-specific limits and test criteria.
+6. **Testing is procedural and traceable:** pressure, leakage, stroke, timing, force, wear and functional checks must be linked to approved procedures and calibrated equipment where required.
+7. **Defects are recognized before intervention:** students learn evidence-based fault description, escalation and safe isolation before maintenance decisions.
+8. **Failure and degraded modes are explicit:** learners understand that braking performance can change with failures, loading, adhesion, environmental conditions and component wear.
+9. **Documentation is a technical output:** test records, component identity, calibration status, defect evidence, replaced parts, settings and release boundaries are treated as core maintenance records.
+10. **Publication-ready design:** chapter planning must include pneumatic schematics, brake-rigging diagrams, component cutaways, control-flow diagrams, pressure/force graphs, troubleshooting trees, inspection illustrations and practical-journal pages.
+
+---
+
+## 32.4 Sixteen-Week / Eight-Module Architecture
+
+| Weeks | Code | Module | Classification | Orientation | Prerequisite |
+|---|---|---|---|---|---|
+| 1–2 | C06-101 | Railway Braking Fundamentals, Safety & Technical Documentation | Foundation / Safety Core | Theory + System Identification + Workshop Induction | None |
+| 3–4 | C06-102 | Compressed Air, Pneumatic Brake Architecture & Air Supply | Pneumatic Core | Theory + Schematic Reading + Component Demonstration | C06-101 |
+| 5–6 | C06-103 | Brake Control, Distributors, Valves, Load Compensation & Emergency Functions | Safety-Critical Control Core | Theory + Pneumatic Logic + Controlled Functional Demonstration | C06-101, C06-102 |
+| 7–8 | C06-104 | Mechanical Brake Gear, Friction Materials, Disc & Tread Braking | Mechanical / Friction Core | Theory + Component Inspection + Measurement | C06-101 to C06-103 |
+| 9–10 | C06-105 | Electropneumatic Braking, Wheel-Slide Protection & Dynamic/Blended Braking Awareness | Control / Adhesion Core | Theory + System Interfaces + Diagnostic Awareness | C06-102 to C06-104 |
+| 11–12 | C06-106 | Brake Inspection, Testing, Maintenance & Fault Diagnosis | Maintenance / Inspection Core | Theory + Test Procedures + Practical Diagnostics | C06-101 to C06-105 |
+| 13–14 | C06-107 | Braking Performance, Degraded Conditions, Reliability, ECM & EU Compliance Awareness | Performance / Reliability / Compliance Core | Theory + Case Study + Maintenance Records | C06-101 to C06-106 |
+| 15–16 | C06-108 | Integrated Railway Braking Practicum & Final Competency Assessment | Integrative / Capstone | Workshop + Testing + Diagnosis + Documentation + Final Assessment | Completion of C06-101 to C06-107 |
+
+---
+
+## 32.5 Module Progression Logic
+
+### Weeks 1–2 — C06-101 Railway Braking Fundamentals, Safety & Technical Documentation
+
+Learners establish the purpose and functional chain of railway braking: command generation, energy supply, control/distribution, actuation, friction or dynamic brake-force generation, wheel/rail adhesion and vehicle/train deceleration or immobilisation.
+
+The module introduces service, emergency and parking/holding braking concepts; pneumatic, mechanical, electropneumatic and dynamic braking families; representative freight-wagon, locomotive, coach and multiple-unit configurations; and the difference between vehicle-level equipment and train-level braking behaviour.
+
+Workshop safety includes stored pneumatic energy, moving brake rigging, pinch/crush points, spring-loaded devices, rotating equipment, elevated/underframe work, hot friction components, electrical interfaces, isolation/lockout boundaries, PPE and controlled depressurisation.
+
+Students begin using pneumatic schematics, brake-system diagrams, work orders, inspection sheets, component identification records, test forms and controlled maintenance instructions. No generic training value may be treated as an in-service acceptance criterion.
+
+### Weeks 3–4 — C06-102 Compressed Air, Pneumatic Brake Architecture & Air Supply
+
+Learners study how compressed air is generated, conditioned, stored, distributed and made available to braking equipment. Topics include compressors, dryers/air treatment, reservoirs, pipework, hoses, cocks, filters, pressure regulation, main-reservoir and brake-pipe concepts, leakage, contamination and moisture-management awareness.
+
+The module develops pneumatic schematic literacy: learners follow air paths through representative systems and identify normal, charging, application, release and isolation states at conceptual level.
+
+Practical work may include safe identification of components on de-energized/depressurized training rigs, controlled pressure demonstrations, leak-detection exercises and schematic-to-hardware tracing. Actual pressure settings, leakage limits and test acceptance criteria must come from the governing approved source.
+
+### Weeks 5–6 — C06-103 Brake Control, Distributors, Valves, Load Compensation & Emergency Functions
+
+This module focuses on how brake commands are translated into controlled brake-cylinder or actuator response. Learners study distributor/control-valve principles, relay functions, pressure transformation, application/release logic, emergency response, load-dependent braking concepts, empty/loaded arrangements, brake modes where relevant and representative isolation devices.
+
+Students learn how faults in valves, pipework, reservoirs, sensors or control elements can cause slow application, slow release, brake drag, insufficient force, unintended application or loss of braking capability.
+
+Controlled demonstrations may use pneumatic training panels or approved rolling-stock assets. Adjustment, calibration or acceptance of safety-critical valves remains authorization-dependent and must follow approved maintenance instructions.
+
+### Weeks 7–8 — C06-104 Mechanical Brake Gear, Friction Materials, Disc & Tread Braking
+
+Learners study how pneumatic or other actuator force reaches the braking interface. Content includes brake cylinders/actuators, slack adjustment, levers and linkages, hangers, beams, pins/bushes, calipers, discs, pads, tread brake blocks, mounting arrangements, wear mechanisms and mechanical efficiency concepts.
+
+The module introduces friction behaviour, heat generation, fade/damage awareness, wear patterns, contamination and the effect of incorrect clearances or mechanical defects on braking.
+
+Practical work may include component identification, visual inspection, wear measurement, rigging-condition checks, actuator/stroke observation and structured defect reporting. Wear limits, stroke limits, adjustment settings and friction-material acceptance criteria are controlled values, not generic textbook values.
+
+### Weeks 9–10 — C06-105 Electropneumatic Braking, Wheel-Slide Protection & Dynamic/Blended Braking Awareness
+
+Learners are introduced to modern braking interfaces beyond purely pneumatic control. Topics include electropneumatic command concepts, electrical/pneumatic interfaces, sensors and control units, wheel-speed sensing, wheel-slide protection, adhesion management, dynamic or regenerative braking, rheostatic braking where applicable, and blended coordination between dynamic and friction braking.
+
+The emphasis is system understanding and diagnostic awareness rather than unauthorized software, parameter or safety-function modification. Students learn how loss of sensors, communication, electrical supply or adhesion may affect available braking and how systems may revert to degraded modes.
+
+High-voltage traction equipment remains subject to the electrical-safety controls defined by the relevant vehicle, facility and employer. Training should use simulation, low-voltage demonstrators or controlled observation unless the facility has the competence and authorization for live traction work.
+
+### Weeks 11–12 — C06-106 Brake Inspection, Testing, Maintenance & Fault Diagnosis
+
+This is the principal maintenance and diagnostic block. Learners follow a controlled sequence: confirm vehicle/system identity, identify the applicable maintenance/test instruction, establish safe condition, inspect components and pipework, conduct specified functional or measurement checks, record evidence, compare with approved criteria and escalate findings outside authorization.
+
+Training may include leakage-check concepts, pressure observation, brake-cylinder/actuator response, friction-material wear inspection, mechanical free-movement checks, hose/cock condition, visual examination of discs/blocks/pads, representative functional brake tests and fault-isolation exercises on training rigs.
+
+Diagnostic case studies include dragging brakes, brakes failing to apply or release, air leakage, abnormal pressure behaviour, uneven wear, overheating, mechanical seizure, sensor/WSP faults and degraded dynamic-brake contribution.
+
+Maintenance work must preserve configuration control, component traceability, tool/calibration status and post-maintenance verification.
+
+### Weeks 13–14 — C06-107 Braking Performance, Degraded Conditions, Reliability, ECM & EU Compliance Awareness
+
+Learners connect component and system condition to vehicle/train braking performance. The module introduces braking force, deceleration, stopping distance, response time, load condition, adhesion, wheel condition, friction coefficient, brake weight/braked-mass concepts where applicable, gradient/environmental influences and the difference between design validation and routine maintenance testing.
+
+The current LOC&PAS interoperability framework requires braking performance to be determined and validated through controlled calculations and testing, including normal and degraded conditions. Freight-wagon braking requirements are governed through the current WAG TSI framework. These principles are taught for understanding only; students do not derive approval or certification authority from classroom calculations.
+
+Reliability content introduces recurrent-fault analysis, safety-critical component management, ECM responsibilities, maintenance-file control, defect escalation, configuration status, component traceability and release boundaries.
+
+Any future textbook equation, worked example or sample calculation must be clearly labelled as educational unless it reproduces a formally controlled method with permission and correct applicability. Actual braking-performance acceptance requires the governing approved technical documentation and applicable legal/standards framework.
+
+### Weeks 15–16 — C06-108 Integrated Railway Braking Practicum & Final Competency Assessment
+
+The final block integrates the certificate. Using representative brake assemblies, pneumatic rigs, training vehicles or approved workshop assets, learners receive a controlled task package and must perform a safety review, identify the braking architecture, trace pneumatic/control paths, inspect selected mechanical and pneumatic components, conduct specified measurements or functional checks, diagnose representative faults, record findings and explain escalation/release boundaries.
+
+The assessment rewards safe isolation, correct system understanding, disciplined test sequence, accurate observation/measurement, evidence quality, fault reasoning, traceability and recognition of competence limits. Speed must never override technical accuracy or safety.
+
+---
+
+## 32.6 Module Inventory
+
+PAK-C06 contains **8 modules over 16 weeks**:
+
+- 1 foundation/safety/documentation module;
+- 2 pneumatic/control modules;
+- 1 mechanical/friction-braking module;
+- 1 electropneumatic/WSP/dynamic-braking interface module;
+- 1 inspection/testing/maintenance/diagnostics module;
+- 1 performance/reliability/ECM/compliance module;
+- 1 integrated practicum/final competency module.
+
+Exact contact hours, workshop hours, guided-learning hours and independent-study hours remain intentionally unassigned until the dedicated workload-mapping phase.
+
+---
+
+## 32.7 Practical Competency Baseline
+
+Subject to facility capability, approved assets, controlled procedures and instructor authorization, practical learning should progressively include:
+
+1. identification of railway brake-system components and functional groups;
+2. reading pneumatic and brake-system schematics;
+3. workshop hazard review, isolation and safe depressurisation awareness;
+4. tracing compressed-air supply and brake-command paths;
+5. identifying reservoirs, pipes, hoses, cocks, valves and distributors;
+6. inspecting brake cylinders/actuators and mechanical brake gear;
+7. inspecting discs, pads, tread blocks and representative friction surfaces;
+8. selected dimensional/wear measurements using appropriate instruments;
+9. controlled pressure/functional demonstrations on training rigs;
+10. leak-identification and defect-reporting exercises;
+11. brake application/release sequence observation;
+12. electropneumatic/WSP system-interface identification;
+13. dynamic/regenerative/blended-braking functional-flow exercises;
+14. representative fault-isolation exercises;
+15. maintenance/test-record completion and traceability;
+16. final integrated brake inspection, test, diagnosis and documentation scenario.
+
+**Practical competency remains bounded by the exact training asset, approved procedure, facility risk assessment, instructor competence and applicable employer/legal authorization framework.**
+
+---
+
+## 32.8 Safety-Critical & Authorization Boundaries
+
+Future C06 textbooks, practical manuals, workbooks and journals must explicitly flag and control:
+
+- stored pneumatic energy and depressurisation;
+- brake-pipe and reservoir pressure work;
+- safety-critical valves and distributors;
+- brake-cylinder/actuator condition and adjustment;
+- mechanical brake-rigging integrity;
+- disc, pad and tread-block condition;
+- wheel-slide protection and adhesion-management functions;
+- electropneumatic brake control;
+- traction/dynamic/regenerative brake interfaces;
+- software/configuration parameters;
+- emergency-brake functions;
+- parking/holding brake functions;
+- leakage and response-time testing;
+- braking-performance calculations and test results;
+- calibrated measurements used for release;
+- statutory or operational train brake tests;
+- return-to-service / release to operation.
+
+PAK-C06 may teach principles and supervised exercises, but course completion alone must not be represented as authorization to independently test, certify, alter, accept or release safety-critical braking systems.
+
+---
+
+## 32.9 Shared-Module & Pathway Strategy
+
+C06 may reuse/adapt selected content from C02, C03, C04, C05, D01, D02 and D03 where learning outcomes and level match, especially:
+
+- workshop safety and documentation;
+- compressed-air fundamentals;
+- rolling-stock component identification;
+- metrology and inspection principles;
+- electrical/control fundamentals;
+- wheel/rail adhesion awareness;
+- defect reporting;
+- maintenance quality and traceability;
+- ECM awareness.
+
+C06 nevertheless requires independent specialist depth for:
+
+- railway pneumatic brake architecture;
+- distributor/control-valve logic;
+- brake application/release and emergency functions;
+- load-dependent braking concepts;
+- mechanical brake gear and friction interfaces;
+- wheel-slide protection;
+- electropneumatic and blended-brake interfaces;
+- brake inspection/testing and fault diagnosis;
+- braking-performance and degraded-condition awareness;
+- brake-system safety-critical maintenance case studies.
+
+Possible progression includes PAK-C08 Railway Electrical Systems, PAK-C09 Railway Inspection & NDT, PAK-D01 Railway Rolling Stock Engineering & Maintenance, PAK-D02 Railway Mechanical Engineering and PAK-D03 Railway Electrical & Control Systems.
+
+---
+
+## 32.10 Technical & Regulatory Reference Baseline for Future Chapter Development
+
+Future C06 chapter and book development must verify the current authoritative sources appropriate to the vehicle/system/process, including where applicable:
+
+- Directive (EU) 2016/797 on railway interoperability;
+- Directive (EU) 2016/798 on railway safety;
+- the current consolidated LOC&PAS TSI under Commission Regulation (EU) No 1302/2014, including braking-system, braking-performance, emergency/service braking, adhesion and wheel-slide-protection requirements where applicable;
+- the current consolidated WAG TSI under Commission Regulation (EU) No 321/2013, including freight-wagon braking requirements and relevant brake-system interfaces;
+- Commission Implementing Regulation (EU) 2019/779 concerning ECM certification and safety-critical component management;
+- current ERA guidance and technical documentation;
+- approved vehicle, brake-system and component manufacturer documentation;
+- keeper/ECM maintenance files, controlled drawings, test instructions and work procedures;
+- applicable current EN/UIC/ISO standards for railway braking, pneumatic equipment, brake performance, friction materials, testing, maintenance, quality and occupational safety;
+- applicable Polish railway, workshop and workplace-safety requirements.
+
+At the time this module architecture was created, EUR-Lex exposed a consolidated LOC&PAS TSI text dated **27 April 2025**, and the WAG TSI page exposed a current consolidated version effective **4 November 2025**. These dates are reference checkpoints only; every future chapter/book must re-check the then-current authoritative versions before publication.
+
+**Control rule:** educational schematics, equations, pressure traces and worked examples may explain principles, but actual pressures, leakage limits, timing limits, cylinder strokes, wear limits, friction criteria, stopping-distance assumptions, brake-weight/braked-mass values, software parameters, test acceptance criteria and release requirements must be traceable to the governing approved source for the exact vehicle/system/process.
+
+The regulatory/reference register for every future C06 publication must record the edition, amendment or consolidated version actually checked and its applicability.
+
+---
+
+## 32.11 Assessment Architecture Placeholder
+
+The eventual assessment system should include:
+
+- module knowledge checks;
+- brake-system/component identification;
+- pneumatic schematic interpretation;
+- air-supply and control-path exercises;
+- valve/distributor functional reasoning;
+- mechanical brake-gear inspection;
+- friction-material/wear measurement exercises;
+- electropneumatic/WSP/dynamic-braking interface questions;
+- safe isolation/depressurisation scenarios;
+- controlled test-procedure exercises;
+- fault-diagnosis cases;
+- braking-performance/degraded-condition concept questions;
+- ECM/traceability/documentation exercises;
+- final theory assessment;
+- final integrated workshop practical;
+- oral questioning on safety, escalation and release boundaries.
+
+Unsafe handling, unauthorized adjustment, use of unverified limits, incorrect test sequence, falsified/incomplete records, bypassing safety controls or missing traceability must be treated as serious assessment failures.
+
+---
+
+## 32.12 Chapter-Decomposition & Publication Readiness
+
+For each of the 8 C06 modules, chapter design must define:
+
+- module purpose and scope;
+- chapter titles and sequence;
+- terminology and component identification content;
+- required theory depth;
+- workshop/practical allocation;
+- tools, gauges, pressure/test equipment and measurement instruments;
+- controlled practical exercises;
+- workbook and practical-journal activities;
+- learning-outcome placeholders;
+- assessment links;
+- regulatory/technical source families;
+- safety-critical flags;
+- authorization/certification boundaries;
+- required publication outputs under the global print-ready standard.
+
+### Mandatory C06 Technical Visual Plan
+
+At chapter-design stage, the publication plan must allocate appropriate print-ready visuals including where relevant:
+
+1. complete railway brake-system functional block diagrams;
+2. compressed-air generation, treatment, reservoir and pipework schematics;
+3. brake-pipe/main-reservoir conceptual diagrams;
+4. distributor/control-valve cutaways and functional-flow illustrations;
+5. service/application/release/emergency pneumatic-state diagrams;
+6. brake-cylinder and actuator sectional views;
+7. mechanical brake-rigging layouts and force-path diagrams;
+8. disc brake, caliper, pad and tread-brake component drawings;
+9. friction, heat and wear illustrations;
+10. load-compensation conceptual diagrams;
+11. electropneumatic brake-control block diagrams;
+12. wheel-slide-protection sensor/control/actuator diagrams;
+13. dynamic/regenerative and blended-braking energy-flow diagrams;
+14. adhesion and wheel-slip/slide explanatory graphics;
+15. pressure/time and brake-response training graphs;
+16. inspection measurement-point illustrations;
+17. common defect and wear graphics with annotated photographs;
+18. brake-test process flows and check sheets;
+19. fault-diagnosis trees and troubleshooting flowcharts;
+20. ECM, traceability and maintenance-documentation flows;
+21. safe depressurisation, isolation and workshop-hazard illustrations.
+
+All technical visuals must use figure numbering and captions, remain legible at final print size, prefer vector line art where appropriate, meet print-resolution requirements, retain source/licence records and clearly label non-controlled educational drawings **Illustrative / Training Use Only** where confusion is possible.
+
+---
+
+## 32.13 Mandatory Print-Ready Study-Material Package
+
+When C06 book production starts, each approved module/subject publication must be designed for both digital use and physical printing. The package must follow `PRINT_READY_PUBLISHING_STANDARD.md` and include, as applicable:
+
+- professional front cover and spine/back-cover data where the publication format requires it;
+- title page, copyright/version-control page and document-control information;
+- programme/module identification and intended learner profile;
+- introduction/preface and how-to-use-this-book guidance;
+- table of contents/index structure;
+- list of figures and list of tables where appropriate;
+- abbreviations, acronyms, symbols and railway terminology;
+- learning outcomes and chapter objectives;
+- complete theory chapters with technical drawings, diagrams, schematics, graphs, photographs and explanatory graphics;
+- worked examples and clearly controlled educational calculations where appropriate;
+- workshop/practical procedures and safety warnings;
+- student exercises, knowledge checks and assignments;
+- workbook pages and practical-journal/logbook pages where required;
+- chapter summaries and revision questions;
+- assessment preparation material where approved;
+- glossary and technical terminology;
+- references/further reading and regulatory/source register;
+- appendices, forms, checklists and controlled templates where useful;
+- print-ready final PDF produced to the global publishing specification.
+
+No C06 textbook, workbook, practical manual or journal should enter full production until the chapter/publication architecture and visual plan are approved.
+
+---
+
+# 33. PAK-C07 — Certificate in Railway Welding & Fabrication
+
+**Synchronization record:** Approved modular architecture synchronized from `docs/academic/certificates/C07/PAK-C07.md` into master PRD v0.2.0 on 11 September 2026. Curriculum substance is preserved; the modular file remains the day-to-day working source and this section is the consolidated governance/audit copy.
+
+## 33.1 Programme Identity
+
+**Programme Code:** `PAK-C07`  
+**Programme Title:** Certificate in Railway Welding & Fabrication  
+**Duration:** 6 Months / 24 Weeks  
+**Academic Structure:** 12 sequential modules, normally delivered in two-week blocks  
+**Primary Language:** English  
+**Orientation:** Specialist practical foundation in railway welding, fabrication, metallurgy, joint preparation, process control, dimensional accuracy, inspection, NDT awareness, welding quality, repair/rework, traceability and supervised workshop competence
+
+## 33.2 Programme Purpose
+
+PAK-C07 develops focused technical knowledge and supervised practical competence for learners entering railway welding, fabrication, repair, production and quality environments. It is designed for workshop trainees, fabricators, junior welding personnel, production technicians, maintenance personnel, inspectors-in-training and learners progressing toward PAK-D05 or related specialist programmes.
+
+The programme progresses from railway-welding safety, drawings and documentation into engineering materials and weldability; manual and semi-mechanized welding-process fundamentals; joint preparation, fit-up and welding symbols; welding metallurgy, heat-affected-zone behaviour and distortion; parameter/consumable/process control; railway fabrication; weld-defect recognition and NDT awareness; WPS/WPQR and personnel-qualification concepts; EN 15085/ISO 3834 quality awareness; repair/rework and failure analysis; and a final integrated fabrication practicum.
+
+The programme may use structural steels and common railway fabrication examples as its principal training context. Aluminium, stainless steel, high-strength steels and other materials may be introduced where facility capability and programme scope justify them.
+
+Completion of PAK-C07 does **not** by itself qualify or certify the learner as a production welder, welding operator, welding coordinator, welding inspector, NDT personnel, WPS/WPQR approver, railway welding quality manager or person authorized to accept or release safety-critical welded railway components. Formal qualifications, certifications, approvals and employer authorization remain separate.
+
+## 33.3 Curriculum Design Principles
+
+1. **Safety before arc striking:** hot work, electricity, fumes, gases, fire/explosion risk, UV/IR radiation, burns, grinding/cutting hazards, cylinders, confined spaces and manual handling are controlled from the first module.
+2. **Metallurgy supports workmanship:** students learn material behaviour, weldability and thermal effects before being expected to interpret weld quality or failure.
+3. **Drawing and fit-up discipline:** joint geometry, symbols, tolerances, edge preparation, root conditions, tack welding, restraint and assembly sequence are treated as technical fundamentals.
+4. **Process control over informal technique:** welding current/voltage, wire/electrode selection, travel speed, heat input, shielding gas, interpass control and equipment condition are taught as controlled variables rather than personal preference.
+5. **Fabrication is more than welding:** cutting, forming, jigs, fixtures, alignment, dimensional control, sequence planning and post-weld verification form part of the production system.
+6. **Quality is built into the process:** inspection, traceability, material identification, consumable control, WPS awareness, welder/operator qualification, NCR/CAPA and records are integrated throughout.
+7. **Training does not equal certification:** supervised coupon work and academic assessment must never be represented as formal welder, welding-operator, coordinator, inspector or NDT certification.
+8. **Railway-specific application is explicit:** later modules introduce railway-vehicle/component welding quality frameworks and criticality without reproducing proprietary standards text.
+9. **Repair is controlled engineering:** weld repair/rework must follow approved instructions, traceability and required post-repair verification.
+10. **Publication-ready design:** chapter planning must include welding symbols, process schematics, metallurgy graphics, joint drawings, defect atlases, fabrication sequences, inspection illustrations, WPS/WPQR workflow diagrams and practical-journal records.
+
+---
+
+## 33.4 Twenty-Four-Week / Twelve-Module Architecture
+
+| Weeks | Code | Module | Classification | Orientation | Prerequisite |
+|---|---|---|---|---|---|
+| 1–2 | C07-101 | Railway Welding & Fabrication Fundamentals, Safety & Technical Documentation | Foundation / Safety Core | Theory + Workshop Induction + Drawing/Documentation Practice | None |
+| 3–4 | C07-102 | Engineering Materials, Metallurgy & Weldability | Materials Core | Theory + Materials Demonstration + Case Study | C07-101 |
+| 5–6 | C07-103 | Welding Processes I — SMAW, GMAW/MAG, GTAW & FCAW Fundamentals | Welding Process Core | Theory + Equipment Setup + Supervised Coupon Practice | C07-101, C07-102 |
+| 7–8 | C07-104 | Joint Design, Preparation, Fit-Up, Welding Symbols & Fabrication Drawings | Fabrication / Drawing Core | Drawing Interpretation + Fit-Up + Workshop Practice | C07-101 to C07-103 |
+| 9–10 | C07-105 | Welding Metallurgy, Heat Input, HAZ, Distortion & Residual Stress | Metallurgy / Quality Core | Theory + Worked Examples + Distortion Demonstration | C07-102 to C07-104 |
+| 11–12 | C07-106 | Welding Processes II — Parameters, Consumables, Equipment & Process Control | Process-Control Core | Theory + Controlled Welding Practice + Record Keeping | C07-103 to C07-105 |
+| 13–14 | C07-107 | Railway Fabrication — Cutting, Forming, Jigs, Fixtures, Assembly & Dimensional Control | Fabrication Core | Workshop-Dominant + Metrology | C07-104, C07-106 |
+| 15–16 | C07-108 | Weld Defects, Visual Inspection & NDT Awareness | Inspection / Quality Core | Theory + Visual Inspection + Controlled NDT Demonstration | C07-102, C07-105 to C07-107 |
+| 17–18 | C07-109 | WPS/WPQR, Welder Qualification, Welding Operator & Coordination Awareness | Qualification / Documentation Core | Theory + Documentation Exercises + Case Study | C07-103 to C07-108 |
+| 19–20 | C07-110 | Railway Welding Quality — EN 15085, ISO 3834, Traceability & Production Documentation | Railway Quality / Compliance Core | Theory + Quality Records + Compliance Case Study | C07-108, C07-109 |
+| 21–22 | C07-111 | Weld Repair, Rework, Failure Analysis & Production Quality | Repair / Failure Core | Theory + Repair Planning + Controlled Workshop Practice | C07-105 to C07-110 |
+| 23–24 | C07-112 | Integrated Railway Welding & Fabrication Practicum & Final Competency Assessment | Integrative / Capstone | Workshop + Inspection + Documentation + Final Assessment | Completion of C07-101 to C07-111 |
+
+---
+
+## 33.5 Module Progression Logic
+
+### Weeks 1–2 — C07-101 Railway Welding & Fabrication Fundamentals, Safety & Technical Documentation
+
+Learners are introduced to the place of welding and fabrication in railway manufacturing, maintenance and repair. Representative applications include vehicle structures, brackets, frames, enclosures, tanks, supports, underframe components and non-service training assemblies, while emphasizing that component criticality and permitted processes depend on approved design and quality requirements.
+
+Safety induction covers electric shock, arc radiation, burns, fumes, gases, fire, hot work, gas-cylinder handling, grinding/cutting, sparks, noise, PPE, ventilation, housekeeping, manual handling, lifting and isolation of work areas.
+
+Students begin reading engineering drawings, welding symbols, job travellers, inspection records, material-identification records and controlled work instructions. They learn that the drawing/WPS/work instruction governs the task, not habit or memory.
+
+### Weeks 3–4 — C07-102 Engineering Materials, Metallurgy & Weldability
+
+This module introduces steels and common railway fabrication materials at certificate depth. Learners study basic microstructure concepts, mechanical properties, heat treatment awareness, carbon-equivalent/weldability concepts, hardening/cracking susceptibility, corrosion and the relationship between material condition and welding behaviour.
+
+The module introduces stainless steel, aluminium and higher-strength materials where useful, while making clear that each may require different preparation, consumables, thermal control and qualification requirements.
+
+Students practice material identification from controlled records and learn why mixing grades, unknown material substitution or undocumented repair material is unacceptable in controlled railway production.
+
+### Weeks 5–6 — C07-103 Welding Processes I — SMAW, GMAW/MAG, GTAW & FCAW Fundamentals
+
+Learners compare common fusion-welding processes, equipment, power-source characteristics, electrodes/wires, shielding methods, polarity/current concepts, torch/electrode manipulation and typical use cases.
+
+Supervised practical work should use training coupons and defined parameters. The objective is safe setup, process recognition, joint preparation, basic bead control and disciplined record keeping—not formal qualification to production standards.
+
+Where equipment or facility constraints limit a process, theory and demonstration may substitute for hands-on practice without changing the stated competence boundary.
+
+### Weeks 7–8 — C07-104 Joint Design, Preparation, Fit-Up, Welding Symbols & Fabrication Drawings
+
+Students learn butt, fillet, lap, corner and other representative joint configurations; groove preparation; root gap/face awareness; backing concepts; tack welding; alignment; fit-up; accessibility; welding-position concepts and the relationship between joint geometry and process execution.
+
+Drawing exercises develop interpretation of weld symbols, dimensions, tolerances, reference lines, joint details and fabrication notes. Workshop exercises emphasize measuring, marking, edge preparation, fit-up and pre-weld verification.
+
+The course must avoid presenting simplified training sketches as approved production drawings.
+
+### Weeks 9–10 — C07-105 Welding Metallurgy, Heat Input, HAZ, Distortion & Residual Stress
+
+This module connects process parameters with metallurgical and dimensional consequences. Learners study heat flow, fusion zone, heat-affected zone, cooling-rate concepts, hardness/cracking risk awareness, preheat/interpass/post-weld treatment concepts, shrinkage, angular distortion, bowing and residual stress.
+
+Students use diagrams and simple calculations to understand why sequence, restraint, heat distribution and joint preparation matter. Any actual preheat/interpass or post-weld requirements must come from an approved procedure or governing source for the material/process.
+
+### Weeks 11–12 — C07-106 Welding Processes II — Parameters, Consumables, Equipment & Process Control
+
+Learners move from process recognition to controlled execution. Topics include current/voltage relationship, travel speed, wire feed, arc length, shielding gas flow, contact-tip/electrode condition, consumable storage/control, cleanliness, interpass cleaning, equipment checks and parameter recording.
+
+Practical exercises emphasize repeatability, following a controlled welding instruction, identifying parameter deviations and maintaining traceable records. Students learn that acceptable visual appearance alone does not prove process compliance or internal weld quality.
+
+### Weeks 13–14 — C07-107 Railway Fabrication — Cutting, Forming, Jigs, Fixtures, Assembly & Dimensional Control
+
+This block broadens the learner from welding to fabrication. Topics include cutting and edge preparation, drilling/machining interfaces, basic forming, sequence planning, jigs/fixtures, datum concepts, alignment, tack sequence, assembly control, dimensional inspection and post-weld dimensional verification.
+
+Workshop activities should include fabrication of a controlled training assembly using drawings, a process plan, measuring instruments and documented inspection steps.
+
+Students learn to distinguish correction of fit-up from unauthorized modification of a controlled design.
+
+### Weeks 15–16 — C07-108 Weld Defects, Visual Inspection & NDT Awareness
+
+Learners identify common weld discontinuities and defect mechanisms such as cracks, porosity, lack of fusion, incomplete penetration, undercut, overlap, excessive reinforcement, burn-through, arc strikes, inclusions, misalignment and distortion at an appropriate certificate level.
+
+Visual inspection is taught as a disciplined process using lighting, cleanliness, access, dimensional tools and documentation. Penetrant, magnetic-particle, ultrasonic and radiographic principles are introduced at awareness level with examples and controlled demonstrations where appropriate.
+
+PAK-C07 does not itself certify NDT personnel or authorize NDT acceptance of railway components.
+
+### Weeks 17–18 — C07-109 WPS/WPQR, Welder Qualification, Welding Operator & Coordination Awareness
+
+Students learn the purpose and relationship of welding procedure specifications, procedure qualification records, welder qualification, welding-operator qualification and welding coordination. They practice reading simplified or legitimately available controlled examples and identifying essential task information.
+
+The module emphasizes the organizational distinction between a qualified welding procedure, qualified personnel, competent welding coordination and an approved production organization. Academic completion of this module cannot substitute for the applicable formal qualification route.
+
+### Weeks 19–20 — C07-110 Railway Welding Quality — EN 15085, ISO 3834, Traceability & Production Documentation
+
+This module introduces the quality-system context for railway welding. Learners study the purpose of the EN 15085 railway-welding framework and the ISO 3834 family at awareness level, together with material/consumable traceability, drawing/WPS control, personnel qualification records, equipment condition, inspection/test planning, nonconformance management and production documentation.
+
+Standards are referenced and explained in original educational language; proprietary standard text is not reproduced. The exact current applicable edition and contractual scope must be verified during chapter and book production.
+
+### Weeks 21–22 — C07-111 Weld Repair, Rework, Failure Analysis & Production Quality
+
+Students study why welds or fabricated assemblies may require repair/rework and how controlled repair differs from informal correction. Topics include defect investigation, extent determination, repair authorization, removal/preparation of defective material, approved repair procedures, re-inspection, dimensional verification and traceability.
+
+Failure-awareness case studies may include fatigue cracking, poor fit-up, inappropriate heat input, distortion, corrosion interaction, workmanship defects and process-control breakdowns. Safety-critical railway repairs remain subject to approved engineering and quality controls.
+
+### Weeks 23–24 — C07-112 Integrated Railway Welding & Fabrication Practicum & Final Competency Assessment
+
+The final module integrates safety, drawings, materials, process setup, joint preparation, welding, fabrication, dimensional inspection, visual inspection, records and quality reasoning.
+
+Using a non-service training assembly or suitably controlled workshop project, learners receive a task package, prepare the work area, verify material/consumables, interpret the drawing/instruction, prepare and fit the joint, execute permitted welding operations, inspect and measure the result, complete production records and explain which findings require escalation or formal qualification/approval.
+
+The final assessment must evaluate safe practice, compliance with instructions, workmanship discipline, process control, dimensional accuracy, inspection reasoning, traceability and competence boundaries—not appearance alone.
+
+---
+
+## 33.6 PAK-C07 Module Inventory
+
+PAK-C07 contains **12 modules over 24 weeks**:
+
+- 1 safety/foundation/documentation module;
+- 1 materials/metallurgy/weldability module;
+- 2 welding-process/process-control modules;
+- 1 joint-preparation/drawing/fit-up module;
+- 1 welding-metallurgy/distortion module;
+- 1 railway-fabrication/dimensional-control module;
+- 1 weld-defect/visual-inspection/NDT-awareness module;
+- 1 WPS/WPQR/personnel-qualification/coordination-awareness module;
+- 1 EN 15085/ISO 3834/traceability-quality module;
+- 1 repair/rework/failure-analysis module;
+- 1 integrated practicum/final competency module.
+
+Exact contact hours, welding-booth hours, fabrication-workshop hours, inspection-lab hours, guided-learning hours and independent-study hours remain intentionally unassigned until the workload-mapping phase.
+
+---
+
+## 33.7 Practical Competency Baseline
+
+Subject to facility capability, approved training equipment, workshop risk controls and instructor competence, C07 practical learning should progressively include:
+
+1. welding/fabrication workshop safety and hot-work preparation;
+2. PPE and fume/ventilation control awareness;
+3. engineering drawing and welding-symbol interpretation;
+4. material and consumable identification from controlled records;
+5. equipment identification and pre-use checks;
+6. supervised SMAW, GMAW/MAG, GTAW and/or FCAW training as available;
+7. joint preparation, marking, cutting/grinding and fit-up;
+8. tack-welding and alignment exercises;
+9. parameter setting and welding-record completion;
+10. basic distortion-control and sequence exercises;
+11. fabrication using jigs/fixtures and dimensional checks;
+12. visual weld inspection and dimensional measurement;
+13. defect identification using training samples/graphics;
+14. controlled NDT demonstrations/interpretation where appropriate;
+15. reading WPS/WPQR and qualification-document examples;
+16. material/consumable/process traceability exercises;
+17. NCR/rework/repair-planning case exercises;
+18. final integrated training fabrication project.
+
+**Practical competence is limited to the specific processes, positions, materials, joints and training conditions actually taught and assessed. It does not equal production certification.**
+
+---
+
+## 33.8 Safety, Qualification & Certification Boundaries
+
+Future C07 textbooks, workshop manuals, workbooks and journals must explicitly flag and control:
+
+- electric shock and welding-power-source hazards;
+- arc radiation and eye/skin exposure;
+- welding fumes and gases;
+- oxygen enrichment/depletion and confined-space hazards;
+- fire/explosion and hot-work controls;
+- gas cylinders and pressurized systems;
+- grinding/cutting and rotating-tool hazards;
+- hot metal and burn hazards;
+- lifting, fixturing and heavy fabrication assemblies;
+- unknown/unverified materials;
+- preheat/interpass/post-weld treatment requirements;
+- safety-critical railway welds and structures;
+- formal welder/welding-operator qualification;
+- welding-coordination responsibilities;
+- WPS/WPQR approval and control;
+- certified NDT and inspection acceptance;
+- destructive testing used for qualification;
+- radiographic testing and ionizing-radiation controls;
+- repair/rework authorization;
+- final product acceptance and release.
+
+PAK-C07 may teach and assess supervised training welds and fabrication exercises. The certificate itself must **not** be marketed as ISO 9606 qualification, welding-operator qualification, ISO 14731 welding-coordination competence, EN 15085 organizational certification, ISO 3834 certification, NDT personnel certification or authority to release safety-critical railway components.
+
+---
+
+## 33.9 Shared-Module & Pathway Strategy
+
+C07 may reuse/adapt selected C01, C02 and D05 master content where learning outcomes genuinely match, including:
+
+- railway-system and workshop-safety fundamentals;
+- engineering materials and corrosion fundamentals;
+- drawing/technical-documentation principles;
+- basic metrology;
+- generic inspection and traceability concepts;
+- quality/nonconformance fundamentals.
+
+C07 requires independent welding/fabrication depth for:
+
+- fusion-welding process operation and control;
+- joint design and preparation;
+- welding symbols and fabrication drawings;
+- welding metallurgy and HAZ behaviour;
+- heat input and distortion;
+- welding consumables and shielding systems;
+- railway fabrication sequence/jigs/fixtures;
+- weld discontinuities and defects;
+- WPS/WPQR concepts;
+- welder/welding-operator qualification awareness;
+- welding coordination;
+- EN 15085 / ISO 3834 context;
+- controlled weld repair/rework.
+
+Possible progression includes PAK-C09, PAK-C11, PAK-D02 and especially PAK-D05. Recognition of prior learning must depend on mapped learning outcomes and assessment evidence, not programme-title similarity.
+
+---
+
+## 33.10 Technical & Standards Reference Baseline for Future Chapter Development
+
+Future C07 chapter and book development must verify the current applicable edition, adoption status and contractual scope of authoritative sources relevant to the process/material/component being taught, including where applicable:
+
+- the current applicable **EN 15085 series** for welding of railway vehicles and components;
+- the current applicable **ISO 3834 series** for quality requirements for fusion welding of metallic materials;
+- **ISO 14731** or its then-current successor for welding-coordination tasks and responsibilities;
+- **ISO 9606-1** or its then-current successor for qualification testing of welders for fusion welding of steels where applicable;
+- current applicable welding-operator qualification standards for mechanized/automatic welding where relevant;
+- current applicable ISO 156xx series documents for welding procedure specification/qualification and metallic-material grouping where relevant;
+- current applicable standards for welding symbols, weld imperfections, visual inspection, penetrant testing, magnetic-particle testing, ultrasonic testing and radiographic testing according to chapter scope;
+- current applicable ISO 9712 requirements where NDT personnel qualification/certification is discussed;
+- applicable EN/ISO standards for engineering drawings, GD&T, metrology, calibration, material certificates, quality management and occupational safety;
+- current EU railway interoperability/safety framework and applicable rolling-stock TSIs where welded production or repair interfaces with regulated railway requirements;
+- approved drawings, WPSs, WPQRs, inspection/test plans, manufacturer/ECM instructions, customer specifications and certified-organization procedures where legitimately available for training use;
+- relevant Polish workplace-safety, fire, environmental and radiation-control requirements.
+
+**Control rule:** PAK educational material may explain welding principles and use illustrative training parameters, but production current/voltage ranges, heat-input limits, preheat/interpass values, filler-metal classifications, joint details, defect acceptance levels, NDT acceptance criteria, repair instructions and release requirements must be traceable to the governing approved source for the exact product/process.
+
+The regulatory/reference register for every future C07 publication must record the edition or consolidated version actually checked. Because welding standards are periodically revised, books must not assume that the edition current during curriculum design remains current at publication or reprint.
+
+---
+
+## 33.11 Assessment Architecture Placeholder
+
+The eventual C07 assessment system should include:
+
+- module knowledge checks;
+- welding/fabrication safety observation;
+- engineering drawing and welding-symbol interpretation;
+- material/consumable identification exercises;
+- joint-preparation and fit-up practicals;
+- supervised welding-process practicals on training coupons;
+- parameter/process-control record exercises;
+- dimensional fabrication practicals;
+- visual weld-inspection and defect-recognition exercises;
+- NDT-awareness interpretation tasks;
+- WPS/WPQR/qualification-document exercises;
+- quality/traceability/NCR documentation tasks;
+- weld-repair/failure case studies;
+- final theory assessment;
+- final integrated fabrication/welding practical;
+- oral questioning on certification, quality and release boundaries.
+
+Unsafe hot work, bypassed PPE/ventilation/fire controls, use of unverified material, unapproved parameter changes, falsified welding/inspection records, uncontrolled repair, or claiming certification/acceptance authority outside scope must be treated as serious assessment failures.
+
+---
+
+## 33.12 Chapter-Decomposition & Publication Readiness
+
+For each of the 12 C07 modules, chapter design must define:
+
+- module purpose and scope;
+- chapter titles and sequence;
+- welding/fabrication terminology;
+- required metallurgy/process theory depth;
+- workshop/lab allocation;
+- tools, welding equipment, extraction/ventilation and inspection equipment;
+- controlled welding/fabrication exercises;
+- workbook and practical-journal activities;
+- learning-outcome placeholders;
+- assessment links;
+- technical/standards source families;
+- safety-critical flags;
+- qualification/certification boundaries;
+- required publication outputs under the global print-ready standard.
+
+### Mandatory C07 Technical Visual Plan
+
+At chapter-design stage, the publication plan must explicitly allocate appropriate print-ready visuals, including where relevant:
+
+1. welding-process equipment and circuit schematics;
+2. electrode/torch/workpiece arrangement diagrams;
+3. joint-type and edge-preparation drawings;
+4. welding-symbol and fabrication-drawing examples;
+5. weld-position illustrations;
+6. bead profile and penetration/fusion concept diagrams;
+7. metallurgy and heat-affected-zone graphics;
+8. heating/cooling and heat-flow illustrations;
+9. distortion, shrinkage and restraint diagrams;
+10. consumable/shielding-gas selection concept charts;
+11. cutting, forming and fabrication process flows;
+12. jig, fixture, datum and assembly-sequence diagrams;
+13. dimensional inspection and measurement-point drawings;
+14. weld-defect/discontinuity atlas graphics;
+15. visual/PT/MT/UT/RT method principle diagrams;
+16. WPS → WPQR → qualification → production workflow diagrams;
+17. EN 15085 / ISO 3834 quality-system relationship diagrams at awareness level;
+18. material/consumable/component traceability flows;
+19. NCR/CAPA/rework/repair decision trees;
+20. annotated photographs of acceptable training examples and common defects where rights permit.
+
+All visuals must comply with the global print-ready governance: figure numbering and captions, print legibility, vector preference for technical diagrams, appropriate raster resolution, source/licence records, grayscale robustness and clear distinction between **Illustrative / Training Use Only** material and approved controlled production documentation.
+
+### Mandatory C07 Publication Package
+
+When book production begins, C07 must be planned for at least:
+
+- Student Textbook / Module Book PDF;
+- Practical / Welding Workshop Manual PDF;
+- Student Workbook PDF;
+- Welding & Fabrication Practical Journal / Logbook PDF;
+- Instructor Guide PDF;
+- Teaching Slides;
+- Question Bank;
+- Theory Examination;
+- Practical Competency Assessment Pack;
+- Answer Key / Marking Guide.
+
+The student-facing printed material must include appropriate cover/title/control pages, programme/module identification, introduction, learning outcomes, contents, list of figures/tables/drawings, abbreviations/acronyms, symbols/units where relevant, chapter summaries, review questions, glossary, references, appendices and index where book size justifies it.
+
+No full C07 textbook, workbook, journal or practical manual should enter production until its chapter architecture, visual plan, learning-outcome mapping, practical requirements and assessment placeholders are approved.
+
+---
+
+# 34. PAK-C08 — Certificate in Railway Electrical Systems
+
+**Synchronization record:** Approved modular architecture synchronized from `docs/academic/certificates/C08/PAK-C08.md` into master PRD v0.2.0 on 11 September 2026. Curriculum substance is preserved; the modular file remains the day-to-day working source and this section is the consolidated governance/audit copy.
+
+## 34.1 Programme Identity
+
+**Programme Code:** `PAK-C08`  
+**Programme Title:** Certificate in Railway Electrical Systems  
+**Duration:** 6 Months / 24 Weeks  
+**Academic Structure:** 12 sequential modules, normally delivered in two-week blocks  
+**Primary Language:** English  
+**Orientation:** Practical railway electrical-maintenance foundation covering electrical safety, circuits and measurements, drawings and wiring, batteries and low-voltage supplies, electrical machines, rolling-stock auxiliaries, traction-power awareness, power electronics, control devices, inspection/testing, fault finding, bonding/EMC, quality/traceability and supervised practical competence
+
+## 34.2 Programme Purpose
+
+PAK-C08 develops entry-to-intermediate railway electrical knowledge and supervised practical competence for learners preparing to work in rolling-stock maintenance, depots, workshops, production, inspection, commissioning-support and technical service environments.
+
+The programme begins with electrical safety and fundamental circuit behaviour, then builds competence in measurement, schematics, wiring and connectors before progressing to batteries and low-voltage supplies, electrical machines, rolling-stock auxiliary systems, railway electrification interfaces, power electronics, relays/contactors/sensors, inspection, insulation and continuity testing, structured fault finding, earthing/bonding, EMC, maintenance quality and traceability.
+
+The course is intended to be broader and more vocational than the two-year PAK-D03 Diploma in Railway Electrical & Control Systems. It prepares students to recognize, inspect, measure, document and perform selected controlled electrical-maintenance tasks under approved instructions, while leaving advanced traction-drive engineering, embedded control, detailed protection design, TCMS/network architecture and signalling engineering to higher-level or specialist programmes.
+
+Completion of PAK-C08 does **not** by itself authorize live high-voltage work, traction-power switching, electrical isolation/earthing authority, pantograph/roof work, protection-setting changes, safety-related software/configuration changes, formal insulation acceptance, train-protection intervention, electrical release-to-service or any other task requiring separate statutory, employer or competence authorization.
+
+## 34.3 Curriculum Design Principles
+
+1. **Electrical safety precedes technical intervention:** shock, arc, stored energy, batteries, capacitors, isolation, proving dead, earthing/bonding and safe instrument use are introduced before hands-on work.
+2. **Measure before replacing:** students learn voltage/current/resistance concepts, continuity and insulation principles, instrument selection and evidence-based diagnosis before component replacement.
+3. **Schematics are a core maintenance language:** circuit diagrams, wiring diagrams, terminal plans, cable identification and connector documentation are embedded throughout.
+4. **Low-voltage practical work first:** most practical training should use de-energized assets or purpose-built low-voltage training systems unless a separately governed facility supports higher-energy work.
+5. **Vehicle-side focus with infrastructure awareness:** rolling-stock systems are the main competence domain; fixed traction-energy installations are taught only to explain interfaces and hazards.
+6. **Power and control are differentiated:** energy-path devices and command/control devices are taught as related but distinct functional layers.
+7. **Approved technical data governs work:** test limits, insulation values, protection settings, wire sizes, connector pin-outs and acceptance criteria must come from approved current sources for the exact equipment.
+8. **Fault finding is structured:** verify symptom, review drawings/history, make safe, inspect, measure, isolate causes, correct within scope, verify and document.
+9. **Traceability is part of electrical competence:** instrument identity/calibration, measurements, replaced parts, wiring changes, defect records and post-task verification must be recorded.
+10. **Publication-ready design:** every future chapter must allocate the necessary schematics, wiring diagrams, block diagrams, waveforms, test-point illustrations, fault trees, photographs, workbook activities and practical-journal records.
+
+---
+
+## 34.4 Twenty-Four-Week / Twelve-Module Architecture
+
+| Weeks | Code | Module | Classification | Orientation | Prerequisite |
+|---|---|---|---|---|---|
+| 1–2 | C08-101 | Railway Electrical Fundamentals, Electrical Safety & Safe Working Principles | Foundation / Safety Core | Theory + Safety Demonstration + Low-Risk Practical | None |
+| 3–4 | C08-102 | DC & AC Circuits, Electrical Quantities, Measurements & Instrument Use | Electrical Foundation Core | Theory + Measurement Laboratory | C08-101 |
+| 5–6 | C08-103 | Electrical Drawings, Schematics, Wiring, Cables, Terminals & Connectors | Documentation / Wiring Core | Diagram Interpretation + Wiring Practice | C08-101, C08-102 |
+| 7–8 | C08-104 | Batteries, Chargers, Low-Voltage Supplies & Energy Storage Fundamentals | Vehicle Electrical Core | Theory + Controlled Battery/LV Practical | C08-101 to C08-103 |
+| 9–10 | C08-105 | Electrical Machines, Transformers & Electromechanical Devices | Electrical Machines Core | Theory + Machine Demonstration + Measurements | C08-102, C08-103 |
+| 11–12 | C08-106 | Rolling Stock Auxiliary Electrical Systems — Lighting, HVAC, Doors, Pumps, Fans & Cab Systems | Rolling-Stock Specialization | Theory + De-energized/Low-Voltage Practical | C08-103 to C08-105 |
+| 13–14 | C08-107 | Railway Electrification, Current Collection & Traction-Power Interface Awareness | Traction / Safety Awareness | Theory + System Diagrams + Simulation/Demonstration | C08-101, C08-105 |
+| 15–16 | C08-108 | Power Electronics, Converters, Inverters & Traction-Drive Awareness | Power-Electronics Foundation | Theory + Simulation + De-energized Demonstration | C08-102, C08-105, C08-107 |
+| 17–18 | C08-109 | Relays, Contactors, Sensors, Interlocks & Basic Electrical Control Circuits | Control-Circuit Core | Theory + Low-Voltage Wiring/Control Practical | C08-103, C08-105, C08-106 |
+| 19–20 | C08-110 | Electrical Inspection, Continuity/Insulation Testing & Structured Fault Finding | Inspection / Diagnostic Core | Theory + Controlled Test Practice + Case Diagnosis | C08-102 to C08-109 |
+| 21–22 | C08-111 | Earthing, Bonding, EMC, Maintenance Quality, ECM Awareness & Traceability | Quality / Compliance Core | Theory + Documentation + Inspection Case Study | C08-103, C08-110 |
+| 23–24 | C08-112 | Integrated Railway Electrical Systems Practicum & Final Competency Assessment | Integrative / Capstone | Practical + Diagnostics + Documentation + Final Assessment | Completion of C08-101 to C08-111 |
+
+---
+
+## 34.5 Module Progression Logic
+
+### Weeks 1–2 — C08-101 Railway Electrical Fundamentals, Electrical Safety & Safe Working Principles
+
+Learners are introduced to electricity in railway environments through basic concepts of voltage, current, resistance, power, energy, conductors, insulators, DC and AC systems, and the distinction between low-voltage, higher-energy and traction-power environments.
+
+Safety content includes electric shock, burns, arc hazards, stored electrical energy, capacitors, batteries, unexpected energization, conductive tools, wet environments, damaged insulation, PPE awareness, access control, lockout/tagout concepts, isolation-awareness, proving-dead concepts, earthing/bonding awareness and emergency response.
+
+The programme must make one principle explicit from the first week: **knowing how an isolation system works is not the same as being authorized to perform railway electrical isolation.**
+
+Practical work in this block should use safe low-energy training circuits and instrument familiarization only.
+
+### Weeks 3–4 — C08-102 DC & AC Circuits, Electrical Quantities, Measurements & Instrument Use
+
+Students develop practical understanding of Ohm's law, series/parallel circuits, voltage drop, power, energy, basic capacitance and inductance, AC frequency, phase awareness and simple single-phase/three-phase concepts at certificate depth.
+
+They learn safe use of multimeters and selected test instruments on controlled training rigs, including instrument function/range selection, lead condition, measurement points, polarity, continuity, resistance and voltage measurement.
+
+Measurement uncertainty and instrument limitations are introduced so learners understand that a displayed number is not automatically a valid engineering conclusion.
+
+### Weeks 5–6 — C08-103 Electrical Drawings, Schematics, Wiring, Cables, Terminals & Connectors
+
+Learners develop competence in reading electrical symbols, simple circuit diagrams, wiring diagrams, terminal plans, cable identifiers, connector references, wire numbers, equipment tags and cross-references.
+
+Practical work may include low-voltage panel wiring, terminal preparation, crimping awareness, connector inspection, cable routing, basic continuity verification and documentation updates on purpose-built training boards.
+
+Wire size, insulation type, crimp tooling, terminal torque, connector pin-outs and railway fire/smoke requirements are equipment-/standard-specific and must not be generalized from classroom examples.
+
+### Weeks 7–8 — C08-104 Batteries, Chargers, Low-Voltage Supplies & Energy Storage Fundamentals
+
+Students study the role of batteries and low-voltage supplies in railway vehicles, including starting/control supply, emergency loads, charging, DC distribution and backup functions.
+
+The module introduces common battery technologies and basic condition indicators, while explicitly addressing short-circuit energy, acid/electrolyte hazards where relevant, thermal risk, ventilation, polarity, isolation and safe handling.
+
+Modern high-energy battery or hybrid traction systems may be introduced conceptually, but traction-battery maintenance requires system-specific high-voltage competence beyond the default C08 practical scope.
+
+### Weeks 9–10 — C08-105 Electrical Machines, Transformers & Electromechanical Devices
+
+Learners study the operating purpose of motors, generators/alternators, transformers, solenoids and other electromechanical devices. The goal is functional understanding: magnetic fields, electromagnetic induction, torque generation, speed/load relationships, losses, heating and common maintenance observations.
+
+Practical work may use small training motors/transformers to demonstrate winding continuity, basic terminal identification, rotation, loading effects and safe measurement.
+
+Traction-motor acceptance, transformer testing, high-voltage insulation criteria or internal overhaul remain specialist tasks governed by approved procedures.
+
+### Weeks 11–12 — C08-106 Rolling Stock Auxiliary Electrical Systems
+
+This module applies fundamentals to routine rolling-stock auxiliaries: lighting, cab systems, HVAC interfaces, fans, pumps, compressors, doors, warning devices, heaters, low-voltage power distribution and selected passenger/freight auxiliaries according to training assets.
+
+Students learn subsystem block diagrams, typical power/control interfaces, fuses/protection awareness, relays/contactors, switches, sensors and common failure symptoms.
+
+Practical exercises should emphasize de-energized inspection, low-voltage training systems, controlled measurements, connector/wiring checks and accurate fault documentation.
+
+### Weeks 13–14 — C08-107 Railway Electrification, Current Collection & Traction-Power Interface Awareness
+
+Students learn why railways use different electrification systems and how fixed traction-energy infrastructure interfaces with rolling stock. Concepts may include substations, feeders, overhead contact line/catenary, third-rail awareness, return current, pantographs/current collectors, neutral sections and traction-energy flow.
+
+The module is deliberately **interface awareness**, not infrastructure electrical authorization. The Energy TSI applies to fixed installations supplying traction energy, while rolling-stock electrical equipment is treated through the applicable vehicle framework.
+
+Roof access, pantograph work, overhead-line proximity, third-rail proximity, traction-power isolation and switching remain authorization-dependent activities.
+
+### Weeks 15–16 — C08-108 Power Electronics, Converters, Inverters & Traction-Drive Awareness
+
+Learners are introduced to diodes, rectification, switching devices, converters, inverters, DC links, pulse-width modulation concepts and traction-drive energy flow at an accessible certificate level.
+
+The module focuses on understanding system architecture, identifying principal assemblies, recognizing cooling/contamination/overheating indicators and interpreting block diagrams—not component-level repair of high-energy power electronics.
+
+Practical delivery should use simulation, low-power electronics trainers or de-energized representative equipment. Capacitor stored energy and high-voltage DC links must receive explicit hazard treatment.
+
+### Weeks 17–18 — C08-109 Relays, Contactors, Sensors, Interlocks & Basic Electrical Control Circuits
+
+Students learn how low-voltage control circuits command higher-power equipment. Topics include coils, contacts, NO/NC logic, interlocks, limit switches, proximity/temperature/pressure sensors, basic transducers, simple relay logic and fault-indication circuits.
+
+Practical work may include safe low-voltage relay/contactors trainers, continuity tracing, simple interlock circuits, sensor-state checks and fault-insertion exercises.
+
+Safety-related interlocks must be taught with the rule that bypassing, defeating or altering them in actual railway equipment is not a permissible diagnostic shortcut.
+
+### Weeks 19–20 — C08-110 Electrical Inspection, Continuity/Insulation Testing & Structured Fault Finding
+
+This is the principal diagnostic block. Learners combine visual inspection, drawings, maintenance history and controlled measurements into a structured troubleshooting method.
+
+Activities may include cable/connector inspection, continuity testing, resistance checks, selected insulation-testing demonstrations under defined safe conditions, voltage-tracing on low-voltage rigs, relay/control diagnosis and documentation of findings.
+
+Insulation test voltages, minimum insulation criteria, permissible leakage, protection thresholds and acceptance values are equipment-/vehicle-/standard-specific and must be taken from approved technical documentation.
+
+Students should be trained to stop and escalate when a fault enters high-voltage, safety-related software, protection, train-control or other authorization-dependent territory.
+
+### Weeks 21–22 — C08-111 Earthing, Bonding, EMC, Maintenance Quality, ECM Awareness & Traceability
+
+Learners study the purpose of protective earthing, vehicle bonding, return-current paths, equipotential bonding and the difference between protective, functional and traction-return concepts at an introductory level.
+
+Electromagnetic compatibility (EMC) is introduced through interference sources, shielding, cable routing, grounding/bonding interfaces and the need for controlled configuration.
+
+The module also embeds maintenance quality: controlled instructions, competent personnel, calibrated instruments, parts/cable/connector traceability, defect/nonconformance reporting, post-maintenance verification and ECM/maintenance-system awareness.
+
+Any change to wiring, cable routing, shielding, bonding, software/configuration or protection settings must be controlled and documented according to approved requirements.
+
+### Weeks 23–24 — C08-112 Integrated Railway Electrical Systems Practicum & Final Competency Assessment
+
+The final block integrates safe electrical work, schematics, measurement, wiring/control understanding, auxiliary-system diagnosis, documentation and escalation.
+
+Students should receive a controlled practical task on a training panel, simulator, de-energized vehicle system or purpose-built low-voltage railway electrical rig. They perform pre-task safety checks, read the schematic, identify components and test points, carry out permitted measurements, diagnose a defined fault, perform an authorized low-risk correction, verify the result and complete the required records.
+
+Assessment must reward **safe process, correct instrument use, drawing interpretation, evidence-based diagnosis, documentation and recognition of authorization boundaries**, not speed or uncontrolled trial-and-error.
+
+---
+
+## 34.6 Module Inventory
+
+PAK-C08 contains **12 modules over 24 weeks**:
+
+- 3 electrical foundation/safety/drawing modules (`C08-101` to `C08-103`);
+- 3 vehicle/equipment foundation modules covering batteries, machines and auxiliaries (`C08-104` to `C08-106`);
+- 2 traction/power-electronics awareness modules (`C08-107` to `C08-108`);
+- 1 control-circuit module (`C08-109`);
+- 1 inspection/testing/fault-diagnosis module (`C08-110`);
+- 1 earthing/EMC/quality/traceability module (`C08-111`);
+- 1 integrated practicum/final assessment module (`C08-112`).
+
+Exact contact hours, laboratory/workshop hours, guided-learning hours and independent-study hours remain intentionally unassigned until the workload-mapping phase.
+
+---
+
+## 34.7 Practical Competency Baseline
+
+Subject to facility capability, approved training assets and instructor competence, C08 practical learning should progressively include:
+
+1. electrical hazard identification and safe-work preparation;
+2. inspection of test leads, tools and low-voltage training equipment;
+3. voltage, current, resistance and continuity measurements on safe training circuits;
+4. reading schematic and wiring diagrams;
+5. cable, terminal, connector and equipment identification;
+6. low-voltage wiring and terminal exercises on training boards;
+7. battery/charger/low-voltage supply component identification and safe checks;
+8. small motor/transformer demonstrations and basic measurements;
+9. rolling-stock auxiliary-system component identification;
+10. relay, contactor, sensor and interlock training circuits;
+11. fuse/protection-device identification and controlled fault scenarios;
+12. de-energized inspection of representative rolling-stock electrical equipment;
+13. selected low-voltage fault-insertion and diagnostic exercises;
+14. continuity and insulation-testing principles using approved safe training setups;
+15. maintenance measurement and defect documentation;
+16. instrument/calibration traceability awareness;
+17. post-task verification and restoration;
+18. final integrated diagnostic practical.
+
+**Practical competency is bounded by voltage/energy level, training asset, approved task instruction, risk assessment, facility controls, instructor competence and employer/legal authorization.**
+
+---
+
+## 34.8 Electrical Safety & Authorization Boundaries
+
+Future C08 textbooks, practical manuals, workbooks and journals must explicitly flag and control:
+
+- live electrical work;
+- high-voltage traction equipment;
+- overhead line and third-rail proximity;
+- pantograph/current-collector and roof access;
+- formal isolation, proving dead and earthing/grounding authority;
+- capacitor/DC-link stored energy;
+- high-current battery and traction-battery systems;
+- rotating electrical machinery;
+- insulation testing and elevated test voltages;
+- protective relays and protection-setting changes;
+- safety-related interlocks;
+- train-protection/control-command interfaces;
+- TCMS or safety-related software/configuration changes;
+- electromagnetic-compatibility-sensitive modifications;
+- calibrated test results used as release criteria;
+- electrical release to service / return to operation.
+
+C08 may teach principles and may conduct controlled practical exercises on suitable systems. The certificate itself must never be represented as authorization for independent high-voltage isolation, live traction work, protection commissioning, safety-critical electrical acceptance or railway-vehicle release.
+
+---
+
+## 34.9 Shared-Module & Pathway Strategy
+
+C08 may reuse or adapt selected C01, C02, C04 and D03 master content where outcomes and depth match, including:
+
+- railway electrical safety awareness;
+- basic electrical quantities and measurements;
+- schematic/documentation fundamentals;
+- batteries and low-voltage auxiliaries;
+- basic traction architecture;
+- relays, contactors and sensors;
+- fault-finding methodology;
+- maintenance quality and traceability.
+
+C08 requires its own certificate-level electrical maintenance treatment for:
+
+- measurement-led troubleshooting;
+- wiring, connectors and cable inspection;
+- auxiliary electrical systems;
+- controlled low-voltage practical work;
+- traction-power interface awareness;
+- introductory power-electronics architecture;
+- electrical inspection/continuity/insulation concepts;
+- earthing/bonding/EMC awareness.
+
+Possible progression includes PAK-C09, PAK-C10, PAK-C11, PAK-D01 and especially **PAK-D03 — Diploma in Railway Electrical & Control Systems**.
+
+Recognition of prior learning must depend on mapped learning outcomes, practical evidence and assessment equivalence rather than programme-title similarity alone.
+
+---
+
+## 34.10 Technical & Regulatory Reference Baseline for Future Chapter Development
+
+Future C08 chapter and book development must verify current authoritative sources appropriate to the exact electrical system being taught, including where applicable:
+
+- Directive (EU) 2016/797 on rail-system interoperability, using the current applicable/consolidated text;
+- Directive (EU) 2016/798 on railway safety, using the current applicable/consolidated text;
+- **Commission Regulation (EU) No 1302/2014** concerning the rolling-stock — locomotives and passenger rolling stock TSI (LOC&PAS TSI), using the current consolidated edition applicable at publication time;
+- **Commission Regulation (EU) No 1301/2014** concerning the energy subsystem TSI (ENE TSI) for awareness of fixed traction-energy installations and rolling-stock interfaces, using the current applicable edition;
+- **Commission Implementing Regulation (EU) 2019/779** concerning the system of certification of Entities in Charge of Maintenance where applicable to rolling-stock maintenance governance;
+- current ERA technical guidance and TSI application guides;
+- applicable EN/IEC/ISO railway electrical standards concerning rolling-stock electrical equipment, traction systems, transformers/machines, batteries, cabling, insulation, earthing/bonding, EMC, electrical safety, measurements and maintenance according to chapter scope;
+- relevant Polish electrical, railway and workplace-safety requirements;
+- approved vehicle manufacturer/keeper/ECM schematics, wiring diagrams, maintenance manuals, diagnostic instructions and controlled work procedures where legitimately available for training use.
+
+**Control rule:** illustrative classroom circuits and values are teaching aids only. Actual nominal voltages, test voltages, insulation limits, fuse/protection ratings, connector pin-outs, wire sizes, torques, software parameters, earth/bond resistance limits and release criteria must be traceable to the governing approved source for the exact vehicle/equipment/process.
+
+The regulatory/reference register for every C08 publication must record the edition or consolidated version actually checked, and must be revalidated before print release or revision.
+
+---
+
+## 34.11 Assessment Architecture Placeholder
+
+The eventual C08 assessment system should include:
+
+- module knowledge checks;
+- electrical-safety scenario questions;
+- circuit calculations at certificate depth;
+- multimeter/instrument-selection exercises;
+- schematic and wiring-diagram interpretation;
+- cable/terminal/connector identification;
+- low-voltage wiring practicals;
+- battery and auxiliary-system case tasks;
+- electrical-machine identification and principle questions;
+- relay/contact/sensor logic exercises;
+- fault-finding case studies;
+- controlled continuity/insulation-testing exercises;
+- maintenance documentation and traceability tasks;
+- final theory examination;
+- final integrated low-voltage/de-energized practical;
+- oral questioning on isolation, HV, software/protection and release boundaries.
+
+Unsafe energization, bypassing interlocks, use of an unsuitable instrument/range, unauthorized high-voltage intervention, unsupported test values, undocumented wiring changes, falsified measurements or missing traceability must be treated as serious assessment failures.
+
+---
+
+## 34.12 Print-Ready Study-Material Package
+
+When C08 book production begins, the programme must follow the global publishing standard and produce the applicable controlled publication set, including:
+
+- Student Textbook / Module Book;
+- Electrical Practical / Laboratory Manual;
+- Student Workbook;
+- Practical Journal / Electrical Lab Logbook;
+- Instructor Guide;
+- Teaching Slides;
+- Question Bank;
+- Theory Examination;
+- Practical Competency Assessment Pack;
+- Answer Key / Marking Guide.
+
+Every full student book must contain the required professional front/back matter, including cover page, title/publication page, edition/version control, introduction, programme/module scope, prerequisites, learning outcomes, table of contents, list of figures, list of tables, list of electrical drawings/schematics, abbreviations/acronyms, symbols/units, chapter summaries, review questions, glossary, references, appendices and index where appropriate.
+
+---
+
+## 34.13 Mandatory C08 Technical Visual Plan
+
+At chapter-design stage, each module must explicitly allocate print-ready visuals where relevant. The C08 visual library should include:
+
+1. basic voltage/current/resistance/power concept diagrams;
+2. series/parallel DC circuit diagrams;
+3. AC waveform, frequency and phase illustrations;
+4. multimeter/test-instrument connection diagrams;
+5. electrical symbols and schematic-reading examples;
+6. wiring diagrams, terminal plans and cable-numbering illustrations;
+7. cable construction, connector and crimp/terminal diagrams;
+8. battery and charger block diagrams;
+9. low-voltage distribution diagrams;
+10. motor, generator and transformer operating-principle diagrams;
+11. annotated rolling-stock auxiliary-system layouts;
+12. lighting, HVAC, door, pump/fan and cab-system simplified schematics;
+13. traction-energy system block diagrams showing fixed-installation/vehicle interfaces;
+14. pantograph/current-collection conceptual illustrations labelled for training use;
+15. rectifier, converter, inverter and DC-link block diagrams;
+16. conceptual traction-drive energy-flow diagrams;
+17. relay/contactor NO/NC logic diagrams;
+18. sensor and interlock circuit examples;
+19. continuity and insulation-test setup diagrams;
+20. electrical fault-finding decision trees;
+21. annotated photographs/graphics of common cable, connector, insulation and overheating defects;
+22. earthing/bonding/return-current conceptual diagrams;
+23. shielding/cable-routing/EMC illustrations;
+24. maintenance process, measurement-record and traceability flows;
+25. laboratory/workshop safe-zone and hazard diagrams where useful.
+
+All visuals must comply with the global print-ready standard: figure numbering/captions, final-size legibility, vector preference for schematics and diagrams, adequate raster resolution, source/licence records, grayscale robustness and explicit **Illustrative / Training Use Only** labeling where a visual is not an approved controlled railway instruction.
+
+---
+
+## 34.14 Chapter-Decomposition & Publication Readiness
+
+For each of the 12 C08 modules, the next chapter-design phase must define:
+
+- module purpose and scope;
+- chapter titles and sequence;
+- electrical terminology and symbols;
+- calculation depth;
+- required schematics/wiring diagrams/technical illustrations;
+- theory/laboratory/workshop split;
+- safe practical exercises;
+- instruments, tools and training equipment;
+- diagnostic/fault-insertion scenarios;
+- workbook and journal activities;
+- learning-outcome placeholders;
+- assessment links;
+- regulatory/technical source families;
+- voltage/energy-level safety classification;
+- authorization/certification boundaries;
+- required publication outputs under the global publishing standard.
+
+No full C08 textbook, module book, workbook, practical manual or journal should enter production until this chapter/publication architecture and its technical visual requirements are approved.
+
+---
+
+## 34.15 C08 Completion Checkpoint
+
+PAK-C08 completes **12 module placements** within the Certificate portfolio.
+
+After C08 approval and index synchronization:
+
+- Completed Certificate programmes: **8 of 12**;
+- Completed Certificate module placements: **88**;
+- Next controlled curriculum target: **PAK-C09 — Certificate in Railway Inspection & NDT — 6 Months**.
+
+---
+
+# 35. PAK-C09 — Certificate in Railway Inspection & NDT
+
+**Synchronization record:** Approved modular architecture synchronized from `docs/academic/certificates/C09/PAK-C09.md` into master PRD v0.2.0 on 11 September 2026. Curriculum substance is preserved; the modular file remains the day-to-day working source and this section is the consolidated governance/audit copy.
+
+## 35.1 Programme Identity
+
+**Programme Code:** `PAK-C09`  
+**Programme Title:** Certificate in Railway Inspection & NDT  
+**Duration:** 6 Months / 24 Weeks  
+**Academic Structure:** 12 sequential modules, normally delivered in two-week blocks  
+**Primary Language:** English  
+**Orientation:** Practical railway inspection foundation covering visual inspection, dimensional metrology, penetrant testing, magnetic particle testing, ultrasonic and radiographic principles, eddy-current awareness, railway component inspection, reporting, traceability, certification boundaries and supervised practical competence
+
+## 35.2 Programme Purpose
+
+PAK-C09 develops entry-to-intermediate knowledge and supervised practical competence for learners preparing to support railway inspection, maintenance, manufacturing, overhaul, quality-control and workshop activities.
+
+The programme begins with inspection planning, safety, documentation, materials and defect fundamentals before progressing through visual testing, dimensional inspection and selected NDT methods. It then applies those methods to railway welds, wheelsets, axles, bogies, frames and other representative components while embedding traceability, reporting, escalation and competence boundaries.
+
+The course is intentionally vocational and broad. It does **not** replace formal NDT personnel qualification/certification schemes or employer authorization. Advanced method-specific Level 2/Level 3 competence, radiation practice, acceptance engineering, procedure approval and release-to-service authority remain outside the default certificate scope.
+
+Completion of PAK-C09 does **not** by itself qualify or certify a learner under ISO 9712, authorize independent NDT sign-off, permit radiographic exposure work, authorize acceptance/rejection of safety-critical railway components, approve NDT procedures, or confer maintenance release/return-to-service authority.
+
+## 35.3 Curriculum Design Principles
+
+1. **Inspection starts with purpose and risk:** identify component, failure consequence, required information, approved procedure and safe access before choosing a method.
+2. **Visual and dimensional inspection are core disciplines:** advanced NDT does not replace disciplined surface examination, metrology or documentation.
+3. **Method selection follows defect physics:** surface-breaking, near-surface and volumetric discontinuities require different techniques and limitations.
+4. **Indication is not automatically a defect:** learners distinguish observation, indication, characterization, evaluation and acceptance decision.
+5. **Acceptance criteria come from approved sources:** no classroom example or generic threshold overrides approved drawings, maintenance instructions, standards or customer specifications.
+6. **Training is not certification:** demonstrations and supervised exercises do not create ISO 9712 or equivalent personnel certification.
+7. **Radiography is tightly controlled:** default delivery is theory, image interpretation and radiation-safety awareness unless a separately licensed facility and authorized personnel support exposure work.
+8. **Traceability is mandatory:** component identity, inspection zone, procedure/reference, instrument identity/status, consumables, conditions, results, limitations and signatures must be recorded.
+9. **Escalation is part of competence:** uncertain indications and safety-critical findings must be referred to authorized personnel.
+10. **Publication-ready design:** future chapters must include defect atlases, process diagrams, inspection-zone drawings, NDT equipment illustrations, signal/image examples, forms, workbook tasks and practical-journal records.
+
+---
+
+## 35.4 Twenty-Four-Week / Twelve-Module Architecture
+
+| Weeks | Code | Module | Classification | Orientation | Prerequisite |
+|---|---|---|---|---|---|
+| 1–2 | C09-101 | Railway Inspection Fundamentals, Safety, Quality & Technical Documentation | Foundation / Safety Core | Theory + Documentation + Inspection Demonstration | None |
+| 3–4 | C09-102 | Materials, Discontinuities, Defects, Failure Modes & Inspection Planning | Materials / Defect Core | Theory + Defect Recognition + Case Analysis | C09-101 |
+| 5–6 | C09-103 | Visual Testing, Optical Aids & Surface Condition Assessment | Inspection Core | Theory + Controlled Visual Practical | C09-101, C09-102 |
+| 7–8 | C09-104 | Dimensional Inspection, Metrology & Measurement Systems | Metrology Core | Theory + Measurement Laboratory | C09-101 to C09-103 |
+| 9–10 | C09-105 | Penetrant Testing — Principles, Process Control & Interpretation | NDT Method Core | Theory + Supervised PT Practical | C09-101 to C09-104 |
+| 11–12 | C09-106 | Magnetic Particle Testing — Principles, Techniques & Interpretation | NDT Method Core | Theory + Supervised MT Practical | C09-101 to C09-105 |
+| 13–14 | C09-107 | Ultrasonic Testing — Fundamentals, Equipment, Calibration Concepts & Indications | NDT Method Foundation | Theory + Training-Block Demonstration + Basic Signal Interpretation | C09-102 to C09-106 |
+| 15–16 | C09-108 | Radiographic Testing — Film/Digital Principles & Radiation-Safety Awareness | NDT Method / Safety Awareness | Theory + Image Interpretation + Simulation | C09-102, C09-107 |
+| 17–18 | C09-109 | Eddy Current & Advanced NDT Methods Awareness | Advanced-Method Awareness | Theory + Demonstration/Simulation | C09-102 to C09-108 |
+| 19–20 | C09-110 | Railway Component Inspection — Welds, Wheelsets, Axles, Bogies & Structures | Railway Application Core | Inspection Planning + Case Work + Supervised Practical | C09-103 to C09-109 |
+| 21–22 | C09-111 | NDT Procedures, Reporting, Evaluation, Certification, ECM & Traceability | Quality / Compliance Core | Theory + Reporting + Procedure Interpretation | C09-101 to C09-110 |
+| 23–24 | C09-112 | Integrated Railway Inspection & NDT Practicum & Final Competency Assessment | Integrative / Capstone | Practical + Reporting + Final Assessment | Completion of C09-101 to C09-111 |
+
+---
+
+## 35.5 Module Progression Logic
+
+### Weeks 1–2 — C09-101 Railway Inspection Fundamentals, Safety, Quality & Technical Documentation
+
+Learners are introduced to inspection in railway maintenance, manufacturing and overhaul: detecting deterioration or nonconformity, confirming condition, supporting maintenance decisions, verifying workmanship and creating traceable evidence.
+
+The block covers controlled instructions, drawings, inspection plans, checklists, component identification, inspection zones, defect recording, photographs, measurement records, equipment status and escalation routes. Safety topics include heavy components, lifting/support, sharp edges, chemicals, UV-A awareness, magnetic fields, electrical equipment, hot surfaces and radiation-exclusion principles.
+
+The core rule is explicit: **inspection training does not confer authority to accept, reject or release a safety-critical railway component.**
+
+### Weeks 3–4 — C09-102 Materials, Discontinuities, Defects, Failure Modes & Inspection Planning
+
+Students distinguish discontinuity, indication, imperfection, defect and failure in a practical engineering context. Typical sources include manufacturing flaws, weld imperfections, fatigue cracking, impact damage, wear, fretting, corrosion, overheating and deformation.
+
+The module introduces steels, castings, forgings, welds and selected non-ferrous materials at certificate depth, focusing on how material, geometry, surface condition and defect orientation influence inspection-method suitability.
+
+Inspection planning covers component history, likely failure modes, accessibility, surface condition, sensitivity needs, method limitations, applicable procedure, acceptance authority and escalation.
+
+### Weeks 5–6 — C09-103 Visual Testing, Optical Aids & Surface Condition Assessment
+
+Visual inspection is taught as a formal discipline. Learners study lighting, cleanliness, access, viewing angle, surface condition, optical aids, mirrors, borescopes/endoscopes awareness, photographic documentation and repeatable defect-location referencing.
+
+Supervised exercises may include weld appearance, corrosion, deformation, loose/missing hardware, leakage evidence, surface cracking indicators and wheel/bogie surface condition. Where limits apply, observation must be followed by the prescribed measurement or authorized method rather than subjective judgment alone.
+
+### Weeks 7–8 — C09-104 Dimensional Inspection, Metrology & Measurement Systems
+
+Learners use basic metrology tools such as rules, calipers, micrometers, feeler gauges, straightedges, depth gauges, radius/profile gauges and selected railway-specific gauges/templates where training assets permit.
+
+The block introduces repeatability, resolution, uncertainty awareness, calibration/status labels, datum/reference points, environmental influences, measurement recording and instrument care. Railway examples may include wear dimensions, gaps, clearances, thickness, alignment and profile comparison, while actual service limits remain controlled-source data.
+
+### Weeks 9–10 — C09-105 Penetrant Testing — Principles, Process Control & Interpretation
+
+Students learn the PT sequence for surface-breaking discontinuities: surface preparation, penetrant application, dwell, excess removal, developer application, inspection conditions, indication interpretation and post-cleaning.
+
+Practical work may use controlled training coupons and approved consumables under instructor supervision. Process discipline, contamination control, timing, lighting/UV-A awareness, false/nonrelevant indications and record keeping are emphasized.
+
+### Weeks 11–12 — C09-106 Magnetic Particle Testing — Principles, Techniques & Interpretation
+
+Learners study ferromagnetism, field orientation, flux leakage, surface/near-surface discontinuities, magnetization techniques, field direction, sensitivity, particle media, lighting, demagnetization awareness and post-test cleaning.
+
+Supervised practical demonstrations may use suitable training equipment and specimens. Real railway component acceptance, technique selection and equipment checks remain governed by approved procedures and authorized personnel.
+
+### Weeks 13–14 — C09-107 Ultrasonic Testing — Fundamentals, Equipment, Calibration Concepts & Indications
+
+Students are introduced to sound propagation, longitudinal/transverse waves, reflection, refraction, attenuation, couplant, probes, normal/angle-beam concepts, time-of-flight, amplitude, dead zones and A-scan concepts.
+
+Training may use reference blocks, simple specimens, simulators or supervised demonstrations. Calibration and sensitivity are taught conceptually and through controlled exercises, without implying independent UT qualification or acceptance authority.
+
+### Weeks 15–16 — C09-108 Radiographic Testing — Film/Digital Principles & Radiation-Safety Awareness
+
+Learners study X-ray/gamma-ray image formation, source-object-detector geometry, contrast, geometric unsharpness, image quality indicators, film and digital detector concepts, common artefacts and basic weld-image interpretation.
+
+Radiation protection is mandatory: ionizing-radiation hazard, controlled areas, exclusion zones, time/distance/shielding concepts, dosimetry awareness, source security and legal authorization.
+
+**Default PAK-C09 delivery must not expose learners to ionizing radiation.** Practical learning should use approved images, simulation or demonstrations by licensed/authorized organizations unless PAK separately establishes a compliant radiation facility and authorization system.
+
+### Weeks 17–18 — C09-109 Eddy Current & Advanced NDT Methods Awareness
+
+The block introduces eddy-current principles including electromagnetic induction, conductivity/permeability effects, lift-off, probe types, surface/near-surface sensitivity and signal interpretation awareness.
+
+Other methods may be introduced at awareness level—phased-array UT, TOFD, acoustic emission, thermography, leak testing, shearography or digital/automated inspection—according to railway relevance and available technology.
+
+### Weeks 19–20 — C09-110 Railway Component Inspection — Welds, Wheelsets, Axles, Bogies & Structures
+
+Learners integrate method selection with representative railway components: welds/fabrications, bogie frames, suspension attachments, wheelsets, axle surfaces, axlebox/bearing interfaces, brackets, couplers and structural members.
+
+Students identify damage mechanisms, inspection zones, access constraints, suitable primary/secondary methods and documentation requirements. Safety-critical wheelset/axle decisions remain governed by applicable railway standards, controlled procedures, competent personnel and authorized acceptance criteria.
+
+### Weeks 21–22 — C09-111 NDT Procedures, Reporting, Evaluation, Certification, ECM & Traceability
+
+Students learn the structure of an NDT instruction/procedure: scope, component/material, surface condition, equipment, calibration/reference blocks, technique, coverage, sensitivity, conditions, recording, evaluation, acceptance reference, reporting and authorization.
+
+ISO 9712 qualification/certification concepts are introduced specifically to separate training attendance from formal method/sector certification and employer authorization.
+
+Reporting practice includes component identity, drawing/serial data, inspection area, method/technique, equipment and calibration status, consumables, conditions, indication location/characterization as permitted, limitations, result status, escalation, inspector identity and review/approval fields.
+
+### Weeks 23–24 — C09-112 Integrated Railway Inspection & NDT Practicum & Final Competency Assessment
+
+The final block integrates document review, visual inspection, dimensional checks and one or more supervised NDT methods such as PT or MT, with UT interpretation/simulation according to facility capability.
+
+The learner must identify the component and inspection zone, assess safety, choose permitted tools/methods, verify equipment status, perform the inspection within scope, record measurements/indications, recognize limitations, escalate appropriately and produce a complete inspection report.
+
+Assessment rewards **safe process, method discipline, traceability, recognition of limitations, correct reporting and respect for certification/authorization boundaries**, not merely finding a planted defect.
+
+---
+
+## 35.6 Module Inventory
+
+PAK-C09 contains **12 modules over 24 weeks**:
+
+- 2 foundation modules (`C09-101` to `C09-102`);
+- 2 visual/metrology modules (`C09-103` to `C09-104`);
+- 4 NDT method modules covering PT, MT, UT and RT (`C09-105` to `C09-108`);
+- 1 advanced-method awareness module (`C09-109`);
+- 1 railway application module (`C09-110`);
+- 1 procedures/reporting/certification/traceability module (`C09-111`);
+- 1 integrated practicum/final assessment (`C09-112`).
+
+Exact contact, laboratory/workshop, guided-learning and independent-study hours remain unassigned until workload mapping.
+
+---
+
+## 35.7 Practical Competency Baseline
+
+Subject to facility capability, approved procedures, risk assessment and instructor competence, C09 practical learning should include progressively:
+
+1. inspection-area safety preparation and component identification;
+2. use of drawings, checklists and inspection plans;
+3. visual examination under controlled conditions;
+4. optical aids and photographic documentation;
+5. dimensional inspection using suitable measuring tools;
+6. calibration/status awareness and measurement recording;
+7. PT sequence on training specimens;
+8. MT demonstration/practice on suitable specimens;
+9. basic UT equipment/probe/reference-block familiarization;
+10. simple A-scan and geometric-indication interpretation;
+11. radiographic image interpretation using non-exposure media;
+12. eddy-current/advanced-method demonstrations where available;
+13. method selection for representative railway defects;
+14. defect/indication location coding and sketching;
+15. controlled inspection-report completion;
+16. nonconformance/escalation exercises;
+17. equipment/consumable traceability;
+18. final integrated inspection and reporting assessment.
+
+**Practical competence is limited to the method, specimen, equipment, facility and task explicitly approved for training. It is not equivalent to formal NDT personnel certification.**
+
+---
+
+## 35.8 Certification, Safety & Authorization Boundaries
+
+Future C09 textbooks, practical manuals, workbooks and assessments must explicitly distinguish:
+
+- PAK course completion from ISO 9712 or other third-party personnel certification;
+- supervised training from independently authorized inspection;
+- indication detection from acceptance/rejection authority;
+- visual/dimensional observation from engineering disposition;
+- basic UT familiarization from certified UT setup, scanning, sizing and evaluation;
+- radiographic image learning from licensed radiographic exposure work;
+- training coupons from safety-critical railway components;
+- NDT report-writing practice from legally/contractually valid inspection certification;
+- method awareness from Level 2/Level 3 responsibilities;
+- component inspection from maintenance release/return-to-service authority.
+
+PAK-C09 must not be marketed as an ISO 9712 certification course unless PAK separately satisfies the relevant certification framework and the claim is formally validated.
+
+---
+
+## 35.9 Assessment Architecture
+
+Recommended later-stage assessment model:
+
+- knowledge checks on terminology, defect mechanisms, method principles, safety and limitations;
+- visual and dimensional practicals;
+- PT/MT and selected UT training exercises within facility scope;
+- radiographic/UT image and signal interpretation;
+- railway inspection-planning assignment;
+- reporting portfolio with sketches, measurements and traceability evidence;
+- final integrated practical with report and escalation decision;
+- final theory assessment across method selection, safety, quality and certification boundaries.
+
+Final weightings and pass rules remain to be frozen during the detailed assessment-blueprint phase.
+
+---
+
+## 35.10 Mandatory Technical Visual Plan
+
+Before any C09 textbook/module publication is approved, the visual register must include where relevant:
+
+1. discontinuity/defect taxonomy diagrams;
+2. crack orientation and failure illustrations;
+3. weld cross-sections and weld-imperfection graphics;
+4. visual-inspection lighting/viewing-angle diagrams;
+5. dimensional measurement-point drawings and gauge-use illustrations;
+6. PT process graphics and indication examples;
+7. MT field-direction/flux-leakage diagrams and indication examples;
+8. UT wave-propagation, probe, beam-path and sound-path diagrams;
+9. reference-block/calibration concept illustrations;
+10. representative annotated A-scan examples;
+11. radiographic geometry, image-quality and artefact illustrations;
+12. licensed/original film/digital radiographic defect examples;
+13. eddy-current principle and probe/signal diagrams;
+14. wheelset/axle/bogie/weld inspection-zone drawings;
+15. method-selection and inspection decision trees;
+16. defect-location coding/sketch examples;
+17. calibration/traceability workflow graphics;
+18. inspection-report and NCR/escalation process maps.
+
+Vector artwork is preferred for diagrams. Raster defect photographs and NDT images must meet the global print-ready resolution standard and carry clear captions and source/licence records.
+
+---
+
+## 35.11 Print-Ready Study-Material Deliverables
+
+C09 inherits the global PAK print-ready publishing standard. The eventual publication set must support, as applicable:
+
+- **Student Textbook / Module Book** with controlled cover, title, edition/version, revision record, preface, programme mapping, prerequisites, learning outcomes, contents, figures/tables, abbreviations, symbols/units and safety/certification boundary;
+- **Practical Inspection & NDT Manual** with activity number, objective, linked learning outcomes, safety/PPE, equipment/consumables, approved training procedure, process steps, observation/indication tables, sketches, results, limitations, housekeeping and sign-off fields;
+- **Student Workbook** with method-selection, defect-identification, measurement, image/signal interpretation, procedure-reading and reporting exercises with writing space;
+- **Practical Journal / Logbook** capturing date, activity, specimen/component, method, equipment status, observations, measurements/indications, limitations, instructor verification and reassessment where required;
+- **Instructor Guide** with lesson plans, practical setup, hazard controls, answer guidance, rubrics, common misconceptions, escalation boundaries and equipment requirements;
+- **Assessment / Question Bank**;
+- **Final Examination + Answer/Marking Guide**;
+- **Technical Visual Register** with image-rights/source status;
+- **Glossary, Abbreviation List, Standards/Reference Register and Bibliography**;
+- **Final searchable print-ready PDF** with embedded fonts, bookmarks/TOC, vector preservation, A4/binding-aware margins and printer-required PDF/X output at final production stage.
+
+No copyrighted ISO/EN standard text, proprietary railway maintenance manuals or third-party defect atlases may be reproduced without permission. Standards are to be cited and paraphrased unless licensed extracts are available.
+
+---
+
+## 35.12 Regulatory & Technical Reference Baseline
+
+Detailed C09 books must revalidate applicable editions immediately before publication. Current architecture is grounded in these reference families:
+
+- **ISO 9712:2021** — qualification and certification of industrial NDT personnel;
+- **ISO 17635:2025** — general rules/method-selection framework for NDT of metallic welds;
+- **ISO 17637:2016** — visual testing of fusion-welded joints;
+- **ISO 3452-1:2021** — penetrant-testing general principles;
+- **ISO 17638:2016** — magnetic-particle testing of welds;
+- **ISO 17636-1:2022 / ISO 17636-2:2022** — film and digital radiographic testing of welds;
+- **ISO 17640:2018** — currently published ultrasonic-testing reference for welds, with a replacement revision under development and therefore requiring revalidation before publication;
+- applicable **EN 15085** railway welding framework and relevant railway product/maintenance standards for the component inspected;
+- applicable ECM, maintenance, calibration, radiation-protection and employer authorization requirements.
+
+These are governance anchors, not reproduced teaching text. Method parameters, calibration requirements, acceptance levels, component limits and examination instructions must come from licensed/current approved sources for the exact application.
+
+---
+
+## 35.13 Chapter-Architecture Gate
+
+No full C09 textbook prose may begin until each module has a frozen chapter list containing at minimum:
+
+- module purpose and chapter sequence;
+- measurable learning outcomes;
+- prerequisite knowledge;
+- method/equipment scope;
+- practical activities;
+- mandatory visuals and defect examples;
+- safety/certification-boundary flags;
+- applicable technical/regulatory references;
+- assessment placeholders;
+- workbook/journal requirements;
+- publication type and print requirements.
+
+This preserves the PAK architecture-before-books rule.
+
+---
+
+## 35.14 Completion Checkpoint
+
+With PAK-C09 module architecture complete:
+
+- Certificate programmes with completed module architecture: **9 of 12**;
+- Certificate module placements defined: **100**;
+- Diploma programmes with completed subject architecture: **5 of 5**;
+- Diploma semester subject placements preserved: **120**;
+- next controlled Certificate target: **PAK-C10 — Certificate in Railway Safety & Workshop Practices — 3 Months**;
+- chapter architecture remains pending;
+- full study-material writing remains not started.
+
+---
+
+# 36. PAK-C10 — Certificate in Railway Safety & Workshop Practices
+
+**Synchronization record:** Approved modular architecture synchronized from `docs/academic/certificates/C10/PAK-C10.md` into master PRD v0.2.0 on 11 September 2026. Curriculum substance is preserved; the modular file remains the day-to-day working source and this section is the consolidated governance/audit copy.
+
+## 36.1 Programme Identity
+
+**Programme Code:** `PAK-C10`  
+**Programme Title:** Certificate in Railway Safety & Workshop Practices  
+**Duration:** 3 Months / 12 Weeks  
+**Academic Structure:** 6 sequential modules, normally delivered in two-week blocks  
+**Primary Language:** English  
+**Orientation:** Practical railway-workshop safety foundation covering safety culture, hazard identification, risk assessment, safe systems of work, PPE, housekeeping, manual handling, tools and machinery, stored energy and isolation awareness, lifting/jacking/supporting, fire/hot-work/chemical/battery/compressed-system hazards, emergency response and supervised workshop competence
+
+## 36.2 Programme Purpose
+
+PAK-C10 develops entry-level railway workshop safety knowledge and supervised practical competence for learners preparing to work in depots, rolling-stock workshops, maintenance facilities, fabrication areas, inspection bays, stores, service pits and related railway technical environments.
+
+The course is deliberately railway-specific rather than a generic occupational-safety course. Learners work through hazards associated with rolling stock, workshop movement, pits, heavy components, jacking/supporting, tools, machinery, stored mechanical/pneumatic/electrical energy, batteries, hot work, chemicals, compressed systems, workshop traffic, lifting operations, housekeeping, incident response and controlled documentation.
+
+The programme develops the learner's ability to identify hazards, follow approved instructions, understand risk controls, use appropriate PPE, maintain safe working areas, stop and escalate unsafe work, participate in toolbox talks, complete basic safety records and perform selected supervised workshop tasks within clearly defined limits.
+
+Completion of PAK-C10 does **not** by itself authorize electrical isolation, traction-power switching, operation of lifting equipment where separate qualification is required, vehicle movement/shunting, hot-work permit approval, confined-space entry, work-at-height certification, first-aider status, emergency-rescue roles, safety-critical maintenance release or return-to-service decisions.
+
+## 36.3 Curriculum Design Principles
+
+1. **Safety is a work system, not PPE alone:** elimination, substitution, engineering controls, safe systems of work, supervision and competence precede reliance on personal protective equipment.
+2. **Railway hazards are contextual:** the same tool or task may carry different risk around rolling stock, pits, suspended loads, stored energy, moving vehicles or traction-power interfaces.
+3. **Stop-work and escalation are core competence:** students must know when a task is outside their authority, when conditions have changed and when work must stop.
+4. **Make safe before intervention:** immobilisation, access control, isolation-awareness, residual/stored-energy control, support and exclusion zones are embedded before hands-on work.
+5. **Housekeeping is a safety control:** slips, trips, fire load, obstructed access, misplaced tools and contaminated work areas are treated as preventable operational hazards.
+6. **Lifting and supporting require controlled methods:** load path, capacity, support points, equipment condition, exclusion zones and competent supervision govern all training activity.
+7. **Approved instructions override classroom examples:** safe limits, lifting points, isolation arrangements, chemical controls and emergency procedures must come from the current approved source for the actual workplace/equipment.
+8. **Human factors matter:** fatigue, communication, distraction, assumptions, time pressure, handovers and situational awareness are included in workshop safety decisions.
+9. **Documentation closes the loop:** risk assessments, permits, pre-use checks, defect tags, incident/near-miss reports and corrective actions must be traceable.
+10. **Publication-ready design:** future chapters must map hazards, controls, diagrams, warning symbols, checklists, workshop scenarios, practical records and assessment evidence.
+
+---
+
+## 36.4 Twelve-Week / Six-Module Architecture
+
+| Weeks | Code | Module | Classification | Orientation | Prerequisite |
+|---|---|---|---|---|---|
+| 1–2 | C10-101 | Railway Safety Culture, Hazard Identification, Risk Assessment & Safe-System-of-Work Fundamentals | Safety Foundation | Theory + Hazard Mapping + Risk-Control Exercises | None |
+| 3–4 | C10-102 | PPE, Workshop Housekeeping, Ergonomics, Manual Handling & Safe Workplace Organization | Workshop Safety Core | Theory + Demonstration + Supervised Practical | C10-101 |
+| 5–6 | C10-103 | Hand/Power Tools, Machinery, Guards, Stored Energy & Isolation/LOTO Awareness | Equipment Safety Core | Theory + Pre-Use Inspection + Controlled Practical | C10-101, C10-102 |
+| 7–8 | C10-104 | Lifting, Jacking, Supporting Railway Vehicles & Heavy-Component Handling | Railway Workshop Core | Theory + Demonstration + Supervised Rigging/Support Awareness | C10-101 to C10-103 |
+| 9–10 | C10-105 | Fire, Hot Work, Chemicals, Batteries, Compressed Systems & Emergency Preparedness | Hazard / Emergency Core | Theory + Scenario Drills + Controlled Demonstrations | C10-101 to C10-104 |
+| 11–12 | C10-106 | Integrated Railway Workshop Safety Practicum, Incident Response & Final Competency Assessment | Integrative / Capstone | Practical + Scenario Assessment + Documentation | Completion of C10-101 to C10-105 |
+
+---
+
+## 36.5 Module Progression Logic
+
+### Weeks 1–2 — C10-101 Railway Safety Culture, Hazard Identification, Risk Assessment & Safe-System-of-Work Fundamentals
+
+Learners are introduced to railway workshop safety as a managed system involving employer controls, competent persons, approved procedures, supervision, communication and individual responsibility.
+
+Core topics include hazard versus risk, likelihood/consequence concepts, hierarchy of controls, task-based risk assessment, dynamic changes in risk, safe systems of work, access control, exclusion zones, signage, permits, toolbox talks, shift handovers, near-miss reporting and stop-work escalation.
+
+Railway-specific scenarios include moving rolling stock, workshop roads, inspection pits, work under vehicles, elevated access, stored pneumatic/mechanical energy, roof equipment, overhead-line awareness, heavy assemblies, maintenance machinery and simultaneous work by multiple trades.
+
+The module establishes the central rule: **a training certificate does not substitute for workplace authorization, task-specific competence or an approved safe system of work.**
+
+### Weeks 3–4 — C10-102 PPE, Workshop Housekeeping, Ergonomics, Manual Handling & Safe Workplace Organization
+
+Students learn PPE selection as the last line of defence within the hierarchy of controls. Content includes eye/face protection, gloves, safety footwear, hearing protection, respiratory protection awareness, protective clothing, high-visibility requirements and limitations of PPE.
+
+Workshop organization covers clean-as-you-go practice, tool control, spill response awareness, cable/hose routing, waste segregation, access routes, emergency exits, lighting, ventilation, inspection-pit housekeeping, storage of components and segregation of pedestrians from workshop vehicles/mobile equipment.
+
+Ergonomics and manual handling include posture, repetitive work, awkward access, team lifting, use of mechanical aids, push/pull risk, hand/finger injury prevention and recognition of loads that require lifting equipment rather than manual handling.
+
+Practical exercises should include PPE pre-use checks, workstation hazard walks, housekeeping audits and manual-handling planning using safe training loads.
+
+### Weeks 5–6 — C10-103 Hand/Power Tools, Machinery, Guards, Stored Energy & Isolation/LOTO Awareness
+
+Learners develop safe habits for hand tools, portable power tools and common workshop machinery. Topics include correct tool selection, inspection, damaged tools, electrical leads, abrasive wheels awareness, rotating machinery, pinch/crush points, guarding, emergency stops, entanglement hazards, compressed-air misuse prevention and housekeeping around machines.
+
+Stored-energy content includes springs, suspended masses, hydraulic pressure, pneumatic pressure, compressed gases, batteries/capacitors and electrical systems. Learners study isolation/lockout-tagout concepts and the distinction between recognizing an isolation requirement and being authorized to establish or prove an isolation.
+
+Training must use de-energized or purpose-built safe equipment unless a separately controlled facility provides approved practical conditions. No student may infer live electrical-work authority from C10.
+
+### Weeks 7–8 — C10-104 Lifting, Jacking, Supporting Railway Vehicles & Heavy-Component Handling
+
+This module focuses on one of the highest-risk workshop activities: lifting and supporting vehicles/components.
+
+Topics include load weight and centre-of-gravity awareness, rated capacity, lifting points, jacking points, stands/supports, slings/shackles/attachments awareness, equipment inspection, stability, level foundations, exclusion zones, communication/signalling awareness, suspended-load prohibition zones and uncontrolled movement prevention.
+
+Railway applications include wheelsets, bogies, brake equipment, couplers, batteries, traction components and supported rolling stock. Students learn that lifting diagrams and support points are vehicle/component specific and must come from approved manufacturer/operator/maintenance documentation.
+
+Practical delivery should emphasize planning, visual inspection, exclusion-zone setup, support verification and instructor-led demonstration. Independent lifting-equipment operation is outside scope unless separately authorized and assessed under applicable workplace rules.
+
+### Weeks 9–10 — C10-105 Fire, Hot Work, Chemicals, Batteries, Compressed Systems & Emergency Preparedness
+
+Students study ignition sources, combustible materials, flammable liquids, welding/cutting/grinding hazards, hot-work controls, fire watch concepts, extinguishing-media awareness and evacuation principles.
+
+Chemical safety includes labels, safety data sheets, storage/segregation, ventilation, skin/eye exposure, spill response, cleaning agents, paints/coatings, solvents, oils, greases and battery electrolyte awareness.
+
+Battery hazards include short circuit, high fault current, electrolyte, gas generation, thermal events and heavy-mass handling. Compressed-system hazards include stored pressure, hose failure, uncontrolled release, pressure isolation and safe depressurization awareness.
+
+Emergency-preparedness content includes alarms, emergency communication, evacuation, first-response boundaries, incident scene protection, reporting, preservation of evidence and escalation to authorized emergency/technical personnel. C10 training does not confer formal first-aider, fire-responder or rescue qualification.
+
+### Weeks 11–12 — C10-106 Integrated Railway Workshop Safety Practicum, Incident Response & Final Competency Assessment
+
+The final block integrates hazard recognition, risk control, PPE, housekeeping, tool/machinery safety, stored-energy awareness, lifting/supporting controls, fire/chemical/compressed-system hazards, emergency response and documentation.
+
+Students complete supervised scenarios such as:
+
+- workshop pre-start safety inspection;
+- task hazard identification and basic risk-control plan;
+- PPE selection and pre-use check;
+- safe work-area/exclusion-zone setup;
+- tool and equipment pre-use inspection;
+- isolation-requirement recognition and escalation;
+- safe manual-handling plan;
+- lifting/jacking plan interpretation without unauthorized equipment operation;
+- simulated spill/fire/incident response;
+- near-miss and incident-report completion;
+- final integrated safety walkdown and verbal technical briefing.
+
+The capstone must assess safe decision-making and escalation as strongly as task execution.
+
+---
+
+## 36.6 Indicative Learning Outcomes
+
+On successful completion, a learner should be able to:
+
+1. explain the hierarchy of controls and basic railway-workshop safety responsibilities;
+2. identify common hazards in rolling-stock workshops and depots;
+3. participate in task-level hazard identification and basic risk-control planning;
+4. recognize when a formal permit, isolation or competent-person authorization is required;
+5. select and inspect basic PPE appropriate to a defined training task;
+6. maintain safe housekeeping, access and tool-control practices;
+7. demonstrate safe manual-handling planning and use of simple mechanical aids under supervision;
+8. inspect common hand/power tools for obvious pre-use defects;
+9. recognize machine guarding, pinch-point, entanglement and stored-energy hazards;
+10. explain isolation/LOTO principles without claiming authorization to perform controlled isolations;
+11. identify core lifting/jacking/supporting hazards and interpret approved lifting/support instructions;
+12. recognize hot-work, fire, chemical, battery and compressed-system hazards;
+13. respond appropriately to simulated alarms, incidents and near misses within training scope;
+14. complete basic safety checklists, hazard records and incident/near-miss documentation;
+15. stop work and escalate when conditions are unsafe, unclear or outside competence;
+16. complete an integrated supervised railway-workshop safety assessment.
+
+---
+
+## 36.7 Indicative Practical Competence Areas
+
+Subject to facility risk assessment and instructor authorization, practical activities may include:
+
+1. workshop hazard walk and hazard-map creation;
+2. task-level risk-control worksheet;
+3. PPE inspection, selection and fit/use awareness;
+4. housekeeping and 5S-style workplace-organization exercise;
+5. safe manual-handling planning with low-risk training loads;
+6. pre-use inspection of hand and portable power tools;
+7. machine-guard and emergency-stop identification;
+8. stored-energy hazard identification on training assemblies;
+9. isolation/LOTO sequence simulation using non-energized training boards;
+10. inspection of jacks, stands and lifting accessories for obvious defects/markings awareness;
+11. lifting-plan and vehicle-support drawing interpretation;
+12. exclusion-zone and barricade setup;
+13. hot-work permit and fire-watch simulation;
+14. safety-data-sheet/chemical-label interpretation;
+15. battery and compressed-system hazard scenario;
+16. spill/fire/alarm response drill;
+17. incident/near-miss report and escalation exercise;
+18. final integrated workshop safety practicum.
+
+**All practical work must remain inside the task, equipment, facility and authorization limits defined by the instructor and approved local procedures.**
+
+---
+
+## 36.8 Safety, Qualification & Authorization Boundaries
+
+Future C10 textbooks, practical manuals, workbooks and assessments must explicitly distinguish:
+
+- safety awareness from workplace authorization;
+- hazard recognition from competent-person approval;
+- isolation/LOTO awareness from authority to establish, verify or remove an isolation;
+- electrical/traction-power awareness from live electrical or traction-power work;
+- lifting-plan interpretation from independent crane/hoist/jack operation;
+- supervised workshop exercises from employer-certified machinery operation;
+- hot-work awareness from hot-work permit issue/approval;
+- emergency-response awareness from professional first-aid, fire-fighting or rescue qualification;
+- work-at-height/confined-space awareness from any legally or employer-required qualification;
+- railway vehicle immobilisation awareness from shunting/vehicle-movement authority;
+- safe maintenance participation from safety-critical release-to-service authority.
+
+PAK-C10 must not be marketed as a substitute for statutory, employer, equipment-specific or occupational qualifications that require separate training, medical fitness, licensing, certification or authorization.
+
+---
+
+## 36.9 Assessment Architecture
+
+Recommended later-stage assessment model:
+
+- short knowledge checks on hazards, controls, responsibilities and escalation;
+- hazard-identification/risk-control exercises;
+- PPE and workshop-housekeeping practical checks;
+- tool/equipment pre-use inspection exercises;
+- isolation/LOTO simulation assessment;
+- lifting/support planning and exclusion-zone case assessment;
+- fire/chemical/battery/compressed-system scenario assessment;
+- incident/near-miss reporting exercise;
+- final integrated supervised workshop safety practicum;
+- final theory assessment covering safety principles, railway-specific hazards and authorization boundaries.
+
+Final weightings, pass marks and reassessment rules remain to be frozen during the detailed assessment-blueprint phase.
+
+---
+
+## 36.10 Mandatory Technical Visual Plan
+
+Before any C10 textbook/module publication is approved, the visual register must include where relevant:
+
+1. hierarchy-of-controls pyramid and safe-system-of-work flow;
+2. railway workshop hazard maps and pedestrian/vehicle segregation diagrams;
+3. rolling-stock immobilisation and exclusion-zone concept diagrams;
+4. inspection-pit and under-vehicle hazard illustrations;
+5. PPE selection/limitation graphics;
+6. good-versus-poor housekeeping examples;
+7. manual-handling posture and mechanical-aid diagrams;
+8. hand/power-tool inspection illustrations;
+9. machine-guard, pinch-point and entanglement diagrams;
+10. stored mechanical/pneumatic/electrical energy graphics;
+11. isolation/LOTO awareness process flow;
+12. lifting/jacking/supporting railway vehicle diagrams;
+13. centre-of-gravity, load-path and suspended-load exclusion graphics;
+14. sling/shackle/lifting-accessory identification illustrations;
+15. hot-work and fire-prevention control diagrams;
+16. chemical-label/SDS-navigation training graphics;
+17. battery hazard and compressed-system diagrams;
+18. emergency evacuation/incident-response process maps;
+19. near-miss/incident escalation workflow;
+20. annotated workshop safety inspection checklist examples.
+
+Safety-critical drawings must be marked **Illustrative / Training Use Only** unless derived from approved controlled technical documentation. Vehicle-specific lifting points, support points, clearances and limits must never be invented or generalized.
+
+---
+
+## 36.11 Print-Ready Study-Material Deliverables
+
+C10 inherits the global PAK print-ready publishing standard. The eventual publication set must support, as applicable:
+
+- **Student Textbook / Module Book** with controlled cover, title, edition/version, revision record, preface, programme mapping, prerequisites, learning outcomes, contents, figures/tables, abbreviations, symbols and safety/authorization boundaries;
+- **Railway Workshop Safety Practical Manual** with activity number, objective, linked learning outcomes, hazards, PPE, equipment, approved procedure/reference, safe setup, step sequence, observations, stop-work points, housekeeping and instructor sign-off;
+- **Student Workbook** with hazard-identification, risk-control, PPE, lifting-plan, SDS, emergency and incident-report exercises plus writing space;
+- **Practical Journal / Logbook** capturing date, activity, hazards, controls, equipment, observations, deviations, escalation and instructor verification;
+- **Instructor Guide** with lesson plans, demonstrations, facility controls, risk controls, answer guidance, common unsafe assumptions, assessment rubrics and authorization boundaries;
+- **Assessment / Question Bank**;
+- **Final Examination + Answer/Marking Guide**;
+- **Technical Visual Register** with image-rights/source status;
+- **Glossary, Abbreviation List, Legal/Standards Reference Register and Bibliography**;
+- **Final searchable print-ready PDF** with embedded fonts, bookmarks/TOC, vector preservation, A4/binding-aware margins and printer-required PDF/X output at final production stage.
+
+No proprietary maintenance manuals, controlled railway procedures, copyrighted standards or third-party safety graphics may be reproduced without permission. Approved procedures and legal/standards sources must be cited or paraphrased unless licensed extracts are available.
+
+---
+
+## 36.12 Regulatory & Technical Reference Baseline
+
+Detailed C10 books must revalidate applicable EU, Polish, ERA and workplace requirements immediately before publication. Current architecture is grounded in these reference families:
+
+- **Directive 89/391/EEC** — EU framework for measures encouraging improvements in workers' safety and health at work;
+- **Directive 2009/104/EC** — minimum safety and health requirements for workers' use of work equipment;
+- **Regulation (EU) 2016/425** — personal protective equipment framework;
+- **Directive 90/269/EEC** — manual handling of loads where there is risk, particularly of back injury;
+- **Directive 92/58/EEC** — minimum requirements for safety and/or health signs at work;
+- **Directive (EU) 2016/798** — railway safety framework;
+- applicable **ERA Common Safety Methods** established under the railway safety framework;
+- applicable Polish occupational-safety, fire, lifting-equipment, electrical, machinery, chemical, environmental and workplace requirements;
+- employer/operator/ECM/manufacturer safe systems of work, workshop rules and equipment-specific instructions.
+
+These are governance anchors, not reproduced teaching text. Actual lifting limits, support points, electrical isolation rules, PPE categories, machine operating limits, chemical controls and emergency arrangements must come from current approved sources for the exact workplace/equipment.
+
+---
+
+## 36.13 Chapter-Architecture Gate
+
+No full C10 textbook prose may begin until each module has a frozen chapter list containing at minimum:
+
+- module purpose and chapter sequence;
+- measurable learning outcomes;
+- prerequisite knowledge;
+- railway workshop hazard scope;
+- practical activities;
+- mandatory visuals and workshop scenarios;
+- legal/safety/authorization-boundary flags;
+- applicable technical/regulatory references;
+- assessment placeholders;
+- workbook/journal requirements;
+- publication type and print requirements.
+
+This preserves the PAK architecture-before-books rule.
+
+---
+
+## 36.14 Completion Checkpoint
+
+With PAK-C10 module architecture complete:
+
+- Certificate programmes with completed module architecture: **10 of 12**;
+- Certificate module placements defined: **106**;
+- Diploma programmes with completed subject architecture: **5 of 5**;
+- Diploma semester subject placements preserved: **120**;
+- next controlled Certificate target: **PAK-C11 — Certificate in Railway Quality Control — 4 Months**;
+- chapter architecture remains pending;
+- full study-material writing remains not started.
+
+---
+
+# 37. PAK-C11 — Certificate in Railway Quality Control
+
+**Synchronization record:** Approved modular architecture synchronized from `docs/academic/certificates/C11/PAK-C11.md` into master PRD v0.2.0 on 11 September 2026. Curriculum substance is preserved; the modular file remains the day-to-day working source and this section is the consolidated governance/audit copy.
+
+## 37.1 Programme Identity
+
+**Programme Code:** `PAK-C11`  
+**Programme Title:** Certificate in Railway Quality Control  
+**Duration:** 4 Months / 16 Weeks  
+**Academic Structure:** 8 sequential modules, normally delivered in two-week blocks  
+**Primary Language:** English  
+**Orientation:** Practical railway quality-control foundation covering quality systems, controlled documentation, drawings/specifications, inspection planning, metrology, material/supplier quality, process control, sampling/SPC awareness, final inspection, nonconformity, root cause, CAPA, auditing, ECM quality interfaces, configuration/change control, traceability and integrated quality records
+
+## 37.2 Programme Purpose
+
+PAK-C11 develops entry-to-intermediate railway quality-control knowledge and supervised practical competence for learners preparing to support manufacturing, maintenance, overhaul, workshop, supplier-quality and inspection activities.
+
+The programme is intentionally broader than a single inspection method. It teaches how objective quality evidence is planned, generated, controlled, reviewed and escalated across the chain from drawing/specification and incoming material through production or maintenance, measurement, inspection, nonconformity handling, corrective action and final quality documentation.
+
+PAK-C11 complements PAK-C07 Railway Welding & Fabrication and PAK-C09 Railway Inspection & NDT. Those programmes develop process- and method-specific technical competence; C11 focuses on the quality-management and evidence-control layer that links specifications, process controls, inspection results, traceability, NCR/CAPA and final dossier integrity.
+
+Completion of PAK-C11 does **not** by itself authorize product or maintenance release, safety-critical component acceptance, engineering deviation/concession approval, supplier approval, calibration certification, formal management-system certification, independent audit authority, or return-to-service decisions.
+
+## 37.3 Curriculum Design Principles
+
+1. **Quality begins with requirements:** inspection has meaning only when the applicable drawing, specification, control plan, procedure and acceptance source are identified.
+2. **Objective evidence over opinion:** measurements, records, status, traceability and approved criteria govern quality decisions.
+3. **Measurement confidence matters:** equipment status, calibration/verification, method suitability, uncertainty awareness and environmental conditions are part of valid evidence.
+4. **Traceability is end-to-end:** material, process, operator, equipment, inspection, rework and final records must remain linked where required.
+5. **Prevention before detection:** process control, capability and supplier quality reduce defects before final inspection.
+6. **Nonconformity is controlled, not hidden:** segregation, identification, documentation, disposition authority, root-cause analysis and CAPA are taught as a closed-loop process.
+7. **Approval authority stays explicit:** learners may prepare evidence and recommend escalation but may not infer approval/release powers from course completion.
+8. **Railway context is mandatory:** examples and practicals use rolling-stock, bogie, wheelset, brake, electrical, welding, fabrication and maintenance quality scenarios.
+9. **Audit is evidence-based:** audits test conformity and system effectiveness against defined criteria, not personal preference.
+10. **Publication-ready design:** future chapters must include quality-process maps, control plans, forms, measurement graphics, SPC examples, NCR/CAPA workflows and final dossier examples.
+
+---
+
+## 37.4 Sixteen-Week / Eight-Module Architecture
+
+| Weeks | Code | Module | Classification | Orientation | Prerequisite |
+|---|---|---|---|---|---|
+| 1–2 | C11-101 | Railway Quality Fundamentals, QMS, Roles & Controlled Documentation | Quality Foundation | Theory + Documentation + Case Work | None |
+| 3–4 | C11-102 | Engineering Drawings, Specifications, Inspection Plans & Quality Characteristics | Requirements / Planning Core | Drawing/Specification Review + Control-Plan Exercises | C11-101 |
+| 5–6 | C11-103 | Metrology, Measurement Systems, Calibration & Measurement Confidence | Measurement Core | Theory + Measurement Laboratory + Record Control | C11-101, C11-102 |
+| 7–8 | C11-104 | Incoming Inspection, Material Certification, Supplier Quality & Traceability | Supply Quality Core | Documentation + Inspection + Traceability Exercises | C11-101 to C11-103 |
+| 9–10 | C11-105 | In-Process Quality Control, Sampling, SPC & Process Capability Fundamentals | Process Quality Core | Theory + Data Exercises + Shop-Floor Case Work | C11-101 to C11-104 |
+| 11–12 | C11-106 | Final Inspection, NCR, Deviation/Concession Awareness, Root Cause & CAPA | Nonconformity / Improvement Core | Inspection + NCR/CAPA Case Work | C11-101 to C11-105 |
+| 13–14 | C11-107 | Railway QMS, Auditing, ECM Quality, Configuration/Change Control & Continuous Improvement | System / Compliance Core | Theory + Audit Simulation + Document Control | C11-101 to C11-106 |
+| 15–16 | C11-108 | Integrated Railway Quality-Control Practicum & Final Competency Assessment | Integrative / Capstone | Practical + Quality Dossier + Final Assessment | Completion of C11-101 to C11-107 |
+
+---
+
+## 37.5 Module Progression Logic
+
+### Weeks 1–2 — C11-101 Railway Quality Fundamentals, QMS, Roles & Controlled Documentation
+
+Learners are introduced to quality assurance and quality control in railway manufacturing, maintenance and overhaul environments. The distinction between QA, QC, inspection, verification, validation, approval, release and audit is established early.
+
+Core topics include customer and regulatory requirements, quality-policy awareness, process approach, risk-based thinking, document hierarchy, controlled procedures, work instructions, forms, records, revision status, obsolete-document control, document distribution and retention awareness.
+
+Railway examples include work orders, component histories, inspection records, material certificates, calibration status, weld/NDT records, maintenance instructions, nonconformance records and release documentation.
+
+The central rule is explicit: **quality records support authorized decisions; training alone does not create approval or release authority.**
+
+### Weeks 3–4 — C11-102 Engineering Drawings, Specifications, Inspection Plans & Quality Characteristics
+
+Students learn how quality requirements are derived from engineering drawings, specifications, standards, maintenance instructions and customer requirements.
+
+Topics include drawing revision, dimensions/tolerances, notes, symbols, critical characteristics, inspection points, hold/witness-point awareness, sampling versus 100% inspection, acceptance-source identification and control-plan/inspection-plan structure.
+
+Learners practice converting a controlled technical requirement into a simple inspection checklist or control plan, while distinguishing between what must be measured, what must be visually confirmed, what requires specialist inspection and what requires authorized engineering interpretation.
+
+### Weeks 5–6 — C11-103 Metrology, Measurement Systems, Calibration & Measurement Confidence
+
+This module develops disciplined measurement practice at certificate level. Learners study measurement-system selection, equipment identification, calibration/verification status, resolution, repeatability awareness, environmental influence, handling, zero checks and result recording.
+
+Representative instruments may include steel rules, vernier/digital calipers, micrometers, gauges, torque-tool status awareness, pressure gauges and selected railway-specific gauges where safe training assets are available.
+
+Students learn that a number is not automatically valid evidence: the correct equipment, method, calibration status, units, environmental conditions and acceptance source must be controlled.
+
+No learner may issue calibration certificates or approve a measurement system solely by completing C11.
+
+### Weeks 7–8 — C11-104 Incoming Inspection, Material Certification, Supplier Quality & Traceability
+
+Learners examine how purchased materials and components enter a railway quality system.
+
+Topics include purchase-order/specification review awareness, receiving inspection, identification, quantity/condition checks, certificate/document matching, material heat/batch/serial traceability, storage status, quarantine, shelf-life awareness, supplier nonconformity and counterfeit/suspect-part awareness.
+
+Material certification is treated as evidence that must be checked for identity, completeness, revision/standard reference and linkage to the actual material; students are not taught to treat a certificate as proof when traceability is broken.
+
+Supplier-quality topics include approved-supplier concepts, incoming performance, supplier NCRs, containment, corrective action and escalation, without conferring supplier-approval authority.
+
+### Weeks 9–10 — C11-105 In-Process Quality Control, Sampling, SPC & Process Capability Fundamentals
+
+The focus moves from incoming material to controlled production/maintenance processes.
+
+Topics include first-off/first-article awareness, in-process inspection, process parameters, check sheets, control plans, inspection frequency, operator self-checks, independent verification, sampling fundamentals, attribute versus variable data, basic histograms, run charts and control-chart concepts.
+
+Students are introduced to common-cause versus special-cause variation, process capability concepts and the limitation that statistical stability does not replace technical acceptance criteria.
+
+Railway scenarios may include machined dimensions, weld/fabrication fit-up, fastener/torque record control, brake-component assembly records, electrical wiring quality, coating/corrosion-control records and maintenance process checks.
+
+### Weeks 11–12 — C11-106 Final Inspection, NCR, Deviation/Concession Awareness, Root Cause & CAPA
+
+Students learn how final inspection confirms completion against the applicable quality plan and how nonconforming outputs are controlled.
+
+Topics include final checklist completion, record-package completeness, status identification, segregation/quarantine, NCR creation, defect description, objective evidence, containment, disposition categories awareness, concession/deviation authority boundaries and reinspection after rework/repair.
+
+Root-cause tools include 5-Why, fishbone/Ishikawa and basic cause-and-effect thinking. Corrective and preventive/action-system concepts include containment, root cause, corrective action, implementation evidence, effectiveness verification and recurrence monitoring.
+
+Students must distinguish between **documenting an NCR** and **having authority to accept-use-as-is, repair, rework, scrap or approve a concession**.
+
+### Weeks 13–14 — C11-107 Railway QMS, Auditing, ECM Quality, Configuration/Change Control & Continuous Improvement
+
+This module places shop-floor QC inside the broader railway quality system.
+
+Learners study process audits, product/process-document evidence, audit criteria, sampling evidence, findings, nonconformities, observations, corrective actions and follow-up awareness. ISO 9001 and ISO 22163 are introduced as quality-system frameworks without reproducing proprietary standard text.
+
+Railway maintenance quality includes ECM awareness, maintenance documentation, safety-critical component traceability, controlled maintenance instructions and the interface between quality evidence and authorized maintenance release.
+
+Configuration/change-control topics include drawing revision, software/configuration awareness, approved deviations, change impact, obsolete-document withdrawal, rework instructions and traceability of the configuration actually built or maintained.
+
+Continuous improvement introduces PDCA, lessons learned, basic Pareto analysis, trend monitoring and improvement actions while maintaining formal change-control boundaries.
+
+### Weeks 15–16 — C11-108 Integrated Railway Quality-Control Practicum & Final Competency Assessment
+
+The capstone integrates requirement identification, inspection planning, measurement, incoming/in-process/final quality, traceability, NCR/CAPA and audit/document-control concepts.
+
+A representative training scenario may require students to:
+
+- identify applicable drawing/specification revisions;
+- build a simple inspection/control plan;
+- verify material/component identity and traceability;
+- check measurement-equipment status;
+- perform supervised dimensional/visual quality checks;
+- record results against approved training criteria;
+- identify and document a simulated nonconformity;
+- complete basic root-cause/CAPA exercises;
+- review the final quality dossier for completeness;
+- conduct a short audit-style evidence review;
+- present an escalation/release-boundary briefing.
+
+The final assessment must reward evidence integrity, traceability and correct escalation as strongly as technical observation.
+
+---
+
+## 37.6 Indicative Learning Outcomes
+
+On successful completion, a learner should be able to:
+
+1. distinguish QA, QC, inspection, verification, audit, approval and release roles;
+2. identify controlled quality documents and revision/status requirements;
+3. interpret basic engineering drawings/specifications for quality characteristics within training scope;
+4. prepare a simple inspection plan or control plan from approved requirements;
+5. select and use basic measurement equipment under supervision;
+6. verify calibration/verification status and record measurement evidence correctly;
+7. perform basic incoming inspection and certificate/traceability checks;
+8. explain supplier-quality and quarantine/containment concepts;
+9. explain in-process quality control, sampling and basic SPC/process-capability concepts;
+10. complete controlled inspection and quality records accurately;
+11. identify, segregate and document simulated nonconforming product;
+12. distinguish NCR documentation from disposition/concession authority;
+13. apply simple root-cause tools and participate in CAPA exercises;
+14. explain audit evidence, findings and corrective-action follow-up;
+15. explain ECM quality, configuration/change-control and traceability interfaces at awareness level;
+16. assemble and review a basic railway quality dossier;
+17. stop and escalate when requirements, evidence or authorization are unclear;
+18. complete an integrated supervised railway quality-control assessment.
+
+---
+
+## 37.7 Indicative Practical Competence Areas
+
+Subject to facility, equipment and instructor authorization, practical activities may include:
+
+1. document-control and revision-status exercise;
+2. drawing/specification-to-inspection-plan exercise;
+3. critical-characteristic identification;
+4. measurement-instrument pre-use/status check;
+5. dimensional measurement and recording exercise;
+6. calibration-label/register interpretation;
+7. incoming inspection and packing/condition check;
+8. material certificate and heat/batch/serial traceability exercise;
+9. quarantine/status-identification simulation;
+10. in-process inspection checklist completion;
+11. attribute/variable data collection;
+12. histogram/run-chart/control-chart awareness exercise;
+13. basic sampling-plan interpretation exercise;
+14. final inspection/dossier-completeness review;
+15. NCR creation and objective-evidence writing;
+16. 5-Why/fishbone root-cause exercise;
+17. CAPA action/effectiveness-verification simulation;
+18. audit checklist and evidence-sampling exercise;
+19. configuration/revision-control case study;
+20. final integrated QC practicum.
+
+**Practical competence is limited to the defined training task and does not confer product-release, supplier-approval, engineering-disposition, audit-certification or calibration-certification authority.**
+
+---
+
+## 37.8 Quality, Certification & Authorization Boundaries
+
+Future C11 textbooks, practical manuals, workbooks and assessments must explicitly distinguish:
+
+- quality-control support from formal quality-management responsibility;
+- measurement from calibration certification;
+- inspection evidence from acceptance/release authority;
+- NCR preparation from disposition approval;
+- concession/deviation awareness from engineering authorization;
+- supplier-quality evidence from supplier approval;
+- internal audit training from certified auditor status or independent certification-body authority;
+- ISO 9001/ISO 22163 awareness from organization certification;
+- ECM quality awareness from maintenance-function certification or return-to-service authority;
+- configuration-record review from engineering change approval;
+- statistical-process-control awareness from process-engineering authority;
+- quality-dossier preparation from final release/signature authority.
+
+PAK-C11 must not be marketed as an ISO 9001, ISO 22163, ISO 19011 auditor, calibration, inspection-body or product-certification qualification unless a separate formally validated certification scheme exists.
+
+---
+
+## 37.9 Assessment Architecture
+
+Recommended later-stage assessment model:
+
+- short knowledge checks on QMS, roles, documentation and traceability;
+- drawing/specification interpretation exercise;
+- inspection/control-plan exercise;
+- metrology practical and measurement-record review;
+- incoming/material-certification traceability case;
+- sampling/SPC/process-control exercises;
+- NCR and objective-evidence writing assessment;
+- root-cause/CAPA case study;
+- audit/checklist evidence exercise;
+- configuration/change-control case;
+- final integrated supervised railway QC practicum;
+- final theory assessment covering quality principles, evidence, authorization boundaries and railway context.
+
+Final weightings, pass rules and reassessment requirements remain to be frozen during the detailed assessment-blueprint phase.
+
+---
+
+## 37.10 Mandatory Technical Visual Plan
+
+Before any C11 textbook/module publication is approved, the visual register must include where relevant:
+
+1. QA/QC/inspection/audit/release role map;
+2. QMS process-interaction diagram;
+3. controlled-document lifecycle and revision flow;
+4. drawing/specification-to-control-plan mapping example;
+5. critical-characteristic and inspection-point illustrations;
+6. measurement-system chain and calibration-status diagrams;
+7. gauge/instrument handling and measurement-point illustrations;
+8. traceability chain from material certificate to finished component;
+9. supplier/incoming-inspection flow;
+10. quarantine/status-identification workflow;
+11. in-process control-plan and check-sheet examples;
+12. attribute/variable data graphics;
+13. histogram, run-chart and control-chart training examples;
+14. process-capability concept graphics;
+15. final inspection and quality-dossier flow;
+16. NCR/segregation/disposition-authority workflow;
+17. 5-Why and fishbone root-cause examples;
+18. CAPA closed-loop diagram;
+19. audit planning/evidence/finding/follow-up flow;
+20. ECM/maintenance-quality traceability map;
+21. configuration/change-control workflow;
+22. Pareto/PDCA/continuous-improvement graphics.
+
+Safety-critical or acceptance-related graphics must be labelled **Illustrative / Training Use Only** unless based on approved controlled technical documentation. Numerical tolerances, acceptance limits and release criteria must never be invented for teaching convenience.
+
+---
+
+## 37.11 Print-Ready Study-Material Deliverables
+
+C11 inherits the global PAK print-ready publishing standard. The eventual publication set must support, as applicable:
+
+- **Student Textbook / Module Book** with controlled cover, title, edition/version, revision record, preface, programme mapping, prerequisites, learning outcomes, contents, figures/tables, abbreviations, symbols, units and quality/authorization boundaries;
+- **Railway Quality-Control Practical Manual** with activity number, objective, linked learning outcomes, source requirement, equipment/status, inspection steps, evidence tables, acceptance-source reference, NCR/escalation point and instructor sign-off;
+- **Student Workbook** with drawing/specification, measurement, traceability, sampling/SPC, NCR, root-cause, CAPA and audit exercises plus writing/calculation space;
+- **Practical QC Journal / Logbook** capturing date, activity, requirement/reference, item identity, equipment status, observations, measurements, traceability, NCR/escalation and instructor verification;
+- **Instructor Guide** with lesson plans, practical setup, approved training criteria, answer guidance, common quality errors, rubrics, authority boundaries and controlled-reference requirements;
+- **Assessment / Question Bank**;
+- **Final Examination + Answer/Marking Guide**;
+- **Technical Visual Register** with image-rights/source status;
+- **Glossary, Abbreviation List, Standards/Reference Register and Bibliography**;
+- **Final searchable print-ready PDF** with embedded fonts, bookmarks/TOC, vector preservation, A4/binding-aware margins and printer-required PDF/X output at final production stage.
+
+No copyrighted ISO/EN standard text, proprietary customer specifications, controlled railway maintenance instructions or third-party quality manuals may be reproduced without permission. Standards and controlled sources must be cited and paraphrased unless licensed extracts are available.
+
+---
+
+## 37.12 Regulatory & Technical Reference Baseline
+
+Detailed C11 books must revalidate applicable editions and transition periods immediately before publication. Current architecture is grounded in these reference families:
+
+- **ISO 9001:2015** — currently published quality-management-system requirements at architecture time, with the 2026 revision transition requiring publication-time revalidation;
+- **ISO 22163:2023 + Amendment 1:2024** — railway quality-management-system framework, with future edition status to be revalidated before publication;
+- **ISO 10012:2026** — measurement-management systems;
+- **ISO 19011:2026** — guidelines for auditing management systems;
+- **ISO 2859-1:2026** — sampling procedures for inspection by attributes;
+- **Commission Implementing Regulation (EU) 2019/779** — ECM certification and maintenance-system context, including safety-critical component management interfaces;
+- applicable railway product, maintenance, welding, NDT, metrology, supplier-quality, configuration-management and customer-specific requirements;
+- approved organization/operator/ECM/manufacturer quality procedures and controlled technical documentation.
+
+These are governance anchors, not reproduced teaching text. Exact acceptance values, sampling plans, calibration intervals, process capability targets, concession rules, release signatures and customer-specific requirements must come from the current approved source for the exact application.
+
+---
+
+## 37.13 Chapter-Architecture Gate
+
+No full C11 textbook prose may begin until each module has a frozen chapter list containing at minimum:
+
+- module purpose and chapter sequence;
+- measurable learning outcomes;
+- prerequisite knowledge;
+- quality-process and evidence scope;
+- practical activities;
+- mandatory technical visuals and controlled-form examples;
+- quality/certification/authorization-boundary flags;
+- applicable technical/regulatory references;
+- assessment placeholders;
+- workbook/journal requirements;
+- publication type and print requirements.
+
+This preserves the PAK architecture-before-books rule.
+
+---
+
+## 37.14 Completion Checkpoint
+
+With PAK-C11 module architecture complete:
+
+- Certificate programmes with completed module architecture: **11 of 12**;
+- Certificate module placements defined: **114**;
+- Diploma programmes with completed subject architecture: **5 of 5**;
+- Diploma semester subject placements preserved: **120**;
+- next controlled Certificate target: **PAK-C12 — Certificate in Railway Operations & Logistics — 6 Months**;
+- chapter architecture remains pending;
+- full study-material writing remains not started.
+
+---
+
+# 38. PAK-C12 — Certificate in Railway Operations & Logistics
+
+**Synchronization record:** Approved modular architecture synchronized from `docs/academic/certificates/C12/PAK-C12.md` into master PRD v0.2.0 on 11 September 2026. Curriculum substance is preserved; the modular file remains the day-to-day working source and this section is the consolidated governance/audit copy.
+
+## 38.1 Programme Identity
+
+**Programme Code:** `PAK-C12`  
+**Programme Title:** Certificate in Railway Operations & Logistics  
+**Duration:** 6 Months / 24 Weeks  
+**Academic Structure:** 12 sequential modules, normally delivered in two-week blocks  
+**Primary Language:** English  
+**Orientation:** Vocational railway-operations and logistics foundation covering network actors, operational safety, infrastructure/rolling-stock/signalling interfaces, train planning, timetables, capacity, traffic-management awareness, stations/yards/terminals, passenger services, freight and wagon flows, intermodal logistics, disruption management, cross-border freight, interoperability, performance/KPIs, digital operations and integrated simulation
+
+## 38.2 Programme Purpose
+
+PAK-C12 develops entry-level to intermediate railway operations and logistics knowledge for learners preparing to support railway undertakings, infrastructure managers, freight operators, terminals, stations, control-support functions, logistics providers, passenger-service organizations and related transport businesses.
+
+The programme teaches how railway services are planned, organized, communicated and monitored across the operating chain. Learners build a practical understanding of train paths, timetables, capacity constraints, station and yard interfaces, passenger flows, freight and wagon movements, intermodal terminal processes, disruption impacts, cross-border information flows, operational performance and digital railway information.
+
+PAK-C12 is intentionally narrower and more vocational than PAK-D04 Railway Operations & Transport Management. The two-year diploma develops deeper quantitative, commercial, control-centre, traffic-regulation, capacity, disruption, analytics and management competence. C12 provides a structured foundation that can support entry-level operations/logistics roles or progression into the diploma.
+
+Completion of PAK-C12 does **not** by itself authorize train driving, dispatching, signal operation, traffic-control decisions, shunting command, train-preparation sign-off, operational route competence, safety-critical communications, degraded-mode authority, dangerous-goods certification, timetable/path-allocation authority or any other regulated operational role requiring separate employer/regulatory competence.
+
+## 38.3 Curriculum Design Principles
+
+1. **System before task:** learners first understand railway actors, infrastructure, rolling stock, signalling and operational interfaces before planning individual movements.
+2. **Safety governs operations:** operational efficiency never overrides approved rules, competence requirements, safety management systems or authorized instructions.
+3. **Planning and real-time control are distinct:** students may analyse timetables, conflicts and disruption scenarios without acquiring dispatch or traffic-control authority.
+4. **Passenger and freight models differ:** service quality, demand, train formation, wagon flow, terminal processes, documentation and commercial priorities are taught separately before integration.
+5. **Capacity is constrained:** infrastructure, signalling, headways, rolling stock, dwell time, maintenance possessions and terminal capacity all shape achievable service plans.
+6. **Logistics is end-to-end:** rail movement is connected to terminals, road/sea interfaces, warehousing, customer commitments, documentation and last-mile processes.
+7. **Disruption requires structured communication:** degraded conditions, delays and incidents are taught through controlled scenarios emphasizing escalation, information flow and authorized decision boundaries.
+8. **Cross-border operations require interoperability:** learners study European corridor, documentation, interface and interoperability concepts without claiming regulatory authority.
+9. **Performance must be measurable:** punctuality, dwell, throughput, wagon cycle, capacity use, delay attribution and service-quality indicators are introduced using controlled datasets.
+10. **Simulation before authority:** practical competence is developed through maps, timetable exercises, terminal-flow planning, documentation and simulations rather than uncontrolled live operational decisions.
+11. **Current controlled sources govern:** operating rules, route information, signalling instructions, dangerous-goods requirements and local procedures must come from approved current sources for the actual network/operator.
+12. **Publication-ready design:** future chapters must map operational flows, network diagrams, timetable examples, logistics documents, simulations, safety boundaries and assessment evidence.
+
+---
+
+## 38.4 Twenty-Four-Week / Twelve-Module Architecture
+
+| Weeks | Code | Module | Classification | Orientation | Prerequisite |
+|---|---|---|---|---|---|
+| 1–2 | C12-101 | Railway Operations, Network Actors, Safety Culture & Operational Documentation | Operations Foundation | Theory + System Mapping + Documentation | None |
+| 3–4 | C12-102 | Rolling Stock, Infrastructure, Signalling & Traction Fundamentals for Operations | Technical Interface Core | Theory + Diagrams + Operational Constraint Exercises | C12-101 |
+| 5–6 | C12-103 | Train Planning, Timetables, Paths, Headways & Capacity Fundamentals | Planning Core | Theory + Timetable / Capacity Exercises | C12-101, C12-102 |
+| 7–8 | C12-104 | Train Operations, Traffic Management & Operational Communication | Operations Core | Theory + Scenario Simulation + Communication Exercises | C12-101 to C12-103 |
+| 9–10 | C12-105 | Stations, Yards, Terminals, Shunting Interfaces & Train Formation Awareness | Location / Movement Core | Layout + Flow Simulation + Documentation | C12-101 to C12-104 |
+| 11–12 | C12-106 | Passenger Railway Operations, Service Delivery & Customer Information | Passenger Operations Core | Theory + Service Scenario + Flow Exercises | C12-101 to C12-105 |
+| 13–14 | C12-107 | Freight Rail Operations, Wagon Flow & Freight Documentation | Freight Operations Core | Theory + Wagon-Flow Planning + Documentation | C12-101 to C12-105 |
+| 15–16 | C12-108 | Intermodal Logistics, Terminals, Supply Chains & Last-Mile Interfaces | Logistics Core | Process Mapping + Case Work + Planning | C12-107 |
+| 17–18 | C12-109 | Disruption, Delay, Incident & Degraded-Operation Management Awareness | Resilience Core | Scenario Simulation + Communication + Recovery Planning | C12-103 to C12-108 |
+| 19–20 | C12-110 | Cross-Border Rail Freight, Interoperability & European Railway Corridors | International / Interoperability Core | Theory + Corridor Mapping + Document Flow | C12-107, C12-108 |
+| 21–22 | C12-111 | Railway Performance, KPIs, Digital Operations & Logistics Optimization | Performance / Digital Core | Data Exercises + Dashboards + Case Study | C12-103 to C12-110 |
+| 23–24 | C12-112 | Integrated Railway Operations & Logistics Simulation + Final Competency Assessment | Integrative / Capstone | Simulation + Documentation + Final Assessment | Completion of C12-101 to C12-111 |
+
+---
+
+## 38.5 Module Progression Logic
+
+### Weeks 1–2 — C12-101 Railway Operations, Network Actors, Safety Culture & Operational Documentation
+
+Learners are introduced to the railway as a coordinated operating system involving infrastructure managers, railway undertakings, passenger operators, freight operators, terminals, maintainers, rolling-stock owners/keepers, ECMs, regulators, national safety authorities and the European Union Agency for Railways.
+
+Core concepts include railway network structure, operating boundaries, responsibilities, safety management system awareness, competence management, controlled operating documents, local instructions, route information, notices, train/service identifiers, shift handovers, records and escalation.
+
+Learners distinguish between educational operational knowledge and actual role competence. The central rule is explicit: **understanding an operating process does not create authority to control or execute that process in service.**
+
+### Weeks 3–4 — C12-102 Rolling Stock, Infrastructure, Signalling & Traction Fundamentals for Operations
+
+Students study the technical systems that constrain railway operations. Topics include basic rolling-stock categories, train length/mass awareness, braking implications, couplers, traction types, axle/load concepts, platforms, track layouts, points/switches, gradients, speed restrictions, electrification and signalling/train-protection awareness.
+
+The module emphasizes operational interfaces rather than engineering maintenance. Learners interpret simplified infrastructure and rolling-stock data to identify how platform length, train characteristics, signalling, route availability, traction supply and maintenance possessions can affect a service plan.
+
+No signalling, train-protection, traction-power or technical-release authority is conferred.
+
+### Weeks 5–6 — C12-103 Train Planning, Timetables, Paths, Headways & Capacity Fundamentals
+
+Learners are introduced to service planning from the perspective of train paths and limited network capacity.
+
+Topics include working/public timetables, train paths, running time, dwell time, headway concepts, turnarounds, crossing/overtaking awareness, junction conflicts, single/double-track constraints, capacity consumption, maintenance windows/possessions awareness, recovery margins and basic timetable robustness.
+
+Exercises use simplified educational networks and controlled datasets. Learners may identify conflicts and propose training-scenario alternatives, but real path allocation and operational planning decisions remain with authorized organizations/personnel.
+
+### Weeks 7–8 — C12-104 Train Operations, Traffic Management & Operational Communication
+
+This module explains how a planned service becomes a controlled operating activity.
+
+Topics include train readiness interfaces, departure/arrival processes, traffic-management awareness, train running information, operational messaging, communication discipline, delay information, handovers, escalation, route/rolling-stock constraints and the interface between railway undertaking and infrastructure manager.
+
+Scenario work focuses on information flow: who needs to know what, when, through which controlled process and with what confirmation. Safety-critical phraseology or network-specific instructions must be taught only from current approved sources where the facility is authorized to do so.
+
+PAK-C12 does not authorize dispatching, signalling or traffic regulation.
+
+### Weeks 9–10 — C12-105 Stations, Yards, Terminals, Shunting Interfaces & Train Formation Awareness
+
+Learners study railway locations where trains, vehicles, passengers and freight are assembled, separated, serviced or transferred.
+
+Topics include station layouts, platforms, sidings, reception/departure tracks, yards, terminals, depot interfaces, train formation concepts, consist information, coupling/uncoupling awareness, wagon positioning, loading interfaces, route conflicts, pedestrian/vehicle segregation and shunting hazards.
+
+Practical work uses layouts, model/simulation environments, process maps and movement-planning exercises. Students must not command or undertake real shunting solely on the basis of this certificate.
+
+### Weeks 11–12 — C12-106 Passenger Railway Operations, Service Delivery & Customer Information
+
+Students examine passenger-service operations from service plan to customer delivery.
+
+Topics include station and onboard service interfaces, passenger flows, platform allocation awareness, dwell time, accessibility, connections, demand peaks, crowding awareness, ticketing/revenue-system interfaces, passenger information, disruption messaging, lost property/customer-service processes and service-quality indicators.
+
+Exercises include passenger-flow mapping, connection planning, delay-information scenarios and basic service-recovery case work.
+
+### Weeks 13–14 — C12-107 Freight Rail Operations, Wagon Flow & Freight Documentation
+
+This module establishes freight operating fundamentals. Topics include freight-train types, wagon flow, train formation awareness, loading/unloading interfaces, siding and terminal processes, empty/loaded wagon cycles, customer orders, consignment information, wagon/consist data, train handover, transit planning and freight performance.
+
+Dangerous-goods transport is introduced only at awareness level. Detailed RID classification, loading, documentation, operational acceptance and emergency obligations require current controlled legal/procedural sources and any separate competence required by law or employer.
+
+Students learn how missing or inconsistent documentation can interrupt the physical logistics flow and why traceability between shipment, wagon, train and handover records matters.
+
+### Weeks 15–16 — C12-108 Intermodal Logistics, Terminals, Supply Chains & Last-Mile Interfaces
+
+Learners connect rail freight to the wider logistics chain. Topics include containers/intermodal loading units, terminal gates, cranes/handling interfaces, storage/dwell, train slots, road feeder operations, ports, warehouses, customer delivery windows, first/last mile, inventory/throughput concepts and handover documentation.
+
+Exercises map end-to-end flows and identify bottlenecks, waiting time, terminal-capacity constraints and information dependencies. Optimization remains educational and does not override terminal or operator procedures.
+
+### Weeks 17–18 — C12-109 Disruption, Delay, Incident & Degraded-Operation Management Awareness
+
+Students learn how operating plans can degrade because of technical failures, infrastructure restrictions, late trains, rolling-stock unavailability, terminal congestion, weather, passenger incidents or other network disturbances.
+
+Topics include disruption detection, escalation, stakeholder communication, delay propagation, service prioritization awareness, passenger/freight consequences, alternative-resource concepts, recovery planning, incident logging, post-event review and human-factor considerations.
+
+Degraded-mode rules and emergency instructions are safety-critical. Training therefore uses simulations and approved examples; learners do not acquire authority to make live degraded-operation decisions.
+
+### Weeks 19–20 — C12-110 Cross-Border Rail Freight, Interoperability & European Railway Corridors
+
+This module introduces the institutional and operational context of international rail freight in Europe.
+
+Topics include interoperability concepts, infrastructure-manager/railway-undertaking interfaces, border and network handovers, locomotive/crew/route compatibility awareness, train and consignment information, freight-corridor concepts, TEN-T context, terminal and path interfaces and the effect of national/network differences on end-to-end operations.
+
+Students map representative international freight flows and identify operational/data handover points. The module does not teach learners to certify interoperability, authorize routes or make regulated customs/security/dangerous-goods decisions.
+
+### Weeks 21–22 — C12-111 Railway Performance, KPIs, Digital Operations & Logistics Optimization
+
+Learners develop practical performance literacy using controlled datasets.
+
+Topics include punctuality, delay minutes, dwell time, turnaround, terminal throughput, wagon cycle time, asset utilization awareness, capacity utilization, cancellation, connection reliability, service quality, freight transit time and basic cost/efficiency relationships.
+
+Digital operations topics include traffic-management information, timetable/planning systems, terminal/logistics systems, tracking/status data, dashboards, data quality and the role of digital information in operational coordination.
+
+Students build simple KPI views and analyse scenarios. Analytics support authorized decisions; they do not replace operational rules or competent judgment.
+
+### Weeks 23–24 — C12-112 Integrated Railway Operations & Logistics Simulation + Final Competency Assessment
+
+The final module integrates the certificate through a controlled end-to-end simulation.
+
+A representative scenario may require learners to interpret a network and service plan, identify train/terminal constraints, build a simplified timetable or freight-flow plan, process passenger/freight information, respond to a simulated disruption, update stakeholders, analyse selected KPIs and assemble an operational record pack.
+
+Assessment emphasizes safe reasoning, information quality, role boundaries, escalation, documentation, logistics flow and the ability to explain trade-offs. No live dispatching, shunting, signalling or safety-critical operating authority is assessed or implied.
+
+---
+
+## 38.6 Programme Learning Outcomes
+
+On successful completion, within the limits of the training environment, a learner should be able to:
+
+1. describe the principal actors and interfaces in a railway operating system;
+2. explain how infrastructure, rolling stock, signalling and traction characteristics constrain operations;
+3. interpret basic timetables, train paths, dwell times, headways and capacity concepts;
+4. map the information flow supporting planned and real-time train operations;
+5. explain the roles of stations, yards, terminals and train-formation interfaces;
+6. distinguish passenger-service and freight-operating requirements;
+7. map wagon, shipment and intermodal logistics flows from origin to destination;
+8. interpret selected operational and freight documents at awareness/support level;
+9. recognize disruption impacts and apply structured escalation/communication in simulations;
+10. explain basic cross-border/interoperability and European rail-freight corridor concepts;
+11. calculate or interpret selected operational/logistics KPIs using controlled training datasets;
+12. use simple process maps, timetables, spreadsheets/dashboards or simulations to support operational analysis;
+13. maintain accurate training records and identify information/traceability gaps;
+14. identify when a task requires an authorized operational role or current controlled rule/procedure;
+15. complete an integrated operations/logistics simulation without exceeding the programme's authority boundary.
+
+---
+
+## 38.7 Practical / Simulation Baseline
+
+Subject to available training resources, the programme practical baseline should include:
+
+- railway actor/network-interface mapping;
+- reading simplified network, station, yard and terminal diagrams;
+- rolling-stock/infrastructure compatibility-awareness exercises;
+- timetable reading and simple train-path construction;
+- headway/conflict/capacity exercises using controlled educational assumptions;
+- station/platform allocation scenarios;
+- yard/terminal flow mapping and train-formation awareness;
+- passenger-flow and customer-information scenarios;
+- wagon-flow and freight-order/consignment document exercises;
+- intermodal terminal and first/last-mile process mapping;
+- disruption and delay-propagation simulations;
+- operational communication and escalation exercises;
+- cross-border freight-corridor mapping;
+- KPI calculation, delay/throughput analysis and simple dashboard work;
+- final integrated operations-and-logistics scenario with documentation pack.
+
+Where software or simulation systems are available, they should be configured as training environments and clearly separated from live operational systems.
+
+---
+
+## 38.8 Operational Authority, Safety & Certification Boundaries
+
+PAK-C12 is an academic/vocational training certificate. It does **not** by itself provide competence, licensing, certification or authorization for:
+
+- train driving;
+- dispatcher, signaller, traffic controller or route-setting duties;
+- shunting command, points operation or vehicle movement;
+- train preparation, brake-test or readiness sign-off;
+- operational route competence or route certification;
+- safety-critical operational communication roles;
+- real-time path allocation or possession management;
+- degraded-mode or emergency operational authority;
+- dangerous-goods acceptance, classification, loading or operational certification;
+- interoperability/route-compatibility certification;
+- customs/security authority;
+- safety-management approval;
+- return-to-service or other safety-critical release decisions.
+
+Any live railway practical requires an approved host organization, suitable supervision, role-specific competence, site induction, safe access arrangements, current local rules and risk controls. Observation of operational work does not create authority to perform it.
+
+---
+
+## 38.9 Assessment Architecture
+
+Recommended later-stage assessment model:
+
+- short knowledge checks on railway actors, systems and safety boundaries;
+- network/station/yard diagram interpretation;
+- timetable/path/headway/capacity exercise;
+- operational information and communication scenario;
+- passenger-service planning exercise;
+- freight wagon-flow and documentation exercise;
+- intermodal terminal/supply-chain mapping case;
+- disruption/delay-recovery simulation;
+- cross-border/interoperability case study;
+- KPI/data-analysis exercise;
+- final integrated operations/logistics simulation and record pack;
+- final theory assessment covering concepts, interfaces, safety boundaries and escalation.
+
+Final weightings, pass rules and reassessment requirements remain to be frozen during the detailed assessment-blueprint phase.
+
+---
+
+## 38.10 Mandatory Technical Visual & Data Plan
+
+Before any C12 textbook/module publication is approved, the visual/data register must include where relevant:
+
+1. European/representative railway system actor map;
+2. railway network hierarchy and interface diagrams;
+3. rolling-stock category and train-composition graphics;
+4. track, station, yard and terminal schematic layouts;
+5. signalling/train-protection interface-awareness diagrams;
+6. traction/electrification interface graphics;
+7. timetable and train-path diagrams;
+8. headway and capacity illustrations;
+9. junction/conflict and crossing/overtaking diagrams;
+10. train-running information flow;
+11. operational communication/escalation flow;
+12. station platform and passenger-flow maps;
+13. train-formation and yard-flow graphics;
+14. wagon-flow diagrams;
+15. freight documentation/information-flow maps;
+16. intermodal terminal process diagrams;
+17. port/road/rail/warehouse supply-chain maps;
+18. delay-propagation and disruption decision trees;
+19. cross-border handover/interoperability process maps;
+20. European freight-corridor/TEN-T educational maps using original/licensed data;
+21. operational KPI definitions and example dashboards;
+22. dwell/throughput/wagon-cycle charts;
+23. digital operations/data-flow diagrams;
+24. integrated simulation scenario maps and data tables.
+
+Safety-critical operating graphics must be labelled **Illustrative / Training Use Only** unless they reproduce an approved controlled training source with permission. No fictional signal aspect, movement authority, braking/route parameter, dangerous-goods instruction or degraded-mode rule may be presented as real operational instruction.
+
+---
+
+## 38.11 Print-Ready Study-Material Deliverables
+
+C12 inherits the global PAK print-ready publishing standard. The eventual publication set must support, as applicable:
+
+- **Student Textbook / Module Book** with controlled cover, title, edition/version, revision record, preface, programme mapping, prerequisites, learning outcomes, contents, figures/tables, abbreviations, symbols, units and operational-authority boundaries;
+- **Railway Operations & Logistics Practical/Simulation Manual** with scenario number, objective, network/data pack, linked learning outcomes, assumptions, tasks, safety/authority boundary, expected records and instructor sign-off;
+- **Student Workbook** with timetable, capacity, station/yard, passenger, freight, intermodal, disruption, corridor and KPI exercises plus calculation/writing space;
+- **Practical Operations / Logistics Journal or Logbook** capturing date, scenario/activity, source data, decisions/observations, communications, documentation, escalation and instructor verification;
+- **Instructor Guide** with lesson plans, simulation setup, controlled assumptions, answer guidance, common operational/logistics errors, rubrics and role-boundary guidance;
+- **Assessment / Question Bank**;
+- **Final Examination + Answer/Marking Guide**;
+- **Scenario and Dataset Pack** for timetable, freight, terminal, disruption and KPI exercises;
+- **Technical Visual Register** with image/data rights and source status;
+- **Glossary, Abbreviation List, Regulatory/Reference Register and Bibliography**;
+- **Final searchable print-ready PDF** with embedded fonts, bookmarks/TOC, vector preservation, A4/binding-aware margins and printer-required PDF/X output at final production stage.
+
+No copyrighted rulebook text, proprietary timetable/database content, protected network diagrams, commercial customer data or controlled operator instructions may be reproduced without permission. Original educational diagrams/data or properly licensed/public sources must be used.
+
+---
+
+## 38.12 Regulatory & Technical Reference Baseline
+
+Detailed C12 books must revalidate current editions, amendments, national rules and operator procedures immediately before publication. Architecture is grounded in these reference families:
+
+- **Commission Implementing Regulation (EU) 2019/773 — Operation and Traffic Management TSI (OPE TSI)**, using the current applicable consolidated text at publication time;
+- **ERA OPE TSI Application Guide**, current applicable version at publication time;
+- **Directive (EU) 2016/798** on railway safety and associated safety-management / competence context;
+- **Directive (EU) 2016/797** on railway interoperability;
+- **Regulation (EU) No 913/2010** concerning a European rail network for competitive freight, as amended and applicable;
+- **Regulation (EU) 2024/1679** on Union guidelines for the development of the trans-European transport network (TEN-T), as applicable;
+- applicable national operating rules, infrastructure-manager network statements/rules, railway-undertaking procedures, terminal procedures and authorized route information;
+- current RID/legal requirements where dangerous-goods awareness is referenced;
+- relevant passenger rights, freight-contract/documentation, customs/security and data/interface requirements where included in detailed chapters.
+
+At architecture time, EUR-Lex exposes the OPE TSI consolidated version dated **31 March 2025**, including the 2025 amendment. ERA published an updated OPE TSI Application Guide version 5.00 in **December 2025**. These dates are recorded for design traceability only; publication teams must check for later versions before release.
+
+Exact operational rules, signal/communication instructions, route restrictions, headways, path-allocation processes, dangerous-goods rules, train-composition limits, terminal procedures and emergency/degraded-mode instructions must come from current approved controlled sources for the exact railway environment.
+
+---
+
+## 38.13 Chapter-Architecture Gate
+
+No full C12 textbook prose may begin until each module has a frozen chapter list containing at minimum:
+
+- module purpose and chapter sequence;
+- measurable learning outcomes;
+- prerequisite knowledge;
+- operational/logistics process scope;
+- practical/simulation activities;
+- mandatory maps, diagrams, process flows and datasets;
+- safety/authorization-boundary flags;
+- applicable technical/regulatory references;
+- assessment placeholders;
+- workbook/journal requirements;
+- publication type and print requirements.
+
+This preserves the PAK architecture-before-books rule.
+
+---
+
+## 38.14 Completion Checkpoint
+
+With PAK-C12 module architecture complete:
+
+- Certificate programmes with completed module architecture: **12 of 12**;
+- Certificate module placements defined: **126**;
+- Diploma programmes with completed subject architecture: **5 of 5**;
+- Diploma semester subject placements preserved: **120**;
+- the full Certificate architecture batch is complete;
+- next controlled target: **Certificate Batch Master-PRD Synchronization — PAK-C05 through PAK-C12**;
+- after controlled master synchronization, portfolio expansion proceeds to **PAK-B01 — Bachelor's-Level Railway Engineering**;
+- chapter architecture remains pending;
+- full study-material writing remains not started;
+- print production remains not started.
+
+---
+
+# 39. Portfolio Architecture Checkpoint v0.2.0
+
+The controlled Certificate batch synchronization is complete.
+
+| Portfolio Level | Programmes Completed | Curriculum Placements Defined |
+|---|---:|---:|
+| Certificate | **12 of 12** | **126 module placements** |
+| Diploma | **5 of 5** | **120 semester subject placements** |
+| Bachelor's-level | 0 of 5 | Pending |
+| Postgraduate Diploma | 0 of 6 | Pending |
+| Master's-level | 0 of 6 | Pending |
+
+### 39.1 Certificate Batch Synchronization Record
+
+- PAK-C01 through PAK-C04 remain governed by their previously consolidated master sections.
+- PAK-C05 through PAK-C12 have now been synchronized from their approved modular files into Sections 31 through 38.
+- The Certificate portfolio therefore contains **12 approved programme architectures and 126 programme module placements** before any cross-programme reuse/deduplication into shared master modules.
+- The five Diploma architectures remain complete at **120 semester subject placements**.
+- Chapter architecture remains **not yet started**.
+- Full study-material writing remains **not yet started**.
+- Print production remains **not yet started**.
+
+### 39.2 Architecture-Before-Books Gate
+
+Completion of Certificate programme architecture does **not** authorize full textbook production. Section 26 remains mandatory. No full subject/module book may enter production until its chapter architecture, learning outcomes, practical requirements, technical/regulatory references, assessments, safety flags, publication deliverables and visual plan have been mapped and approved.
+
+### 39.3 Next Controlled Portfolio Target
+
+**`PAK-B01 — Bachelor's-Level Railway Engineering` — 3 Years / 6 Semesters.**
+
+The next controlled phase is programme/semester subject architecture for PAK-B01. The degree-awarding caveat in Section 11 remains mandatory throughout Bachelor's-level curriculum development and any future marketing/publication activity.

@@ -2,11 +2,11 @@
 
 **Status:** Modular working index  
 **Master governance source:** `docs/academic/PAK_ACADEMIC_CURRICULUM_STUDY_MATERIAL_BLUEPRINT_PRD.md`  
-**Current master version:** `0.1.9`  
+**Current master version:** `0.2.0`  
 **Migration status:** Complete for PAK-C01–C12 and PAK-D01–D05  
 **Defined Certificate module placements:** 126  
 **Preserved Diploma semester subject placements:** 120  
-**Next Controlled Target: Certificate Batch Master-PRD Synchronization — PAK-C05–PAK-C12**
+**Next Controlled Target: PAK-B01 — Bachelor's-Level Railway Engineering — 3 Years / 6 Semesters**
 
 ## Source-of-Truth Relationship
 
@@ -36,14 +36,14 @@ The master PRD remains the **consolidated governance and audit authority**. The 
 | PAK-C02 | Certificate in Railway Vehicle Maintenance | Certificate | 6 Months | 12 two-week modules | `certificates/C02/PAK-C02.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | §24 |
 | PAK-C03 | Certificate in Freight Wagon Maintenance | Certificate | 6 Months | 12 two-week modules | `certificates/C03/PAK-C03.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | §27 |
 | PAK-C04 | Certificate in Locomotive Maintenance | Certificate | 6 Months | 12 two-week modules | `certificates/C04/PAK-C04.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | §29 |
-| PAK-C05 | Certificate in Wheelset & Bogie Technology | Certificate | 4 Months | 8 two-week modules | `certificates/C05/PAK-C05.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | Pending master sync |
-| PAK-C06 | Certificate in Railway Braking Systems | Certificate | 4 Months | 8 two-week modules | `certificates/C06/PAK-C06.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | Pending master sync |
-| PAK-C07 | Certificate in Railway Welding & Fabrication | Certificate | 6 Months | 12 two-week modules | `certificates/C07/PAK-C07.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | Pending master sync |
-| PAK-C08 | Certificate in Railway Electrical Systems | Certificate | 6 Months | 12 two-week modules | `certificates/C08/PAK-C08.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | Pending master sync |
-| PAK-C09 | Certificate in Railway Inspection & NDT | Certificate | 6 Months | 12 two-week modules | `certificates/C09/PAK-C09.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | Pending master sync |
-| PAK-C10 | Certificate in Railway Safety & Workshop Practices | Certificate | 3 Months | 6 two-week modules | `certificates/C10/PAK-C10.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | Pending master sync |
-| PAK-C11 | Certificate in Railway Quality Control | Certificate | 4 Months | 8 two-week modules | `certificates/C11/PAK-C11.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | Pending master sync |
-| PAK-C12 | Certificate in Railway Operations & Logistics | Certificate | 6 Months | 12 two-week modules | `certificates/C12/PAK-C12.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | Pending master sync |
+| PAK-C05 | Certificate in Wheelset & Bogie Technology | Certificate | 4 Months | 8 two-week modules | `certificates/C05/PAK-C05.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | §31 |
+| PAK-C06 | Certificate in Railway Braking Systems | Certificate | 4 Months | 8 two-week modules | `certificates/C06/PAK-C06.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | §32 |
+| PAK-C07 | Certificate in Railway Welding & Fabrication | Certificate | 6 Months | 12 two-week modules | `certificates/C07/PAK-C07.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | §33 |
+| PAK-C08 | Certificate in Railway Electrical Systems | Certificate | 6 Months | 12 two-week modules | `certificates/C08/PAK-C08.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | §34 |
+| PAK-C09 | Certificate in Railway Inspection & NDT | Certificate | 6 Months | 12 two-week modules | `certificates/C09/PAK-C09.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | §35 |
+| PAK-C10 | Certificate in Railway Safety & Workshop Practices | Certificate | 3 Months | 6 two-week modules | `certificates/C10/PAK-C10.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | §36 |
+| PAK-C11 | Certificate in Railway Quality Control | Certificate | 4 Months | 8 two-week modules | `certificates/C11/PAK-C11.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | §37 |
+| PAK-C12 | Certificate in Railway Operations & Logistics | Certificate | 6 Months | 12 two-week modules | `certificates/C12/PAK-C12.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | §38 |
 | PAK-D01 | Diploma in Railway Rolling Stock Engineering & Maintenance | Diploma | 2 Years | 4 semesters | `diplomas/D01/PAK-D01-OVERVIEW.md` + `S1.md`–`S4.md` | Subject Architecture Complete | Pending | Not Started | Not Started | §17 |
 | PAK-D02 | Diploma in Railway Mechanical Engineering | Diploma | 2 Years | 4 semesters | `diplomas/D02/PAK-D02-OVERVIEW.md` + `S1.md`–`S4.md` | Subject Architecture Complete | Pending | Not Started | Not Started | §18 |
 | PAK-D03 | Diploma in Railway Electrical & Control Systems | Diploma | 2 Years | 4 semesters | `diplomas/D03/PAK-D03-OVERVIEW.md` + `S1.md`–`S4.md` | Subject Architecture Complete | Pending | Not Started | Not Started | §19 |
@@ -85,11 +85,11 @@ The master PRD remains the **consolidated governance and audit authority**. The 
 - Diploma semester files: **20**
 - Diploma subject placements preserved: **120**
 - Certificate architecture batch: **complete**
-- Master PRD consolidated synchronization: **next controlled milestone — PAK-C05 through PAK-C12**
+- Master PRD Certificate batch synchronization: **complete at v0.2.0 — PAK-C05 through PAK-C12 synchronized into §§31–38**
 - Global print-ready governance: **mirrored and mandatory**
 
 ## Immediate Working Target
 
-**Certificate Batch Master-PRD Synchronization — PAK-C05 through PAK-C12**
+**PAK-B01 — Bachelor's-Level Railway Engineering — 3 Years / 6 Semesters**
 
-The Certificate programme architecture is now complete. Before beginning PAK-B01 or any Certificate textbook prose, synchronize the approved PAK-C05–C12 modular architectures back into the consolidated master PRD through a controlled, verified batch update. After that synchronization, the next portfolio-development target is **PAK-B01 — Bachelor's-Level Railway Engineering**.
+The Certificate programme architecture and its controlled master synchronization are complete. The next portfolio-development target is the six-semester subject architecture for PAK-B01. Chapter architecture and full study-material writing remain gated and must not begin ahead of the approved architecture sequence. Formal degree naming/award claims remain subject to the master PRD qualification-and-awarding caveat.
