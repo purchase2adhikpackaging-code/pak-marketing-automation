@@ -67,4 +67,20 @@ describe("unattended video generation dispatcher", () => {
     expect(source).toContain('"x-pak-dispatch-token": dispatchSecret');
     expect(source).not.toMatch(/video_url|provider_url|api[_-]?key/i);
   });
+
+  it("installs a portable pg_cron trigger that invokes the dispatcher without embedding environment secrets", () => {
+    const sql = readFileSync(migrationPath, "utf8");
+    expect(sql).toContain("create or replace function public.install_video_generation_dispatch_cron()");
+    expect(sql).toContain("cron.schedule(");
+    expect(sql).toContain("pak-video-generation-dispatch");
+    expect(sql).toContain("10 seconds");
+    expect(sql).toContain("net.http_post(");
+    expect(sql).toContain("/functions/v1/video-generation-dispatcher");
+    expect(sql).toContain("x-pak-dispatch-token");
+    expect(sql).toContain("where name = 'project_url'");
+    expect(sql).toContain("where name = 'pak/video-generation/dispatcher'");
+    expect(sql).toContain("grant execute on function public.install_video_generation_dispatch_cron() to service_role");
+    expect(sql).not.toMatch(/https:\/\/[a-z0-9-]+\.supabase\.co/i);
+    expect(sql).not.toMatch(/service_role\s*['\"]\s*:/i);
+  });
 });
