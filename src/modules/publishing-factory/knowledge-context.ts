@@ -34,15 +34,15 @@ export interface ContextTerminologyEntry {
   sourceIds: string[];
 }
 
-export interface ContextEquation extends KnowledgePack["equations"][number] {
+export type ContextEquation = KnowledgePack["equations"][number] & {
   packId: string;
   domain: string;
-}
+};
 
-export interface ContextVisualSpec extends KnowledgePack["visualSpecs"][number] {
+export type ContextVisualSpec = KnowledgePack["visualSpecs"][number] & {
   packId: string;
   domain: string;
-}
+};
 
 export interface ManuscriptKnowledgeContext {
   level: QualificationLevel;
