@@ -11,7 +11,7 @@ describe("Scene Planning workspace data", () => {
     ])).toEqual(["Railway trainer", "Legacy trainee description"]);
   });
 
-  it("assembles ordered scenes, shots, QC state, and source freshness", () => {
+  it("assembles ordered scenes, shots, QC state, source freshness, and latest safe generation state", () => {
     const result = assembleScenePlanningWorkspace({
       organizationId: "11111111-1111-4111-8111-111111111111",
       actorRole: "OWNER",
@@ -53,6 +53,38 @@ describe("Scene Planning workspace data", () => {
         { id: "shot-2", scene_id: "scene-1", ordinal: 2, duration_seconds: 3, narration_text: "B", narration_start_char: 1, narration_end_char: 2, creative_direction: "Second", master_visual_prompt: "Second prompt", camera_motion: "static", human_modified: true },
         { id: "shot-1", scene_id: "scene-1", ordinal: 1, duration_seconds: 3, narration_text: "A", narration_start_char: 0, narration_end_char: 1, creative_direction: "First", master_visual_prompt: "First prompt", camera_motion: "push", human_modified: false },
       ],
+      generationAttempts: [
+        {
+          id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          job_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          shot_id: "shot-1",
+          attempt_number: 1,
+          state: "FAILED",
+          media_asset_id: null,
+          retryable: true,
+          error_code: "LTX_RATE_LIMITED",
+        },
+        {
+          id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+          job_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          shot_id: "shot-1",
+          attempt_number: 2,
+          state: "PROCESSING",
+          media_asset_id: null,
+          retryable: null,
+          error_code: null,
+        },
+        {
+          id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+          job_id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+          shot_id: "shot-2",
+          attempt_number: 1,
+          state: "COMPLETED",
+          media_asset_id: "ffffffff-ffff-4fff-8fff-ffffffffffff",
+          retryable: null,
+          error_code: null,
+        },
+      ],
     });
 
     expect(result.project.targetDurationSeconds).toBe(55);
@@ -63,6 +95,16 @@ describe("Scene Planning workspace data", () => {
     expect(result.plan?.scenes.map((scene) => scene.ordinal)).toEqual([1, 2]);
     expect(result.plan?.scenes[0]?.shots.map((shot) => shot.ordinal)).toEqual([1, 2]);
     expect(result.plan?.scenes[0]?.shots[1]?.humanModified).toBe(true);
+    expect(result.plan?.scenes[0]?.shots[0]?.videoGeneration).toMatchObject({
+      state: "GENERATING",
+      attemptId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    });
+    expect(result.plan?.scenes[0]?.shots[1]?.videoGeneration).toEqual({
+      jobId: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+      attemptId: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+      state: "COMPLETED",
+      mediaAssetId: "ffffffff-ffff-4fff-8fff-ffffffffffff",
+    });
   });
 
   it("marks the plan stale when the persisted source hash no longer matches", () => {
