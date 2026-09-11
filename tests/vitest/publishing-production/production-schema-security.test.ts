@@ -49,7 +49,7 @@ describe("publishing production schema security contract", () => {
       expect(source).toMatch(new RegExp(`create or replace function\\s+public\\.${fn}`, "i"));
     }
 
-    expect(source).toMatch(/for update\s+skip locked/i);
+    expect(source).toMatch(/for update(?:\s+of\s+\w+)?\s+skip locked/i);
     expect(source).toMatch(/lease_owner/i);
     expect(source).toMatch(/lease_expires_at/i);
     expect(source).toMatch(/attempt_count\s*\+\s*1/i);
