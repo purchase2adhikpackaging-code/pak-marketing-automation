@@ -3,10 +3,10 @@
 **Status:** Modular working index  
 **Master governance source:** `docs/academic/PAK_ACADEMIC_CURRICULUM_STUDY_MATERIAL_BLUEPRINT_PRD.md`  
 **Current master version:** `0.1.9`  
-**Migration status:** Complete for PAK-C01–C11 and PAK-D01–D05  
-**Defined Certificate module placements:** 114  
+**Migration status:** Complete for PAK-C01–C12 and PAK-D01–D05  
+**Defined Certificate module placements:** 126  
 **Preserved Diploma semester subject placements:** 120  
-**Next Controlled Target: PAK-C12**
+**Next Controlled Target: Certificate Batch Master-PRD Synchronization — PAK-C05–PAK-C12**
 
 ## Source-of-Truth Relationship
 
@@ -43,7 +43,7 @@ The master PRD remains the **consolidated governance and audit authority**. The 
 | PAK-C09 | Certificate in Railway Inspection & NDT | Certificate | 6 Months | 12 two-week modules | `certificates/C09/PAK-C09.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | Pending master sync |
 | PAK-C10 | Certificate in Railway Safety & Workshop Practices | Certificate | 3 Months | 6 two-week modules | `certificates/C10/PAK-C10.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | Pending master sync |
 | PAK-C11 | Certificate in Railway Quality Control | Certificate | 4 Months | 8 two-week modules | `certificates/C11/PAK-C11.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | Pending master sync |
-| PAK-C12 | Certificate in Railway Operations & Logistics | Certificate | 6 Months | Block/week structure pending | `certificates/C12/PAK-C12.md` | Catalogue Only | Pending | Not Started | Not Started | §4.1 |
+| PAK-C12 | Certificate in Railway Operations & Logistics | Certificate | 6 Months | 12 two-week modules | `certificates/C12/PAK-C12.md` | Subject/Module Architecture Complete | Pending | Not Started | Not Started | Pending master sync |
 | PAK-D01 | Diploma in Railway Rolling Stock Engineering & Maintenance | Diploma | 2 Years | 4 semesters | `diplomas/D01/PAK-D01-OVERVIEW.md` + `S1.md`–`S4.md` | Subject Architecture Complete | Pending | Not Started | Not Started | §17 |
 | PAK-D02 | Diploma in Railway Mechanical Engineering | Diploma | 2 Years | 4 semesters | `diplomas/D02/PAK-D02-OVERVIEW.md` + `S1.md`–`S4.md` | Subject Architecture Complete | Pending | Not Started | Not Started | §18 |
 | PAK-D03 | Diploma in Railway Electrical & Control Systems | Diploma | 2 Years | 4 semesters | `diplomas/D03/PAK-D03-OVERVIEW.md` + `S1.md`–`S4.md` | Subject Architecture Complete | Pending | Not Started | Not Started | §19 |
@@ -69,8 +69,8 @@ The master PRD remains the **consolidated governance and audit authority**. The 
 
 ## Completed-Architecture Baseline
 
-- Completed Certificate programmes: **11 of 12**
-- Completed Certificate module placements: **114**
+- Completed Certificate programmes: **12 of 12**
+- Completed Certificate module placements: **126**
 - Completed Diploma programmes: **5 of 5**
 - Completed Diploma semester subject placements: **120**
 - Chapter architecture: **not yet started**
@@ -78,17 +78,18 @@ The master PRD remains the **consolidated governance and audit authority**. The 
 
 ## Modular Curriculum Checkpoint
 
-- Modular programme files complete for: **PAK-C01–C11 and PAK-D01–D05**
-- Certificate programme files created: **11**
-- Certificate module placements defined: **114**
+- Modular programme files complete for: **PAK-C01–C12 and PAK-D01–D05**
+- Certificate programme files created: **12**
+- Certificate module placements defined: **126**
 - Diploma programme overview files: **5**
 - Diploma semester files: **20**
 - Diploma subject placements preserved: **120**
-- Master PRD consolidated synchronization: **deferred to controlled batch milestone**
+- Certificate architecture batch: **complete**
+- Master PRD consolidated synchronization: **next controlled milestone — PAK-C05 through PAK-C12**
 - Global print-ready governance: **mirrored and mandatory**
 
 ## Immediate Working Target
 
-**PAK-C12 — Certificate in Railway Operations & Logistics — 6 Months**
+**Certificate Batch Master-PRD Synchronization — PAK-C05 through PAK-C12**
 
-Before writing any textbook prose for C12 or any other programme, first complete and approve its module/subject and chapter architecture, then apply the print-ready publishing standard.
+The Certificate programme architecture is now complete. Before beginning PAK-B01 or any Certificate textbook prose, synchronize the approved PAK-C05–C12 modular architectures back into the consolidated master PRD through a controlled, verified batch update. After that synchronization, the next portfolio-development target is **PAK-B01 — Bachelor's-Level Railway Engineering**.
