@@ -25,6 +25,15 @@ describe("generated video media import SQL", () => {
     expect(sql).toContain("result_payload");
   });
 
+  it("matches the existing media/jobs schema instead of forcing Phase 6 scene IDs into legacy media lineage", () => {
+    const sql = readFileSync(migrationPath, "utf8");
+
+    expect(sql).not.toMatch(/\bscene_id\b/i);
+    expect(sql).not.toMatch(/\bprogress\s*=/i);
+    expect(sql).toContain("generating_job_id");
+    expect(sql).toContain("v_attempt.shot_id");
+  });
+
   it("keeps completion service-role-only and idempotent", () => {
     const sql = readFileSync(migrationPath, "utf8");
 
