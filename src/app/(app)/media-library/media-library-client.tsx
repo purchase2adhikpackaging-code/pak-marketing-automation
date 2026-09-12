@@ -11,6 +11,7 @@ import type {
   MediaListPage,
   SafeMediaAsset,
 } from "@/modules/media/read-model";
+import { submitApprovalAction } from "../approval-center/actions";
 import {
   archiveMediaAction,
   deleteMediaAction,
@@ -63,6 +64,8 @@ export function MediaLibraryClient({ organizations }: { organizations: MediaOrga
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | undefined>();
   const [previewPendingId, setPreviewPendingId] = useState<string | null>(null);
+  const [reviewPendingId, setReviewPendingId] = useState<string | null>(null);
+  const [reviewRequestId, setReviewRequestId] = useState<string | null>(null);
   const [confirmArchiveId, setConfirmArchiveId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -84,8 +87,10 @@ export function MediaLibraryClient({ organizations }: { organizations: MediaOrga
     setFilters(DEFAULT_FILTERS);
     setSelectedAssetId(null);
     setPreviewUrl(undefined);
+    setReviewPendingId(null);
+    setReviewRequestId(null);
     setMessage(null);
-  }, [organization?.id]);
+  }, [organization]);
 
   function query(cursor?: MediaCursor) {
     if (!organization) return null;
@@ -105,6 +110,8 @@ export function MediaLibraryClient({ organizations }: { organizations: MediaOrga
     setNextCursor(page.nextCursor);
     setSelectedAssetId(null);
     setPreviewUrl(undefined);
+    setReviewPendingId(null);
+    setReviewRequestId(null);
   }
 
   async function reload() {
@@ -144,6 +151,7 @@ export function MediaLibraryClient({ organizations }: { organizations: MediaOrga
     if (!organization) return;
     setSelectedAssetId(asset.id);
     setPreviewUrl(undefined);
+    setReviewRequestId(null);
     setPreviewPendingId(asset.id);
     setMessage(null);
     const result = await previewMediaAction({ organizationId: organization.id, mediaAssetId: asset.id });
@@ -153,6 +161,27 @@ export function MediaLibraryClient({ organizations }: { organizations: MediaOrga
     } else {
       setMessage(result.error);
     }
+  }
+
+  function submitForReview(asset: SafeMediaAsset) {
+    if (!organization) return;
+    setMessage(null);
+    setReviewPendingId(asset.id);
+    setReviewRequestId(null);
+    startTransition(async () => {
+      const result = await submitApprovalAction({
+        organizationId: organization.id,
+        targetType: "MEDIA_ASSET",
+        targetId: asset.id,
+        publicationIntent: { source: "media-library", assetType: asset.assetType },
+      });
+      setReviewPendingId(null);
+      if (!result.ok) {
+        setMessage(result.error);
+        return;
+      }
+      setReviewRequestId(result.requestId);
+    });
   }
 
   function confirmArchive(asset: SafeMediaAsset) {
@@ -308,7 +337,7 @@ export function MediaLibraryClient({ organizations }: { organizations: MediaOrga
                           disabled={previewPendingId === asset.id}
                           className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-200 disabled:opacity-50"
                         >Preview</button>
-                        <button type="button" onClick={() => { setSelectedAssetId(asset.id); setPreviewUrl(undefined); }} className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300">Details</button>
+                        <button type="button" onClick={() => { setSelectedAssetId(asset.id); setPreviewUrl(undefined); setReviewRequestId(null); }} className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300">Details</button>
                         {canEdit && asset.status === "ACTIVE" ? (
                           <button type="button" aria-label={`Archive ${asset.displayName}`} onClick={() => { setConfirmArchiveId(asset.id); setConfirmDeleteId(null); }} className="rounded-lg border border-amber-900/70 px-3 py-1.5 text-xs text-amber-200">Archive</button>
                         ) : null}
@@ -355,8 +384,12 @@ export function MediaLibraryClient({ organizations }: { organizations: MediaOrga
             asset={selectedAsset}
             signedUrl={previewUrl}
             previewPending={previewPendingId === selectedAsset.id}
+            canSubmitForReview={canEdit && selectedAsset.status === "ACTIVE" && Boolean(selectedAsset.checksum)}
+            reviewPending={reviewPendingId === selectedAsset.id}
+            reviewRequestHref={reviewRequestId ? `/approval-center/${reviewRequestId}?organization=${organization.id}` : undefined}
             onPreview={() => requestPreview(selectedAsset)}
-            onClose={() => { setSelectedAssetId(null); setPreviewUrl(undefined); }}
+            onSubmitForReview={() => submitForReview(selectedAsset)}
+            onClose={() => { setSelectedAssetId(null); setPreviewUrl(undefined); setReviewRequestId(null); }}
           />
         ) : (
           <aside className="rounded-2xl border border-dashed border-slate-800 p-6 text-sm text-slate-500">
