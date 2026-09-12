@@ -1,11 +1,15 @@
 export const dynamic = "force-dynamic";
 
+import { headers } from "next/headers";
+
+import { E2E_AUTH_BYPASS_HEADER, canBypassAuthForE2E } from "@/modules/auth/e2e-bypass";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { AppRole } from "@/modules/auth/roles";
 import { SupabaseApprovalRepository } from "@/modules/approval/repository";
 import { ApprovalCenterClient, type ApprovalCenterOrganization } from "./approval-center-client";
 
 const REVIEW_ROLES: AppRole[] = ["OWNER", "ADMIN", "EDITOR", "REVIEWER"];
+const E2E_APPROVAL_ORGANIZATION_ID = "00000000-0000-4000-8000-000000000909";
 
 type MembershipRow = {
   organization_id: string;
@@ -38,6 +42,23 @@ export default async function ApprovalCenterPage() {
       initialPage: await repository.list({ organizationId: membership.organization_id, status: "PENDING", limit: 50 }),
       sceneReviewRequired: await repository.countScenePlanReviewRequired(membership.organization_id),
     })));
+  } else {
+    const requestHeaders = await headers();
+    const e2eAuthBypass = canBypassAuthForE2E({
+      nodeEnv: process.env.NODE_ENV,
+      bypassEnabled: process.env.E2E_AUTH_BYPASS,
+      headerValue: requestHeaders.get(E2E_AUTH_BYPASS_HEADER),
+    });
+
+    if (e2eAuthBypass) {
+      organizations = [{
+        id: E2E_APPROVAL_ORGANIZATION_ID,
+        label: "PAK E2E Organization",
+        role: "REVIEWER",
+        initialPage: { items: [] },
+        sceneReviewRequired: 0,
+      }];
+    }
   }
 
   return (
