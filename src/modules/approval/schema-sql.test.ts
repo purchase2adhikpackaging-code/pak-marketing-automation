@@ -64,4 +64,15 @@ describe("Phase 9 Approval Center ledger schema", () => {
     expect(sql).toContain("old.publication_intent is distinct from new.publication_intent");
     expect(sql).toContain("raise exception 'approval request identity is immutable'");
   });
+
+  it("stores actor UUID snapshots without auth-user FKs so immutable audit history survives account deletion", () => {
+    const sql = normalizeSql(migrationSql());
+
+    expect(sql).toContain("requested_by uuid,");
+    expect(sql).toContain("decided_by uuid,");
+    expect(sql).toContain("actor_user_id uuid,");
+    expect(sql).not.toContain("requested_by uuid references auth.users");
+    expect(sql).not.toContain("decided_by uuid references auth.users");
+    expect(sql).not.toContain("actor_user_id uuid references auth.users");
+  });
 });
