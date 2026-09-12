@@ -1,8 +1,8 @@
 # PAK Marketing Automation — Requirements Traceability Matrix
 
 **Document ID:** PAK-TRACE-001  
-**Version:** 1.2  
-**Status:** Current baseline after Phase 8
+**Version:** 1.3  
+**Status:** Current baseline after Phase 9
 
 ## 1. Legend
 
@@ -13,7 +13,7 @@
 - **Legacy/Foundation** — retained compatibility/infrastructure exists but is not the current authoritative domain model.
 - **Redesign** — implementation exists but conflicts with the current contract and blocks downstream dependence.
 
-Stable requirement IDs retain their original semantic meaning. New Phase 6–8 behavior uses new IDs rather than reusing historical IDs.
+Stable requirement IDs retain their original semantic meaning. New Phase 6–9 behavior uses new IDs rather than reusing historical IDs.
 
 ## 2. Current requirement matrix
 
@@ -31,8 +31,8 @@ Stable requirement IDs retain their original semantic meaning. New Phase 6–8 b
 | PRD-VID-006..007 + PRD-VID-012..018 Per-shot provider generation | Scene Planning / Settings | jobs, video_generation_attempts, Edge workers, Vault, media_assets | provider/state/retry/security/media tests + live Edge probes | **Implemented / external paid acceptance pending** | Operational acceptance when LTX credential/credits exist |
 | PRD-VID-005 + PRD-VID-019 Final assembly/readiness | Scene Planning / Media | video_assemblies, video_assembly_components, FINAL_VIDEO_ASSEMBLY jobs, Railway render worker, final media asset | unit/E2E/container + live Edge/worker two-clip render | **Implemented** | Maintenance |
 | PRD-MEDIA-001..006 Media | Media Library / Scene Planning | media_assets, media_upload_sessions, private Storage, lineage + Edge authorization | schema/RLS/UI/E2E + live storage/render verification | **Implemented** | Maintenance |
-| PRD-DASH-001..004 Dashboard | Dashboard | aggregate workflow state | UI/E2E | **Partial** | After Phases 9–12 provide complete signals |
-| PRD-APR-001..005 Generic Approval | Approval Center | approval_requests, approval_events | workflow/E2E/RLS | **Missing**; Scene Plan has domain approval only | Phase 9 |
+| PRD-DASH-001..004 Dashboard | Dashboard | aggregate workflow state | UI/E2E | **Partial** | After Phases 10–12 provide complete signals |
+| PRD-APR-001..005 Generic Approval | Approval Center / Content Studio / Media Library | approval_requests, approval_events, exact target snapshots, approval RPCs | workflow/unit/E2E/RLS + live ACL/currentness/supersession probes | **Implemented** | Maintenance; Phase 10 consumes approval predicate |
 | PRD-PUB-001..006 Publishing | Publishing | integration targets/attempts/jobs | fake provider + idempotency + live smoke | **Missing** | Phase 10 |
 | PRD-CAL-001..003 Calendar | Content Calendar | publication scheduling state | E2E/timezone tests | **Missing** | Phase 11 |
 | PRD-AN-001..005 Analytics | Analytics | metric sync/daily metrics | ingestion/freshness tests | **Missing** | Phase 12 |
@@ -254,18 +254,37 @@ Verified boundaries:
 - fixture objects/rows were removed and the temporary fixture Edge Function was disabled behind JWT;
 - exact-head Railway deployment and full GitHub CI were verified.
 
+### 3.8 Phase 9 Approval Center
+
+Requirement families:
+- PRD-APR-001..005
+- UX-APR-001..004
+
+Implementation areas:
+- `src/modules/approval/*`
+- `src/app/(app)/approval-center/*`
+- Content Studio approval submission integration
+- Media Library approval submission integration
+- migrations `202609120009` through `202609120014`
+- `tests/e2e/approval-center.spec.ts`
+
+Verified boundaries:
+- requests bind to an exact content-artifact revision or media checksum reconstructed server-side;
+- OWNER/ADMIN/EDITOR may submit; OWNER/ADMIN/REVIEWER may decide; ANALYST has no operational approval queue access;
+- authenticated browser roles have SELECT-only approval-table access and cannot directly mutate requests/events;
+- `approval_events` are immutable by trigger and direct authenticated write privileges are revoked;
+- same exact target submission is idempotent;
+- approve, request changes and reject create immutable decision history; request-changes/reject require comments;
+- stale/substantively changed targets supersede prior pending/changes-requested/approved requests;
+- `is_target_currently_approved(...)` returns true only for the current eligible exact target identity;
+- live rollback-only lifecycle proved submit → approve → current=true → revision change → SUPERSEDED → current=false;
+- stale re-decision was denied and event UPDATE/DELETE guards rejected mutation;
+- live RLS/table/function ACL catalogs matched the approved role model;
+- only OWNER memberships existed for safe live probes, so other-role and two-tenant negatives remain automated/RLS contract evidence rather than manufactured production fixtures;
+- live advisor review drove and verified `approval_events_organization_id_idx` without broadening privileges;
+- Scene Planning approval remains an independent domain authority and is not duplicated into the generic ledger.
+
 ## 4. Partial / future module traceability
-
-### Approval Center — Phase 9
-
-Scene Plan approval exists but generic product approval does not.
-
-Still required:
-- `approval_requests`;
-- immutable `approval_events`;
-- artifact/revision/media targets;
-- approve/request-changes/reject;
-- supersession after revision.
 
 ### Publishing — Phase 10
 
