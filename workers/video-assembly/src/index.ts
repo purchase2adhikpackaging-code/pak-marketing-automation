@@ -7,6 +7,7 @@ import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 
 import { validateVideoProbe } from "./ffprobe.js";
+import { safeWorkerLogError } from "./observability.js";
 import { buildFfmpegArgs, buildRenderProfile, type RenderAspectRatio } from "./render.js";
 
 const MAX_COMPONENTS = 200;
@@ -494,11 +495,20 @@ async function main(): Promise<void> {
     try {
       const worked = await processOne(edgeUrl, workerToken, workerId);
       if (!worked) await delay(IDLE_DELAY_MS);
-    } catch {
-      // Deliberately avoid logging request bodies, signed URLs, or credentials.
+    } catch (error) {
+      console.error(JSON.stringify({
+        event: "worker_iteration_error",
+        ...safeWorkerLogError(error),
+      }));
       await delay(ERROR_DELAY_MS);
     }
   }
 }
 
-void main();
+void main().catch((error) => {
+  console.error(JSON.stringify({
+    event: "worker_fatal",
+    ...safeWorkerLogError(error),
+  }));
+  process.exitCode = 1;
+});
