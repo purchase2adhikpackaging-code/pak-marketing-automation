@@ -73,7 +73,7 @@ describe("publishing worker dispatch secret and recovery contract", () => {
   it("lets the Edge generation function resolve the same Vault credential through a service-role RPC", () => {
     const edge = source(edgePath);
 
-    expect(edge).toContain('admin.rpc("read_publishing_worker_dispatch_secret")');
+    expect(edge).toMatch(/admin\.rpc\(\s*["']read_publishing_worker_dispatch_secret["']/);
     expect(edge).not.toContain('Deno.env.get("PUBLISHING_WORKER_SECRET")');
     expect(edge).toContain('req.headers.get("x-publishing-worker-secret")');
   });
