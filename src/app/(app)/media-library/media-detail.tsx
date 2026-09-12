@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React from "react";
 
 import type { SafeMediaAsset } from "@/modules/media/read-model";
@@ -8,13 +9,21 @@ export function MediaDetail({
   asset,
   signedUrl,
   previewPending,
+  canSubmitForReview,
+  reviewPending,
+  reviewRequestHref,
   onPreview,
+  onSubmitForReview,
   onClose,
 }: {
   asset: SafeMediaAsset;
   signedUrl: string | undefined;
   previewPending: boolean;
+  canSubmitForReview: boolean;
+  reviewPending: boolean;
+  reviewRequestHref?: string;
   onPreview(): void;
+  onSubmitForReview(): void;
   onClose(): void;
 }) {
   return (
@@ -38,6 +47,26 @@ export function MediaDetail({
         {asset.sizeBytes ? <div><dt className="text-slate-500">Size</dt><dd className="mt-1 text-slate-200">{(asset.sizeBytes / 1024 / 1024).toFixed(2)} MB</dd></div> : null}
         {asset.generatingJobId ? <div className="col-span-2"><dt className="text-slate-500">Generating job</dt><dd className="mt-1 break-all font-mono text-xs text-slate-300">{asset.generatingJobId}</dd></div> : null}
       </dl>
+
+      {canSubmitForReview ? (
+        <div className="mt-5 rounded-xl border border-emerald-900/60 bg-emerald-950/20 p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-emerald-300">Approval Center</p>
+          <button
+            type="button"
+            aria-label={`Submit ${asset.displayName} for review`}
+            onClick={onSubmitForReview}
+            disabled={reviewPending}
+            className="mt-3 w-full rounded-lg border border-emerald-800 px-3 py-2 text-sm font-semibold text-emerald-100 disabled:opacity-50"
+          >
+            {reviewPending ? "Submitting for review…" : "Submit for review"}
+          </button>
+          {reviewRequestHref ? (
+            <Link href={reviewRequestHref} className="mt-3 inline-block text-sm font-semibold text-emerald-300 underline underline-offset-4">
+              Open review request
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="mt-5">
         {!signedUrl ? (
