@@ -3,7 +3,6 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const ROUTES = [
-  "/media-library",
   "/manual-generation",
   "/ai-representative",
   "/campus-locations",
@@ -20,7 +19,7 @@ function pageSource(route: (typeof ROUTES)[number]): string {
 }
 
 describe("B3 route readiness wiring", () => {
-  it("routes every B3 page through its exact truthful readiness configuration", () => {
+  it("routes every still-future B3 page through its exact truthful readiness configuration", () => {
     for (const route of ROUTES) {
       const source = pageSource(route);
       expect(source, `${route} must render ModuleReadinessPage`).toContain("ModuleReadinessPage");
@@ -30,7 +29,7 @@ describe("B3 route readiness wiring", () => {
     }
   });
 
-  it("contains no domain mutation controls or placeholder destinations on B3 route entry pages", () => {
+  it("contains no domain mutation controls or placeholder destinations on future route entry pages", () => {
     for (const route of ROUTES) {
       const source = pageSource(route);
       expect(source, `${route} contains a button`).not.toContain("<button");
