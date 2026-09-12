@@ -142,11 +142,11 @@ class SupabaseBrandKitPersistence implements BrandKitPersistence {
       _favicon_asset_id: input.faviconAssetId ?? null,
       _approved_imagery_asset_ids: input.approvedImageryAssetIds,
     });
-    if (error) {
-      if (error.code === "40001" || error.code === "P0002") return null;
-      throw new AppError("INTERNAL_ERROR", "Unable to save Brand Kit.");
+    if (error) throw new AppError("INTERNAL_ERROR", "Unable to save Brand Kit.");
+    if (data === null) return null;
+    if (typeof data !== "number") {
+      throw new AppError("INTERNAL_ERROR", "Brand Kit save returned an invalid revision.");
     }
-    if (typeof data !== "number") throw new AppError("INTERNAL_ERROR", "Brand Kit save returned an invalid revision.");
     return this.get(input.organizationId);
   }
 }
