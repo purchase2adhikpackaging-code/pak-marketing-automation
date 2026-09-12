@@ -18,8 +18,8 @@ describe("publishing production run summary SQL", () => {
   });
 
   it("finishes runs only when no queued or running jobs remain", () => {
-    expect(source).toMatch(/queued_count\s*=\s*0/i);
-    expect(source).toMatch(/running_count\s*=\s*0/i);
+    expect(source).toMatch(/coalesce\(v_queued,\s*0\)\s*=\s*0/i);
+    expect(source).toMatch(/coalesce\(v_running,\s*0\)\s*=\s*0/i);
     expect(source).toContain("COMPLETED_WITH_BLOCKED");
     expect(source).toContain("COMPLETED");
   });
