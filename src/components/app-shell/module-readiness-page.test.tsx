@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { B3_MODULE_READINESS } from "./module-readiness";
 import { ModuleReadinessPage } from "./module-readiness-page";
 
-const ACTIVE_ROUTES = new Set(["/dashboard", "/content-studio", "/knowledge-base", "/settings"]);
+const ACTIVE_ROUTES = new Set(["/dashboard", "/content-studio", "/knowledge-base", "/media-library", "/settings"]);
 
 describe("B3 module readiness surface", () => {
   it("renders operator-facing readiness, dependency, roadmap metadata and real workflow links without fake actions", () => {
@@ -24,13 +24,12 @@ describe("B3 module readiness surface", () => {
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
-  it("defines exactly ten B3 routes with one or two links to implemented workflows only", () => {
+  it("defines exactly nine still-future B3 routes with links to implemented workflows only", () => {
     const configs = Object.values(B3_MODULE_READINESS);
 
-    expect(configs).toHaveLength(10);
-    expect(configs.filter((config) => config.status === "Foundation only").map((config) => config.route).sort()).toEqual([
+    expect(configs).toHaveLength(9);
+    expect(configs.filter((config) => config.status === "Foundation only").map((config) => config.route)).toEqual([
       "/manual-generation",
-      "/media-library",
     ]);
     expect(configs.filter((config) => config.status === "Planned")).toHaveLength(8);
 
