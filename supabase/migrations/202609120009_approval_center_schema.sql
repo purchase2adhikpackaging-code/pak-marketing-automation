@@ -10,9 +10,9 @@ create table public.approval_requests (
   publication_intent jsonb not null default '{}'::jsonb,
   status text not null default 'PENDING'
     check (status in ('PENDING','CHANGES_REQUESTED','APPROVED','REJECTED','SUPERSEDED')),
-  requested_by uuid references auth.users(id) on delete set null,
+  requested_by uuid,
   requested_at timestamptz not null default now(),
-  decided_by uuid references auth.users(id) on delete set null,
+  decided_by uuid,
   decided_at timestamptz,
   superseded_at timestamptz,
   superseded_reason text,
@@ -31,7 +31,7 @@ create table public.approval_requests (
   check (
     (status = 'PENDING' and decided_by is null and decided_at is null and superseded_at is null and superseded_reason is null)
     or
-    (status in ('APPROVED','CHANGES_REQUESTED','REJECTED') and decided_at is not null)
+    (status in ('APPROVED','CHANGES_REQUESTED','REJECTED') and decided_by is not null and decided_at is not null)
     or
     (status = 'SUPERSEDED' and superseded_at is not null and superseded_reason is not null and btrim(superseded_reason) <> '')
   )
@@ -42,7 +42,7 @@ create table public.approval_events (
   organization_id uuid not null references public.organizations(id) on delete cascade,
   approval_request_id uuid not null references public.approval_requests(id) on delete cascade,
   actor_kind text not null check (actor_kind in ('USER','SYSTEM')),
-  actor_user_id uuid references auth.users(id) on delete set null,
+  actor_user_id uuid,
   event_type text not null
     check (event_type in ('SUBMITTED','APPROVED','CHANGES_REQUESTED','REJECTED','SUPERSEDED')),
   comment text,
