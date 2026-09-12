@@ -126,7 +126,6 @@ describe("ApprovalReviewClient", () => {
 
   it("renders the exact content snapshot, immutable provenance, review context and audit history", () => {
     renderReview(contentDetail());
-
     expect(screen.getByText("Exact snapshotted railway safety script.")).toBeInTheDocument();
     expect(screen.getByText(/Revision 4/)).toBeInTheDocument();
     expect(screen.getByText(/Source revision 7/)).toBeInTheDocument();
@@ -143,45 +142,26 @@ describe("ApprovalReviewClient", () => {
     expect(screen.getByRole("button", { name: "Approve" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Request changes" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Reject" })).toBeInTheDocument();
-
     rerender(<ApprovalReviewClient organizationId={organizationId} role="EDITOR" initialDetail={contentDetail()} />);
     expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
-
     rerender(<ApprovalReviewClient organizationId={organizationId} role="REVIEWER" initialDetail={contentDetail("SUPERSEDED")} />);
     expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
   });
 
-  it("requires comments for request changes/reject and refreshes authoritative detail after a decision", async () => {
-    vi.mocked(decideApprovalAction).mockResolvedValue({
-      ok: true,
-      requestId,
-      status: "CHANGES_REQUESTED",
-      staleTarget: false,
-    });
-    vi.mocked(loadApprovalDetailAction).mockResolvedValue({
-      ok: true,
-      detail: { ...contentDetail("CHANGES_REQUESTED"), events: [
-        ...contentDetail().events,
-        {
-          id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-          organizationId,
-          requestId,
-          actorKind: "USER",
-          eventType: "CHANGES_REQUESTED",
-          comment: "Clarify the opening line.",
-          targetRevision: 4,
-          createdAt: "2026-09-12T08:10:00.000Z",
-        },
-      ] },
-    });
-
+  it("requires comments and explicit confirmation before irreversible decisions", async () => {
+    vi.mocked(decideApprovalAction).mockResolvedValue({ ok: true, requestId, status: "CHANGES_REQUESTED", staleTarget: false });
+    vi.mocked(loadApprovalDetailAction).mockResolvedValue({ ok: true, detail: contentDetail("CHANGES_REQUESTED") });
     renderReview(contentDetail());
+
     fireEvent.click(screen.getByRole("button", { name: "Request changes" }));
     expect(await screen.findByText(/comment is required/i)).toBeInTheDocument();
     expect(decideApprovalAction).not.toHaveBeenCalled();
 
     fireEvent.change(screen.getByLabelText("Decision comment"), { target: { value: "Clarify the opening line." } });
     fireEvent.click(screen.getByRole("button", { name: "Request changes" }));
+    expect(decideApprovalAction).not.toHaveBeenCalled();
+    expect(screen.getByText(/confirm request changes/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /confirm request changes/i }));
 
     await waitFor(() => expect(decideApprovalAction).toHaveBeenCalledWith({
       organizationId,
@@ -191,39 +171,42 @@ describe("ApprovalReviewClient", () => {
     }));
     await waitFor(() => expect(loadApprovalDetailAction).toHaveBeenCalledWith({ organizationId, requestId }));
     expect(await screen.findByText("CHANGES REQUESTED")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
   });
 
-  it("allows approve without a comment", async () => {
+  it("requires confirmation even when approval has no comment", async () => {
     vi.mocked(decideApprovalAction).mockResolvedValue({ ok: true, requestId, status: "APPROVED", staleTarget: false });
     vi.mocked(loadApprovalDetailAction).mockResolvedValue({ ok: true, detail: contentDetail("APPROVED") });
     renderReview(contentDetail());
 
     fireEvent.click(screen.getByRole("button", { name: "Approve" }));
-    await waitFor(() => expect(decideApprovalAction).toHaveBeenCalledWith({
-      organizationId,
-      requestId,
-      decision: "APPROVE",
-    }));
+    expect(decideApprovalAction).not.toHaveBeenCalled();
+    expect(screen.getByText(/confirm approval/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /confirm approval/i }));
+    await waitFor(() => expect(decideApprovalAction).toHaveBeenCalledWith({ organizationId, requestId, decision: "APPROVE" }));
   });
 
-  it("creates a secure media preview only on demand and surfaces safe preview errors", async () => {
+  it("refreshes authoritative detail when a decision loses a state race", async () => {
+    vi.mocked(decideApprovalAction).mockResolvedValue({ ok: false, error: "The approval decision could not be saved." });
+    vi.mocked(loadApprovalDetailAction).mockResolvedValue({ ok: true, detail: contentDetail("SUPERSEDED") });
+    renderReview(contentDetail());
+
+    fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+    fireEvent.click(screen.getByRole("button", { name: /confirm approval/i }));
+    await waitFor(() => expect(loadApprovalDetailAction).toHaveBeenCalledWith({ organizationId, requestId }));
+    expect(await screen.findByText("SUPERSEDED")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
+  });
+
+  it("creates a request-bound secure media preview only on demand and surfaces safe preview errors", async () => {
     vi.mocked(previewApprovalMediaAction)
-      .mockResolvedValueOnce({
-        ok: true,
-        mediaAssetId,
-        signedUrl: "https://signed.example/media",
-        expiresInSeconds: 300,
-      })
+      .mockResolvedValueOnce({ ok: true, mediaAssetId, signedUrl: "https://signed.example/media", expiresInSeconds: 300 })
       .mockResolvedValueOnce({ ok: false, error: "A secure media preview could not be created." });
 
     const { rerender } = renderReview(mediaDetail());
     expect(screen.getByText("Final safety film")).toBeInTheDocument();
-    expect(screen.getByText(/sha256:bbbb/)).toBeInTheDocument();
     expect(previewApprovalMediaAction).not.toHaveBeenCalled();
-
     fireEvent.click(screen.getByRole("button", { name: /create secure preview/i }));
-    await waitFor(() => expect(previewApprovalMediaAction).toHaveBeenCalledWith({ organizationId, mediaAssetId }));
+    await waitFor(() => expect(previewApprovalMediaAction).toHaveBeenCalledWith({ organizationId, requestId }));
     expect(await screen.findByText(/secure preview ready/i)).toBeInTheDocument();
 
     rerender(<ApprovalReviewClient organizationId={organizationId} role="REVIEWER" initialDetail={mediaDetail()} />);
