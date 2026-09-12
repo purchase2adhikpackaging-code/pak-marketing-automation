@@ -261,7 +261,7 @@ async function downloadToFile(
 
   try {
     await pipeline(
-      Readable.fromWeb(response.body as ReadableStream<Uint8Array>),
+      Readable.from(response.body as AsyncIterable<Uint8Array>),
       limiter,
       createWriteStream(path, { flags: "wx" }),
     );
