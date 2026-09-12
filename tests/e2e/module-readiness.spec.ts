@@ -7,7 +7,6 @@ const routes = [
   ["/podcast", "Podcast", "Planned"],
   ["/student-testimonials", "Student Testimonials", "Planned"],
   ["/content-calendar", "Content Calendar", "Planned"],
-  ["/approval-center", "Approval Center", "Planned"],
   ["/publishing", "Publishing", "Planned"],
   ["/analytics", "Analytics", "Planned"],
 ] as const;
