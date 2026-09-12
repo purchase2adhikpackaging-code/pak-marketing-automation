@@ -34,6 +34,44 @@ create table if not exists public.organization_brand_kits (
   updated_at timestamptz not null default now()
 );
 
+-- Existing organizations receive identity rows immediately. These bootstrap
+-- rows are system-owned; the first human edit advances revision from 1 to 2.
+insert into public.organization_profiles (organization_id, official_name)
+select id, name from public.organizations
+on conflict (organization_id) do nothing;
+
+insert into public.organization_brand_kits (organization_id)
+select id from public.organizations
+on conflict (organization_id) do nothing;
+
+create or replace function public.initialize_organization_identity()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.organization_profiles (organization_id, official_name)
+  values (new.id, new.name)
+  on conflict (organization_id) do nothing;
+
+  insert into public.organization_brand_kits (organization_id)
+  values (new.id)
+  on conflict (organization_id) do nothing;
+
+  return new;
+end;
+$$;
+
+revoke all on function public.initialize_organization_identity() from public;
+revoke all on function public.initialize_organization_identity() from anon;
+revoke all on function public.initialize_organization_identity() from authenticated;
+
+drop trigger if exists organization_identity_initializer on public.organizations;
+create trigger organization_identity_initializer
+after insert on public.organizations
+for each row execute function public.initialize_organization_identity();
+
 create table if not exists public.brand_kit_media_assets (
   id uuid primary key default gen_random_uuid(),
   organization_id uuid not null references public.organization_brand_kits(organization_id) on delete cascade,
@@ -224,24 +262,16 @@ revoke all privileges on table public.organization_profiles from anon;
 revoke all privileges on table public.organization_brand_kits from anon;
 revoke all privileges on table public.brand_kit_media_assets from anon;
 
-grant select, insert, update on table public.organization_profiles to authenticated;
-grant select, insert, update on table public.organization_brand_kits to authenticated;
+-- Rows are guaranteed by bootstrap/trigger, so browser sessions only need
+-- SELECT + UPDATE for profile/brand kit. They cannot create parallel rows.
+grant select, update on table public.organization_profiles to authenticated;
+grant select, update on table public.organization_brand_kits to authenticated;
 grant select, insert, update, delete on table public.brand_kit_media_assets to authenticated;
 
 drop policy if exists organization_profiles_select_member on public.organization_profiles;
 create policy organization_profiles_select_member
 on public.organization_profiles for select to authenticated
 using (public.is_org_member(organization_id));
-
-drop policy if exists organization_profiles_insert_admin on public.organization_profiles;
-create policy organization_profiles_insert_admin
-on public.organization_profiles for insert to authenticated
-with check (
-  public.has_org_role(organization_id, array['OWNER','ADMIN'])
-  and revision = 1
-  and created_by = auth.uid()
-  and updated_by = auth.uid()
-);
 
 drop policy if exists organization_profiles_update_admin on public.organization_profiles;
 create policy organization_profiles_update_admin
@@ -253,16 +283,6 @@ drop policy if exists organization_brand_kits_select_member on public.organizati
 create policy organization_brand_kits_select_member
 on public.organization_brand_kits for select to authenticated
 using (public.is_org_member(organization_id));
-
-drop policy if exists organization_brand_kits_insert_admin on public.organization_brand_kits;
-create policy organization_brand_kits_insert_admin
-on public.organization_brand_kits for insert to authenticated
-with check (
-  public.has_org_role(organization_id, array['OWNER','ADMIN'])
-  and revision = 1
-  and created_by = auth.uid()
-  and updated_by = auth.uid()
-);
 
 drop policy if exists organization_brand_kits_update_admin on public.organization_brand_kits;
 create policy organization_brand_kits_update_admin
