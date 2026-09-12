@@ -97,26 +97,32 @@ describe("MediaLibraryClient", () => {
     expect(screen.queryByRole("button", { name: "Delete PAK Final Visual Master" })).toBeNull();
   });
 
-  it("requires confirmation for archive and admin permanent delete", async () => {
+  it("requires confirmation before archive", async () => {
     vi.mocked(archiveMediaAction).mockResolvedValue({ ok: true });
-    vi.mocked(deleteMediaAction).mockResolvedValue({ ok: true });
 
     render(<MediaLibraryClient organizations={workspace("ADMIN")} />);
     fireEvent.click(screen.getByRole("button", { name: "Archive PAK Final Visual Master" }));
     expect(archiveMediaAction).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Confirm archive" }));
     await waitFor(() => expect(archiveMediaAction).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.queryByText("PAK Final Visual Master")).toBeNull());
+  });
 
+  it("requires confirmation before admin permanent delete", async () => {
+    vi.mocked(deleteMediaAction).mockResolvedValue({ ok: true });
+
+    render(<MediaLibraryClient organizations={workspace("ADMIN")} />);
     fireEvent.click(screen.getByRole("button", { name: "Delete PAK Final Visual Master" }));
     expect(deleteMediaAction).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Confirm permanent delete" }));
     await waitFor(() => expect(deleteMediaAction).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.queryByText("PAK Final Visual Master")).toBeNull());
   });
 
   it("loads the next deterministic catalogue page", async () => {
     vi.mocked(listMediaAction).mockResolvedValue({
       ok: true,
-      page: { items: [], },
+      page: { items: [] },
     });
 
     render(<MediaLibraryClient organizations={workspace("EDITOR")} />);
