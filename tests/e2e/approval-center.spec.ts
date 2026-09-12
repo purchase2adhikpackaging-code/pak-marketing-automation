@@ -23,8 +23,12 @@ test("Approval Center remains reachable in fixed primary navigation and has no h
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/approval-center");
 
+  const openNavigation = page.getByRole("button", { name: "Open navigation" });
+  await expect(openNavigation).toBeVisible();
+  await openNavigation.click();
   const navigation = page.getByRole("navigation", { name: "Primary" });
   await expect(navigation.getByRole("link", { name: "Approval Center", exact: true })).toHaveAttribute("href", "/approval-center");
+  await page.getByRole("button", { name: "Close navigation" }).click();
 
   const widths = await page.evaluate(() => ({
     viewport: document.documentElement.clientWidth,
