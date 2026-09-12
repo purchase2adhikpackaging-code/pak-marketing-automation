@@ -22,6 +22,16 @@ describe("organization profile / brand kit database foundation", () => {
     expect(sql).toContain("brand_voice text");
   });
 
+  it("backfills identity rows and initializes them automatically for future organizations", () => {
+    const sql = source();
+    expect(sql).toContain("insert into public.organization_profiles (organization_id, official_name)");
+    expect(sql).toContain("select id, name from public.organizations");
+    expect(sql).toContain("insert into public.organization_brand_kits (organization_id)");
+    expect(sql).toContain("create or replace function public.initialize_organization_identity()");
+    expect(sql).toContain("organization_identity_initializer");
+    expect(sql).toContain("after insert on public.organizations");
+  });
+
   it("stores official assets only as Media Library IDs with controlled semantic roles", () => {
     const sql = source();
     expect(sql).toContain("create table if not exists public.brand_kit_media_assets");
