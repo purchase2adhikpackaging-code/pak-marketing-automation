@@ -75,16 +75,11 @@ describe("publishing worker dispatch secret and recovery contract", () => {
     expect(runtime).not.toContain("PUBLISHING_WORKER_SECRET");
   });
 
-  it("keeps the legacy worker-auth helper out of every active Vercel publishing path", () => {
-    const helper = source(authHelperPath);
-    const route = source(routePath);
-    const actions = source(actionsPath);
-    const runtime = source(runtimePath);
-
-    expect(helper).toContain("read_publishing_worker_dispatch_secret");
-    expect(route).not.toContain("worker-auth");
-    expect(actions).not.toContain("worker-auth");
-    expect(runtime).not.toContain("worker-auth");
+  it("removes the legacy Vercel worker-auth helper entirely", () => {
+    expect(existsSync(authHelperPath)).toBe(false);
+    expect(source(routePath)).not.toContain("worker-auth");
+    expect(source(actionsPath)).not.toContain("worker-auth");
+    expect(source(runtimePath)).not.toContain("worker-auth");
   });
 
   it("lets trusted Edge functions resolve the Vault credential while Vercel only presents the opaque capability", () => {
