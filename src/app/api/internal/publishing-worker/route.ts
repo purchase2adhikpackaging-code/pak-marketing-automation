@@ -2,7 +2,7 @@ import { handlePublishingWorkerRequest } from "@/modules/publishing-production/n
 import { runConfiguredPublishingWorker } from "@/modules/publishing-production/node-worker-runtime";
 
 export const runtime = "nodejs";
-export const maxDuration = 1800;
+export const maxDuration = 300;
 
 async function handle(request: Request): Promise<Response> {
   return handlePublishingWorkerRequest(request, {
