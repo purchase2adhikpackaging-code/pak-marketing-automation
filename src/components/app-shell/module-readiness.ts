@@ -14,7 +14,6 @@ export type B3ModuleRoute =
   | "/podcast"
   | "/student-testimonials"
   | "/content-calendar"
-  | "/approval-center"
   | "/publishing"
   | "/analytics";
 
@@ -115,20 +114,6 @@ export const B3_MODULE_READINESS = {
     relatedLinks: [
       { href: "/content-studio", label: "Open Content Studio" },
       { href: "/dashboard", label: "Open Dashboard" },
-    ],
-  },
-  "/approval-center": {
-    route: "/approval-center",
-    title: "Approval Center",
-    description: "Review scripts, translations, scenes, renders, and publishing copy with auditable decisions.",
-    status: "Planned",
-    roadmapPhase: "Phase 9",
-    explanation: "The auditable approval workflow is not active in the current release.",
-    dependency:
-      "Approval Center follows the scene/render workflow and will be enabled only when approval records and role-specific decisions are implemented.",
-    relatedLinks: [
-      { href: "/content-studio", label: "Open Content Studio" },
-      { href: "/knowledge-base", label: "Open Knowledge Base" },
     ],
   },
   "/publishing": {
