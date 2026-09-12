@@ -43,7 +43,10 @@ const asset = {
   metadata: { kind: "FINAL_VIDEO", planVersionId: "44444444-4444-4444-8444-444444444444" },
 };
 
-type TestAsset = typeof asset & { checksum?: string; status: "ACTIVE" | "ARCHIVED" | "FAILED" };
+type TestAsset = Omit<typeof asset, "checksum" | "status"> & {
+  checksum?: string;
+  status: "ACTIVE" | "ARCHIVED" | "FAILED";
+};
 
 function workspace(role: MediaOrganizationWorkspace["role"], item: TestAsset = asset): MediaOrganizationWorkspace[] {
   return [{
