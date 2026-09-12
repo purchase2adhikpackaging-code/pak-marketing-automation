@@ -33,12 +33,14 @@ test("Track B desktop navigation traverses all fourteen primary routes", async (
   }
 });
 
-test("Track B traversal preserves truthful future and foundation-only boundaries", async ({ page }) => {
+test("Track B traversal preserves truthful operational, future, and foundation-only boundaries", async ({ page }) => {
   await page.goto("/dashboard");
   const primaryNavigation = page.getByRole("navigation", { name: "Primary" });
 
   await primaryNavigation.getByRole("link", { name: "Media Library", exact: true }).click();
-  await expect(page.getByLabel("Readiness: Foundation only")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Media Library" })).toBeVisible();
+  await expect(page.getByText(/Browse PAK-owned generated and uploaded media/i)).toBeVisible();
+  await expect(page.getByLabel("Readiness: Foundation only")).toHaveCount(0);
 
   await primaryNavigation.getByRole("link", { name: "Manual Generation", exact: true }).click();
   await expect(page.getByLabel("Readiness: Foundation only")).toBeVisible();

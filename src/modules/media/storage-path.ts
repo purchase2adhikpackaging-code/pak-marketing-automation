@@ -33,3 +33,16 @@ export function buildMediaStoragePath(organizationId: string, category: string, 
   assertSafeSegment(category, "media category");
   return `${organizationId}/${category}/${sanitizeFilename(filename)}`;
 }
+
+export function buildMediaObjectIdentity(
+  organizationId: string,
+  bucket: string,
+  category: string,
+  filename: string,
+): { bucket: string; path: string } {
+  assertSafeSegment(bucket, "storage bucket");
+  return {
+    bucket,
+    path: buildMediaStoragePath(organizationId, category, filename),
+  };
+}

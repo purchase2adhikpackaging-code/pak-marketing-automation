@@ -1,8 +1,8 @@
 # PAK Marketing Automation — Requirements Traceability Matrix
 
 **Document ID:** PAK-TRACE-001  
-**Version:** 1.1  
-**Status:** Current baseline after Phase 7
+**Version:** 1.2  
+**Status:** Current baseline after Phase 8
 
 ## 1. Legend
 
@@ -13,7 +13,7 @@
 - **Legacy/Foundation** — retained compatibility/infrastructure exists but is not the current authoritative domain model.
 - **Redesign** — implementation exists but conflicts with the current contract and blocks downstream dependence.
 
-Stable requirement IDs retain their original semantic meaning. New Phase 6–7 behavior uses new IDs rather than reusing historical IDs.
+Stable requirement IDs retain their original semantic meaning. New Phase 6–8 behavior uses new IDs rather than reusing historical IDs.
 
 ## 2. Current requirement matrix
 
@@ -29,9 +29,9 @@ Stable requirement IDs retain their original semantic meaning. New Phase 6–7 b
 | PRD-JOB-001..005 Durable jobs | Provider/job workflows | jobs | state/idempotency/claim/retry tests + live privilege probes | **Implemented foundation** | Continuous |
 | PRD-VID-001..004 + PRD-VID-008..011 Scene Planning | Scene Planning | video_projects, visual_bibles, scene_plan_versions/scenes/shots/qc | unit/QC/RBAC/RLS/E2E + live probes | **Implemented** | Maintenance |
 | PRD-VID-006..007 + PRD-VID-012..018 Per-shot provider generation | Scene Planning / Settings | jobs, video_generation_attempts, Edge workers, Vault, media_assets | provider/state/retry/security/media tests + live Edge probes | **Implemented / external paid acceptance pending** | Operational acceptance when LTX credential/credits exist |
-| PRD-VID-005 + PRD-VID-019 Final assembly/readiness | Scene Planning / Media | future final-assembly job + final media asset | readiness/assembly/E2E | **Missing** | Phase 8 |
-| PRD-MEDIA-001..006 Media | Media Library / Scene Planning | media_assets, Storage, generating_job lineage | schema/RLS/import tests | **Partial** — generated-video import implemented; operator library missing | Phase 8 |
-| PRD-DASH-001..004 Dashboard | Dashboard | aggregate workflow state | UI/E2E | **Partial** | After Phases 8–12 provide complete signals |
+| PRD-VID-005 + PRD-VID-019 Final assembly/readiness | Scene Planning / Media | video_assemblies, video_assembly_components, FINAL_VIDEO_ASSEMBLY jobs, Railway render worker, final media asset | unit/E2E/container + live Edge/worker two-clip render | **Implemented** | Maintenance |
+| PRD-MEDIA-001..006 Media | Media Library / Scene Planning | media_assets, media_upload_sessions, private Storage, lineage + Edge authorization | schema/RLS/UI/E2E + live storage/render verification | **Implemented** | Maintenance |
+| PRD-DASH-001..004 Dashboard | Dashboard | aggregate workflow state | UI/E2E | **Partial** | After Phases 9–12 provide complete signals |
 | PRD-APR-001..005 Generic Approval | Approval Center | approval_requests, approval_events | workflow/E2E/RLS | **Missing**; Scene Plan has domain approval only | Phase 9 |
 | PRD-PUB-001..006 Publishing | Publishing | integration targets/attempts/jobs | fake provider + idempotency + live smoke | **Missing** | Phase 10 |
 | PRD-CAL-001..003 Calendar | Content Calendar | publication scheduling state | E2E/timezone tests | **Missing** | Phase 11 |
@@ -43,7 +43,7 @@ Stable requirement IDs retain their original semantic meaning. New Phase 6–7 b
 | PRD-MAN-001..003 Manual authoring | Manual Generation | shared content/artifact model | editor/revision tests | **Partial/Foundation only** | Phase 17 |
 | PRD-SET-001 Full Settings | Settings | organization/membership/config + integrations | E2E/RLS | **Partial** — Integrations implemented; Organization/Members/Operational config incomplete | Future settings slices |
 | TRD-DEP Hosted app | Entire app | Next.js host + PAK Supabase | build/deployment/runtime verification | **Partial operationally** — app build green; external host quota may independently block deployment | Infrastructure/operations |
-| TRD-TEST-001..006 Release gates | CI/release | GitHub Actions + live Supabase probes | exact-head CI + runtime checks | **Implemented process** | Continuous |
+| TRD-TEST-001..006 Release gates | CI/release | GitHub Actions + live Supabase/Railway probes | exact-head CI + runtime checks | **Implemented process** | Continuous |
 
 ## 3. Implemented foundation traceability
 
@@ -217,35 +217,44 @@ Verified boundaries:
 - scheduled empty dispatcher requests verified 200;
 - paid provider smoke deferred because no production org LTX credential/credits are configured.
 
-## 4. Partial / future module traceability
-
-### Media Library — Phase 8
-
-Already available:
-- `media_assets` data model and RLS;
-- private generated-video storage/import;
-- generation/job lineage.
-
-Still required:
-- operator catalogue/list;
-- upload path;
-- preview/detail;
-- archive/delete/storage authorization;
-- final assembled video visibility/lineage.
-
-### Final video assembly — Phase 8
+### 3.7 Phase 8 final assembly + Media Library
 
 Requirement families:
 - PRD-VID-005, PRD-VID-019
+- PRD-MEDIA-001..006
 - TRD-VID-005..006
 - UX-SCENE-003
+- UX-MEDIA-001..004
 
-Still required:
-- final-assembly job;
-- plan/shot/media readiness calculation;
-- composition/order pipeline;
-- final QA state;
-- final media asset.
+Implementation areas:
+- `src/modules/video/assembly/*`
+- `src/modules/media/*`
+- Scene Planning final assembly actions/read model/controls
+- Media Library catalogue/detail/upload/actions UI
+- `supabase/functions/video-assembly-worker/*`
+- `supabase/functions/media-library/*`
+- Phase 8 migrations `202609120001` through `202609120008`
+- `workers/video-assembly/*`
+- Phase 8 Playwright coverage
+
+Verified boundaries:
+- approved/current/blocker-free Scene Plan required before final assembly enqueue;
+- all persisted shots require active completed media;
+- deterministic ordered component snapshot + readiness/source hashes;
+- browser cannot mutate authoritative final-assembly execution state;
+- worker receives only Edge endpoint/internal worker token, never Supabase service-role credentials;
+- worker inputs/output use short-lived signed URLs;
+- final profile is `PAK_MASTER_1080P_V1` with 1920×1080 or 1080×1920, 24fps H.264/yuv420p, faststart, hard cuts, source audio stripped;
+- final output becomes a PAK-owned `media_assets` record in private `generated-media`;
+- Media Library upload paths are server-issued and private;
+- archive/permanent-delete role and lineage boundaries are enforced;
+- live worker unauthorized request returned 401 and authorized Vault-backed claim succeeded;
+- real two-clip live assembly traversed claim → signed input downloads → Railway FFmpeg → signed upload → atomic finalize;
+- output metadata/checksum/lineage were verified before fixture cleanup;
+- fixture objects/rows were removed and the temporary fixture Edge Function was disabled behind JWT;
+- exact-head Railway deployment and full GitHub CI were verified.
+
+## 4. Partial / future module traceability
 
 ### Approval Center — Phase 9
 
@@ -306,7 +315,7 @@ It remains in the schema from Phase 1 but is not the authoritative Scene Plannin
 
 Status: **Legacy compatibility field**.
 
-Phase 7 does not force `scene_plan_scenes` into this legacy relationship. Current generated-video lineage is preserved through `generating_job_id`, `video_generation_attempts` and job result metadata.
+Phase 7/8 do not force `scene_plan_scenes` into this legacy relationship. Current generated/final-video lineage is preserved through `generating_job_id`, generation/assembly lineage and job result metadata.
 
 ## 6. Drift-control rules
 
