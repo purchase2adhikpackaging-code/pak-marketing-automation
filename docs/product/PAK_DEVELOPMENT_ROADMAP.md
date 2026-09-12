@@ -1,8 +1,8 @@
 # PAK Marketing Automation — Development Roadmap
 
 **Document ID:** PAK-RM-001  
-**Version:** 1.2  
-**Status:** Current roadmap after Phase 8
+**Version:** 1.3  
+**Status:** Current roadmap after Phase 9
 
 ## Governance rule
 
@@ -193,19 +193,36 @@ Verification:
 - fixture storage/database residue removed and fixture seeder disabled behind JWT
 - Supabase security/performance advisors rerun; remaining non-blocking findings documented for maintenance
 
-## Phase 9 — Approval Center
+## Phase 9 — Approval Center — IMPLEMENTED
 
 Requirements:
 - PRD-APR-001..005
 - UX-APR-001..004
 
-Deliverables:
-- `approval_requests`
-- immutable `approval_events`
-- exact artifact/revision/media review
-- approve/request-changes/reject
-- supersede approval after substantive revision
-- integration with existing Scene Planning approval rather than replacement of domain rules
+Delivered:
+- generic organization-scoped `approval_requests` workflow envelope for exact content-artifact revisions and media-asset checksums
+- immutable `approval_events` audit ledger
+- queue/detail Approval Center with Awaiting review / Changes requested / Approved / Rejected filters and superseded history
+- exact artifact snapshot, source/translation context, Knowledge provenance, media preview metadata and publication-intent review context
+- OWNER/ADMIN/EDITOR submission boundary and OWNER/ADMIN/REVIEWER decision boundary
+- approve / request changes / reject actions with required comments for changes/rejection
+- idempotent exact-target submission
+- automatic supersession after substantive content revision, media checksum/state change, or stale decision revalidation
+- stable `is_target_currently_approved(...)` predicate for future Publishing policy enforcement
+- Content Studio and Media Library submission entry points
+- Scene Planning remains the independent domain-specific approval authority; Approval Center integrates by navigation/read affordance only
+- browser mutation lockdown, tenant RLS, explicit table ACLs, bounded SECURITY DEFINER RPCs and immutable event guards
+
+Verification:
+- TDD RED/GREEN across schema, workflow, supersession, ACLs, runtime pgcrypto regression and advisor-driven organization-index hardening
+- exact-head typecheck, lint, unit, production build, final-assembly worker tests/container smoke and Playwright
+- live Phase 9 migrations `approval_center_schema`, `approval_center_workflow`, `approval_center_supersession`, `approval_center_table_acl_hardening`, `approval_center_pgcrypto_schema_fix`, and `approval_events_org_index`
+- live catalog proof: RLS enabled; anon has no table access; authenticated has SELECT-only table access; internal trigger/helper functions are not authenticated-callable
+- controlled rollback-only live lifecycle proved PENDING → APPROVED → SUPERSEDED with current-approval predicate true → false and stale re-decision denied
+- immutable approval-event UPDATE/DELETE guards proved live
+- fixture cleanup verified zero residue
+- only real production membership role available for controlled probes was OWNER; EDITOR/REVIEWER/ANALYST and two-tenant negatives remain covered by automated/RLS contract tests rather than manufactured production memberships
+- Supabase security/performance advisors rerun; the Phase 9 approval-events foreign-key index finding was remediated, while intentional authenticated approval RPC warnings and unrelated pre-existing findings remain documented
 
 ## Phase 10 — Publishing foundation + Meta
 

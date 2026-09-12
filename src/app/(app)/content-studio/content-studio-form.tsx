@@ -248,6 +248,7 @@ export function ContentStudioForm({ organizations }: { organizations: Organizati
           organizationId={workspace.organizationId}
           contentItemId={workspace.contentItemId}
           artifacts={[workspace.artifact]}
+          role={selectedOrganization.role}
         />
       ) : null}
     </div>

@@ -1,8 +1,8 @@
 # PAK Marketing Automation — Master Product Requirements Document (PRD)
 
 **Document ID:** PAK-PRD-001  
-**Version:** 1.1  
-**Status:** Current baseline after Phase 7  
+**Version:** 1.2  
+**Status:** Current baseline after Phase 9  
 **Product:** Polska Akademia Kolejnictwa (PAK) Marketing Automation  
 **Primary users:** PAK marketing, communications, reviewers, analysts, administrators and owners
 
@@ -10,7 +10,7 @@
 
 PAK Marketing Automation is a multi-tenant-ready internal marketing operating system for planning, generating, reviewing, producing, publishing and measuring multilingual railway-industry content. The product combines approved institutional knowledge, AI-assisted content generation, versioned scene planning, provider-backed media generation, approval workflows, publishing integrations, campaign scheduling and analytics without exposing organization data or provider secrets to unauthorized users.
 
-The post-Phase 7 baseline has a production-grade content/knowledge/scene-planning/video-generation core. Approval Center, final video assembly, full Media Library operations, publishing, calendar, analytics and the specialized content modules remain roadmap work.
+The post-Phase 9 baseline has a production-grade content/knowledge/scene-planning/video-generation/final-assembly/media/approval core. Publishing, calendar, analytics and the specialized content modules remain roadmap work.
 
 ## 2. Product principles
 
@@ -36,9 +36,9 @@ The post-Phase 7 baseline has a production-grade content/knowledge/scene-plannin
 | Integration Vault — LTX | Implemented |
 | Scene Planning, Visual Bible, QC, review and approval | Implemented |
 | Approved-shot LTX generation, retry/reconciliation, private media import | Implemented; paid provider acceptance awaits an org credential/credits |
-| Media Library operator catalogue/upload/detail UX | Partial foundation |
-| Final assembled video render | Missing — Phase 8 |
-| Generic Approval Center | Missing — Phase 9 |
+| Media Library operator catalogue/upload/detail/lifecycle UX | Implemented |
+| Final assembled video render | Implemented |
+| Generic Approval Center | Implemented |
 | Publishing / Meta | Missing — Phase 10 |
 | Content Calendar | Missing — Phase 11 |
 | Analytics | Missing — Phase 12 |
@@ -93,7 +93,7 @@ Routes for roadmap modules may exist as truthful readiness surfaces before workf
 - **PRD-DASH-003** Surface recent content, recent generation activity and integration health.
 - **PRD-DASH-004** Never surface data from another organization.
 
-**Current maturity:** Partial. Shell/context exists; full cross-workflow cards depend on later Approval, Publishing and Calendar data.
+**Current maturity:** Partial. Shell/context exists; full cross-workflow cards depend on later Publishing, Calendar and Analytics data.
 
 ## 7. Knowledge Base
 
@@ -143,7 +143,7 @@ Routes for roadmap modules may exist as truthful readiness surfaces before workf
 
 ## 10. Scene Planning and video production
 
-The original video requirements keep their IDs and meanings; Phases 6–7 add new IDs rather than reusing old ones.
+The original video requirements keep their IDs and meanings; Phases 6–8 add new IDs rather than reusing old ones.
 
 ### Original video requirements
 
@@ -173,7 +173,7 @@ The original video requirements keep their IDs and meanings; Phases 6–7 add ne
 - **PRD-VID-018** LTX credentials use Integration Vault, never return to browser state, and support non-billable credential validation where provider semantics permit.
 - **PRD-VID-019** Final video assembly is a separate durable job from per-shot generation and produces an organization-scoped final media asset with component lineage.
 
-**Current maturity:** Scene Planning and per-shot provider generation implemented. PRD-VID-005 and PRD-VID-019 final assembly/readiness remain Phase 8.
+**Current maturity:** Scene Planning, per-shot provider generation, final assembly/readiness and final Media Library output handling are implemented. Paid LTX provider acceptance remains an external operational check when organization credentials/credits exist.
 
 ## 11. AI Representative
 
@@ -225,7 +225,7 @@ The original video requirements keep their IDs and meanings; Phases 6–7 add ne
 - **PRD-MEDIA-005** Provider-generated assets retain safe provider/job metadata where operationally necessary.
 - **PRD-MEDIA-006** Generated-video objects are stored in private organization-scoped paths before a generation job is considered successfully imported.
 
-**Current maturity:** Backend/storage/generated-video foundation implemented; full operator catalogue/upload/preview/detail/lifecycle UX remains Phase 8.
+**Current maturity:** Implemented for operator catalogue/detail/authorized preview/upload/archive/delete plus generated/final-video lineage. Phase 9 adds generic approval submission for eligible ACTIVE checksum-bearing assets.
 
 ## 17. Approval Center
 
@@ -235,7 +235,7 @@ The original video requirements keep their IDs and meanings; Phases 6–7 add ne
 - **PRD-APR-004** Publication may enforce approval prerequisites by channel/content policy.
 - **PRD-APR-005** Revisions after approval invalidate prior approval when substantive content changes.
 
-**Current maturity:** Generic Approval Center missing. Scene Planning has its own implemented domain approval lifecycle but does not replace product-wide approval.
+**Current maturity:** Implemented for exact CONTENT_ARTIFACT revision and MEDIA_ASSET checksum targets, immutable audit events, role-gated decisions, automatic supersession and a stable current-approval predicate. Scene Planning keeps its separate implemented domain approval lifecycle.
 
 ## 18. Content Calendar
 
@@ -289,7 +289,7 @@ The original video requirements keep their IDs and meanings; Phases 6–7 add ne
 - **PRD-JOB-004** Provider errors are normalized before persistence/UI display.
 - **PRD-JOB-005** Provider-spend jobs have a single validated creation boundary that derives trusted execution input from authoritative domain state.
 
-**Current maturity:** Implemented foundation; exercised by Phase 7 video generation.
+**Current maturity:** Implemented foundation; exercised by Phase 7 video generation and Phase 8 final assembly.
 
 ## 23. Non-functional requirements
 
@@ -303,7 +303,7 @@ The original video requirements keep their IDs and meanings; Phases 6–7 add ne
 - **PRD-NFR-008 Data integrity:** database constraints/triggers/RLS are authoritative for security-critical invariants, not browser validation alone.
 - **PRD-NFR-009 Cost safety:** paid-provider execution cannot be triggered through an unvalidated browser-controlled payload or unconstrained retry loop.
 
-## 24. Operational core baseline after Phase 7
+## 24. Operational core baseline after Phase 9
 
 The current operational core consists of:
 
@@ -314,13 +314,16 @@ The current operational core consists of:
 5. Content Studio grounded canonical generation
 6. EN/PL/HI artifact workflow
 7. immutable Knowledge provenance snapshots
-8. Scene Planning with Video Project, Visual Bible, versioned scenes/shots, deterministic QC and approval
+8. Scene Planning with Video Project, Visual Bible, versioned scenes/shots, deterministic QC and domain approval
 9. durable approved-shot LTX generation with bounded retry/reconciliation
 10. private generated-video import into organization-scoped storage and `media_assets`
 11. unattended video-generation dispatcher
-12. GitHub CI / release verification discipline
+12. durable final-video assembly with private signed media flow and Railway FFmpeg worker
+13. operational Media Library catalogue/detail/preview/upload/archive/delete boundaries
+14. generic exact-target Approval Center with immutable audit, supersession and current-approval predicate
+15. GitHub CI / release verification discipline
 
-This operational core is not the full product. Phase 8 onward completes final assembly/media operations, generic approvals, publishing, scheduling, analytics and specialized modules.
+This operational core is not the full product. Phase 10 onward completes publishing, scheduling, analytics and specialized modules.
 
 ## 25. Explicit non-goals for the current baseline
 

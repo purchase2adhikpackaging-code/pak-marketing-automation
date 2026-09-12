@@ -42,6 +42,12 @@ test("Track B traversal preserves truthful operational, future, and foundation-o
   await expect(page.getByText(/Browse PAK-owned generated and uploaded media/i)).toBeVisible();
   await expect(page.getByLabel("Readiness: Foundation only")).toHaveCount(0);
 
+  await primaryNavigation.getByRole("link", { name: "Approval Center", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Approval Center" })).toBeVisible();
+  await expect(page.getByLabel("Readiness: Planned")).toHaveCount(0);
+  await expect(page.getByLabel("Approval workflow status")).toBeVisible();
+  await expect(page.getByText("Domain approval", { exact: true })).toBeVisible();
+
   await primaryNavigation.getByRole("link", { name: "Manual Generation", exact: true }).click();
   await expect(page.getByLabel("Readiness: Foundation only")).toBeVisible();
 

@@ -1,8 +1,8 @@
 # PAK Marketing Automation — Backend Schema & Data Architecture
 
 **Document ID:** PAK-DB-001  
-**Version:** 1.1  
-**Status:** Current baseline after Phase 7
+**Version:** 1.2  
+**Status:** Current baseline after Phase 9
 
 ## 1. Schema principles
 
@@ -41,11 +41,14 @@ jobs
 └─ video_generation_attempts
    └─ media_assets (via generating_job_id/media_asset_id)
 
+approval_requests
+└─ approval_events
+
 legacy/foundation compatibility:
 video_scenes
 ```
 
-The authoritative post-Phase 6 planning model is the normalized Scene Planning hierarchy above. `video_scenes` remains a legacy/foundation table and is not the current Scene Planning source of truth.
+The authoritative post-Phase 6 planning model is the normalized Scene Planning hierarchy above. `video_scenes` remains a legacy/foundation table and is not the current Scene Planning source of truth. Generic Phase 9 approval records do not replace Scene Planning's domain-specific approval lifecycle.
 
 ## 3. `organizations`
 
@@ -534,30 +537,77 @@ Current Phase 7 infrastructure includes:
 
 These are infrastructure capabilities, not browser-managed organization integrations.
 
-## 16. Planned entity — `approval_requests`
+## 16. `approval_requests`
+
+Purpose: mutable workflow envelope for one exact generic review target identity while preserving immutable target context.
+
+Current fields/logical shape:
+- `id uuid PK`
+- `organization_id uuid NOT NULL FK organizations`
+- `target_type`: CONTENT_ARTIFACT|MEDIA_ASSET
+- `target_id uuid NOT NULL`
+- `target_revision integer nullable` — required only for CONTENT_ARTIFACT
+- `target_checksum text nullable` — required only for MEDIA_ASSET
+- `target_fingerprint text NOT NULL`
+- `target_snapshot jsonb NOT NULL`
+- `publication_intent jsonb NOT NULL default {}`
+- `status`: PENDING|CHANGES_REQUESTED|APPROVED|REJECTED|SUPERSEDED
+- `requested_by`, `requested_at`
+- `decided_by`, `decided_at`
+- `superseded_at`, `superseded_reason`
+- timestamps
+- unique `(organization_id, target_type, target_fingerprint)`
+
+Security/integrity rules:
+- CONTENT_ARTIFACT identity uses exact authoritative artifact revision and no checksum;
+- MEDIA_ASSET identity uses exact authoritative checksum and no revision;
+- target identifying fields, fingerprint, snapshot, publication intent and request identity fields are immutable after insertion;
+- publication intent must be an object and is bounded to 8 KiB; it is review context, never authorization;
+- direct authenticated INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER privileges are revoked; authenticated users receive SELECT only subject to RLS;
+- same-org SELECT is restricted to OWNER/ADMIN/EDITOR/REVIEWER; ANALYST has no operational Approval Center queue;
+- anon has no approval-table access.
+
+Authenticated workflow boundaries:
+- `submit_approval_request(...)` accepts organization ID, target type, target ID and bounded publication intent only, then reconstructs revision/checksum/snapshot/fingerprint server-side. OWNER/ADMIN/EDITOR may submit. Exact duplicate submissions are idempotent.
+- `decide_approval_request(...)` locks/revalidates one PENDING request before APPROVE/REQUEST_CHANGES/REJECT. OWNER/ADMIN/REVIEWER may decide. Request-changes/reject require nonempty bounded comments.
+- `is_target_currently_approved(...)` returns true only when the current same-org authoritative target remains eligible and the exact current revision/checksum has a non-superseded APPROVED request.
+- user-callable RPCs are SECURITY DEFINER with pinned `search_path = public`, authenticated-only EXECUTE grants, and internal auth/org/role rechecks; pgcrypto hashing is schema-qualified as `extensions.digest(...)` rather than broadening search_path.
+
+Supersession:
+- content artifact revision/status/script changes supersede PENDING/CHANGES_REQUESTED/APPROVED requests for the old exact identity;
+- media status/checksum changes supersede PENDING/CHANGES_REQUESTED/APPROVED requests for the old exact identity;
+- stale decision revalidation may supersede the request atomically;
+- REJECTED history remains rejected rather than being rewritten as superseded.
+
+## 17. `approval_events`
+
+Purpose: immutable audit ledger for generic approval workflow events.
 
 Fields:
-- `id`
-- `organization_id`
-- target content/artifact/revision/media reference
-- `status`: PENDING|CHANGES_REQUESTED|APPROVED|REJECTED|SUPERSEDED
-- requested_by/timestamps
+- `id uuid PK`
+- `organization_id uuid NOT NULL FK organizations`
+- `approval_request_id uuid NOT NULL FK approval_requests`
+- `actor_kind`: USER|SYSTEM
+- `actor_user_id nullable`
+- `event_type`: SUBMITTED|APPROVED|CHANGES_REQUESTED|REJECTED|SUPERSEDED
+- `comment nullable` bounded to 2000 characters
+- `target_revision nullable`
+- `target_checksum nullable`
+- `created_at`
 
-Phase: 9.
+Rules:
+- USER events require an actor user; SYSTEM events may have no user;
+- CHANGES_REQUESTED and REJECTED require a nonempty comment;
+- event target revision/checksum must match the parent request identity;
+- browser/session clients have same review-role SELECT visibility as requests and no direct INSERT/UPDATE/DELETE;
+- database trigger `approval_events_immutable` rejects UPDATE/DELETE even for accidental privileged mutation paths;
+- parent/org/target identity is enforced at insertion;
+- history index covers `(approval_request_id, created_at, id)` and `approval_events_organization_id_idx` covers the organization FK/tenant history scans.
 
-## 17. Planned entity — `approval_events`
-
-Immutable event log:
-- approval request
-- actor
-- decision/event
-- comment
-- target revision
-- created_at
-
-No authenticated UPDATE/DELETE.
-
-Phase: 9.
+Scene Planning relationship:
+- no Scene Plan request/event rows are created in this generic ledger;
+- `scene_plan_versions` review/approval remains the sole domain authority for Scene Planning;
+- Approval Center exposes only navigational/read integration to that existing lifecycle.
 
 ## 18. Planned publishing entities
 
@@ -616,6 +666,8 @@ Implemented high-level migration groups:
 - Knowledge integrity/provenance;
 - Integration Vault + transactional audit + Supabase Vault migration;
 - Scene Planning migrations `202609110001`–`202609110007`;
-- Phase 7 video generation migrations `202609110008`–`202609110012`.
+- Phase 7 video generation migrations `202609110008`–`202609110012`;
+- Phase 8 Media Library/final-assembly migrations `202609120001`–`202609120008`;
+- Phase 9 Approval Center migrations `202609120009`–`202609120014`, including table ACL hardening, pgcrypto schema qualification and approval-event organization indexing.
 
 The repository migration chain and live Supabase migration history are the authoritative executable schema. This document describes the intended logical model and must be updated whenever a merged migration materially changes that model.
