@@ -13,6 +13,7 @@ import {
   loadProgrammeCurriculumFromDisk,
 } from "@/modules/publishing-production/server-curriculum";
 import { createAuthenticatedPublishingRepository } from "@/modules/publishing-production/server-repository";
+import { resolvePublishingWorkerSecret } from "@/modules/publishing-production/worker-auth";
 
 export interface ProductionActionDependencies {
   getActorMembership(organizationId: string): Promise<{ actorId: string; role: AppRole } | null>;
@@ -164,8 +165,15 @@ async function productionDependencies(): Promise<ProductionActionDependencies> {
     enqueueJobs: (input) => repository.enqueueJobs(input),
 
     async kick() {
-      const secret = process.env.CRON_SECRET ?? process.env.PUBLISHING_WORKER_SECRET;
-      if (!secret) return;
+      let secret = process.env.CRON_SECRET?.trim() || process.env.PUBLISHING_WORKER_SECRET?.trim();
+      if (!secret) {
+        try {
+          secret = await resolvePublishingWorkerSecret();
+        } catch {
+          return;
+        }
+      }
+
       const requestHeaders = await headers();
       const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
       if (!host) return;
@@ -180,7 +188,7 @@ async function productionDependencies(): Promise<ProductionActionDependencies> {
             cache: "no-store",
           });
         } catch {
-          // Cron remains the durable fallback; a failed immediate kick must not undo a persisted run.
+          // Supabase pg_cron remains the durable fallback; a failed kick must not undo a persisted run.
         }
       });
     },
