@@ -89,11 +89,16 @@ describe("Approval Center server actions", () => {
     expect(analyst.getDetail).not.toHaveBeenCalled();
   });
 
-  it("delegates media preview only after same-org membership", async () => {
+  it("permits approval media previews only to operational review roles and blocks ANALYST", async () => {
+    const reviewer = dependencies("REVIEWER");
+    const allowed = await executePreviewApprovalMediaAction({ organizationId, mediaAssetId: targetId }, reviewer);
+    expect(allowed.ok).toBe(true);
+    expect(reviewer.previewMedia).toHaveBeenCalledWith({ operation: "preview", organizationId, mediaAssetId: targetId });
+
     const analyst = dependencies("ANALYST");
-    const result = await executePreviewApprovalMediaAction({ organizationId, mediaAssetId: targetId }, analyst);
-    expect(result.ok).toBe(true);
-    expect(analyst.previewMedia).toHaveBeenCalledWith({ operation: "preview", organizationId, mediaAssetId: targetId });
+    const denied = await executePreviewApprovalMediaAction({ organizationId, mediaAssetId: targetId }, analyst);
+    expect(denied.ok).toBe(false);
+    expect(analyst.previewMedia).not.toHaveBeenCalled();
   });
 
   it("fails malformed or oversized inputs safely before side effects", async () => {
