@@ -222,6 +222,9 @@ export async function executePreviewApprovalMediaAction(
   try {
     const authorization = await authorizeMember(parsed.data.organizationId, dependencies);
     if ("error" in authorization) return { ok: false, error: authorization.error };
+    if (!REVIEW_ROLES.includes(authorization.role)) {
+      return { ok: false, error: "You do not have permission to preview approval media." };
+    }
     const response = await dependencies.previewMedia({
       operation: "preview",
       organizationId: parsed.data.organizationId,
