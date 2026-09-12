@@ -21,7 +21,7 @@ export function MediaDetail({
   previewPending: boolean;
   canSubmitForReview: boolean;
   reviewPending: boolean;
-  reviewRequestHref?: string;
+  reviewRequestHref: string | undefined;
   onPreview(): void;
   onSubmitForReview(): void;
   onClose(): void;
