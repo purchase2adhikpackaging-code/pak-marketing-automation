@@ -28,10 +28,13 @@ describe("generate-content Edge cost guardrails", () => {
     expect(source).toMatch(/max_output_tokens:\s*MAX_OUTPUT_TOKENS/);
   });
 
-  it("enforces a database-backed quota before resolving the provider secret", () => {
+  it("keeps interactive and background generation on separate bounded database quotas", () => {
     expect(source).toContain("RATE_LIMIT_WINDOW_SECONDS");
-    expect(source).toContain("RATE_LIMIT_REQUESTS");
+    expect(source).toContain("INTERACTIVE_RATE_LIMIT_REQUESTS");
+    expect(source).toContain("PUBLISHING_RATE_LIMIT_REQUESTS");
+    expect(source).toMatch(/requestLimit\s*=\s*internalRequest\s*\?\s*PUBLISHING_RATE_LIMIT_REQUESTS\s*:\s*INTERACTIVE_RATE_LIMIT_REQUESTS/);
     expect(source).toContain('admin.rpc("consume_generation_quota", {');
+    expect(source).toContain("_request_limit: requestLimit");
     expect(source).toContain('error: "GENERATION_RATE_LIMITED"');
 
     const quotaCall = source.indexOf('admin.rpc("consume_generation_quota", {');
