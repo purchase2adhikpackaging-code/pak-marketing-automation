@@ -11,9 +11,13 @@ function phase8MigrationSql(): string {
     .join("\n");
 }
 
+function normalizeSql(sql: string): string {
+  return sql.replace(/\s+/g, " ").trim();
+}
+
 describe("Phase 8 media mutation security boundary", () => {
   it("removes direct media delete/insert and limits authenticated updates to archive metadata", () => {
-    const sql = phase8MigrationSql();
+    const sql = normalizeSql(phase8MigrationSql());
 
     expect(sql).toContain(
       "drop policy if exists media_assets_delete_admin on public.media_assets",
@@ -29,7 +33,7 @@ describe("Phase 8 media mutation security boundary", () => {
   });
 
   it("keeps Phase 8 execution tables read-only to browser roles", () => {
-    const sql = phase8MigrationSql();
+    const sql = normalizeSql(phase8MigrationSql());
 
     for (const table of [
       "public.video_assemblies",
