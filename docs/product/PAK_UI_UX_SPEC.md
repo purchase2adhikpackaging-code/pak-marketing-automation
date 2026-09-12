@@ -1,8 +1,8 @@
 # PAK Marketing Automation — UI/UX Design Specification
 
 **Document ID:** PAK-UX-001  
-**Version:** 1.1  
-**Status:** Current baseline after Phase 7
+**Version:** 1.2  
+**Status:** Current baseline after Phase 9
 
 ## 1. UX objective
 
@@ -18,7 +18,7 @@ PAK is an internal operations console, not a public marketing website. UX optimi
 
 A route is not considered implemented merely because it renders. Primary journey, loading/empty/error/success states, authorization and responsive behavior must exist.
 
-Existing UX requirement IDs retain their original meaning; additions introduced by Scene Planning/LTX use new IDs.
+Existing UX requirement IDs retain their original meaning; additions introduced by Scene Planning/LTX/Approval Center use new IDs.
 
 ## 2. Current UI maturity
 
@@ -31,8 +31,8 @@ Existing UX requirement IDs retain their original meaning; additions introduced 
 | Approved-shot video generation controls | Implemented |
 | Settings → Integrations OpenAI/LTX | Implemented |
 | Dashboard | Partial |
-| Media Library | Foundation/readiness only |
-| Approval Center | Planned/readiness only |
+| Media Library | Implemented |
+| Approval Center | Implemented |
 | Publishing | Planned/readiness only |
 | Content Calendar | Planned/readiness only |
 | Analytics | Planned/readiness only |
@@ -110,7 +110,7 @@ Generated content can expose read-only `Sources used` metadata/snapshots to auth
 ### UX-CS-007 Scene Planning handoff
 A GENERATED artifact may expose `Create Scene Plan`; handoff navigates to a persisted project while authoritative script/revision is server-resolved.
 
-**Current maturity:** Implemented.
+**Current maturity:** Implemented. Eligible generated artifacts also expose the Phase 9 `Submit for review` path for authorized submitter roles without sending script/revision as browser authority.
 
 ## 7. Knowledge Base
 
@@ -164,18 +164,18 @@ EDITOR/REVIEWER/ANALYST receive no credential mutation controls or raw secret va
 ## 9. Media Library
 
 ### UX-MEDIA-001 Library view
-Baseline supports/targets a list view with asset type, identity/name, origin, linked content/job, created time and processing state.
+Baseline supports a list/catalogue view with asset type, identity/name, origin, linked content/job, created time and processing state.
 
 ### UX-MEDIA-002 Upload
 Uploads show progress and validation failure; large files use controlled direct-storage paths where practical.
 
 ### UX-MEDIA-003 Asset detail
-Show metadata, preview when supported, lineage/content links and safe provider/job state; never expose raw storage credentials.
+Show metadata, authorized preview when supported, lineage/content links and safe provider/job state; never expose raw storage credentials.
 
 ### UX-MEDIA-004 Generated media
-Phase 7-generated video already creates PAK-owned private `media_assets`; Phase 8 Media Library must surface those records rather than invent alternate identity.
+Phase 7/8 generated and assembled video creates PAK-owned private `media_assets`; Media Library surfaces those records rather than inventing alternate identity.
 
-**Current maturity:** Backend/generated-video foundation only; operator surface remains Phase 8.
+**Current maturity:** Implemented. Phase 9 adds `Submit for review` for ACTIVE checksum-bearing assets for authorized submitter roles while preserving Phase 8 archive/delete boundaries.
 
 ## 10. Scene Planning
 
@@ -188,7 +188,7 @@ Each scene shows sequence/order, estimated duration, narration/script portion, v
 Authorized editors may adjust permitted visual direction/timing fields before provider generation. Script-derived narration remains source-linked/read-only and provenance is preserved.
 
 ### UX-SCENE-003 Readiness
-Final render CTA remains unavailable with explicit reasons until all required components are complete and QA-ready. Until Phase 8 implements final assembly, UI must not imply per-shot generation is a finished film.
+Final render CTA remains unavailable with explicit reasons until all required components are complete and QA-ready. Phase 8 implements the authoritative final assembly path; readiness never implies per-shot generation alone is a finished film.
 
 ### UX-SCENE-004 Entry states
 No-project route shows a truthful Content Studio handoff state. Invalid/unavailable project IDs show safe non-leaking states.
@@ -214,7 +214,7 @@ Review/approve controls depend on role and lifecycle; warnings may require ackno
 ### UX-SCENE-011 Source freshness
 Stale/source-changed plan state is visible and disables provider-generation actions until a current approved plan exists.
 
-**Current maturity:** Implemented.
+**Current maturity:** Implemented. Its approval lifecycle remains domain-specific and is not replaced by the generic Approval Center.
 
 ## 11. Approved-shot video generation
 
@@ -236,7 +236,7 @@ Completed state references PAK-owned media identity, not provider URL.
 ### UX-VID-006 LTX dependency
 Missing/invalid/disabled LTX produces actionable normalized integration state, not provider internals.
 
-**Current maturity:** Implemented per-shot controls; final assembly remains governed by UX-SCENE-003 / Phase 8.
+**Current maturity:** Implemented per-shot controls; Phase 8 final assembly/readiness is also implemented through UX-SCENE-003.
 
 ## 12. AI Representative
 
@@ -295,18 +295,18 @@ Rescheduling updates authoritative schedule and clearly displays timezone.
 ## 18. Approval Center
 
 ### UX-APR-001 Queue
-Filters: Awaiting review / Changes requested / Approved / Rejected.
+Filters: Awaiting review / Changes requested / Approved / Rejected. Superseded records remain available as secondary history rather than a primary decision queue.
 
 ### UX-APR-002 Review screen
-Show exact artifact/revision, source/translation status, Knowledge provenance, media previews and publication intent.
+Show exact artifact/revision, source/translation status, Knowledge provenance, authorized media previews and publication intent. Stale/superseded requests are visibly non-decisionable.
 
 ### UX-APR-003 Review actions
-Approve / Request changes / Reject require explicit action; request/reject require comment; decisions become immutable audit history.
+Approve / Request changes / Reject require explicit action; request/reject require comment; decisions become immutable audit history. Decision controls are shown only to authorized review roles and only while the exact request is PENDING/current.
 
 ### UX-APR-004 Relationship to Scene Planning
-Scene Planning's existing plan-level approval remains domain-specific behavior. Generic Approval Center integrates rather than overwrites that lifecycle.
+Scene Planning's existing plan-level approval remains domain-specific behavior. Generic Approval Center integrates rather than overwrites that lifecycle and provides a link/affordance back to the Scene Planning review surface.
 
-**Current maturity:** Generic module missing; planned Phase 9.
+**Current maturity:** Implemented in Phase 9, including queue/detail views, exact-target history, role-gated decisions, Content Studio/Media Library submission entry points and Scene Planning domain-approval linkage.
 
 ## 19. Publishing
 
@@ -353,7 +353,7 @@ Persistent navigation, multi-column workspaces where useful, dense but readable 
 ### Mobile
 Single-column critical flows, accessible navigation disclosure, cards instead of horizontal-table dependency and no critical control requiring horizontal overflow.
 
-Current release verification includes mobile Scene Planning smoke at a narrow viewport. Content Studio, Knowledge Base, Scene Planning and Settings/Integrations should remain usable in modern mobile Chrome.
+Current release verification includes mobile Scene Planning smoke at a narrow viewport. Content Studio, Knowledge Base, Scene Planning, Media Library, Approval Center and Settings/Integrations should remain usable in modern mobile Chrome.
 
 ## 23. Accessibility baseline
 
