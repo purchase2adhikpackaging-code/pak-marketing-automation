@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
+import type { BookJob } from "@/modules/publishing-factory/domain";
 import {
   PublishingProductionRepository,
   type PublishingProductionTransport,
 } from "@/modules/publishing-production/repository";
 
-const governedBookJob = {
+const governedBookJob: BookJob = {
   bookId: "PAK-D01-S1-D01-102-TEXTBOOK",
   programmeCode: "PAK-D01",
   programmeTitle: "Diploma in Railway Rolling Stock Engineering & Maintenance",
@@ -18,7 +19,7 @@ const governedBookJob = {
   curriculumSourcePaths: ["docs/academic/diplomas/D01/S1.md"],
   status: "PLANNED",
   repairAttempts: {},
-} as const;
+};
 
 function jobRow(overrides: Record<string, unknown> = {}) {
   return {
