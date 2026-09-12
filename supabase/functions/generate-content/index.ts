@@ -16,7 +16,8 @@ const MAX_INSTRUCTIONS_CHARS = 12_000;
 const MAX_INPUT_CHARS = 60_000;
 const MAX_OUTPUT_TOKENS = 4_000;
 const RATE_LIMIT_WINDOW_SECONDS = 600;
-const RATE_LIMIT_REQUESTS = 20;
+const INTERACTIVE_RATE_LIMIT_REQUESTS = 20;
+const PUBLISHING_RATE_LIMIT_REQUESTS = 120;
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
@@ -139,11 +140,12 @@ Deno.serve(async (req: Request) => {
   const model = requestedModel ?? configuredModel ?? "gpt-5.6-luna";
   if (!ALLOWED_MODELS.has(model)) return json(400, { error: "MODEL_NOT_ALLOWED" });
 
+  const requestLimit = internalRequest ? PUBLISHING_RATE_LIMIT_REQUESTS : INTERACTIVE_RATE_LIMIT_REQUESTS;
   const { data: quotaAllowed, error: quotaError } = await admin.rpc("consume_generation_quota", {
     _organization_id: body.organizationId,
     _actor_user_id: actorUserId,
     _window_seconds: RATE_LIMIT_WINDOW_SECONDS,
-    _request_limit: RATE_LIMIT_REQUESTS,
+    _request_limit: requestLimit,
   });
   if (quotaError) return json(500, { error: "QUOTA_UNAVAILABLE" });
   if (quotaAllowed !== true) return json(429, { error: "GENERATION_RATE_LIMITED" });
