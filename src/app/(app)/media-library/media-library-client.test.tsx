@@ -1,3 +1,4 @@
+import "@testing-library/jest-dom/vitest";
 import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,7 +11,11 @@ vi.mock("./actions", () => ({
   issueMediaUploadAction: vi.fn(),
   finalizeMediaUploadAction: vi.fn(),
 }));
+vi.mock("../approval-center/actions", () => ({
+  submitApprovalAction: vi.fn(),
+}));
 
+import { submitApprovalAction } from "../approval-center/actions";
 import {
   archiveMediaAction,
   deleteMediaAction,
@@ -38,14 +43,16 @@ const asset = {
   metadata: { kind: "FINAL_VIDEO", planVersionId: "44444444-4444-4444-8444-444444444444" },
 };
 
-function workspace(role: MediaOrganizationWorkspace["role"]): MediaOrganizationWorkspace[] {
+type TestAsset = typeof asset & { checksum?: string; status: "ACTIVE" | "ARCHIVED" | "FAILED" };
+
+function workspace(role: MediaOrganizationWorkspace["role"], item: TestAsset = asset): MediaOrganizationWorkspace[] {
   return [{
     id: asset.organizationId,
     label: "Polish Railway Academy",
     role,
     initialPage: {
-      items: [asset],
-      nextCursor: { createdAt: asset.createdAt, id: asset.id },
+      items: [item],
+      nextCursor: { createdAt: item.createdAt, id: item.id },
     },
   }];
 }
@@ -56,6 +63,7 @@ describe("MediaLibraryClient", () => {
     vi.mocked(previewMediaAction).mockReset();
     vi.mocked(archiveMediaAction).mockReset();
     vi.mocked(deleteMediaAction).mockReset();
+    vi.mocked(submitApprovalAction).mockReset();
   });
 
   it("renders catalogue lineage without exposing a signed preview before explicit request", () => {
@@ -132,5 +140,49 @@ describe("MediaLibraryClient", () => {
       organizationId: asset.organizationId,
       cursor: { createdAt: asset.createdAt, id: asset.id },
     })));
+  });
+
+  it("offers approval submission only for ACTIVE checksummed media and submit-capable roles", () => {
+    const { rerender } = render(<MediaLibraryClient organizations={workspace("EDITOR")} />);
+    fireEvent.click(screen.getByRole("button", { name: "Details" }));
+    expect(screen.getByRole("button", { name: "Submit PAK Final Visual Master for review" })).toBeInTheDocument();
+
+    rerender(<MediaLibraryClient organizations={workspace("REVIEWER")} />);
+    fireEvent.click(screen.getByRole("button", { name: "Details" }));
+    expect(screen.queryByRole("button", { name: "Submit PAK Final Visual Master for review" })).not.toBeInTheDocument();
+
+    const { checksum: _checksum, ...withoutChecksum } = asset;
+    rerender(<MediaLibraryClient organizations={workspace("EDITOR", withoutChecksum as TestAsset)} />);
+    fireEvent.click(screen.getByRole("button", { name: "Details" }));
+    expect(screen.queryByRole("button", { name: "Submit PAK Final Visual Master for review" })).not.toBeInTheDocument();
+
+    rerender(<MediaLibraryClient organizations={workspace("ADMIN", { ...asset, status: "ARCHIVED" })} />);
+    fireEvent.click(screen.getByRole("button", { name: "Details" }));
+    expect(screen.queryByRole("button", { name: "Submit PAK Final Visual Master for review" })).not.toBeInTheDocument();
+  });
+
+  it("submits only safe media identifiers/context and surfaces the review request", async () => {
+    vi.mocked(submitApprovalAction).mockResolvedValue({
+      ok: true,
+      requestId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    });
+    render(<MediaLibraryClient organizations={workspace("ADMIN")} />);
+    fireEvent.click(screen.getByRole("button", { name: "Details" }));
+    fireEvent.click(screen.getByRole("button", { name: "Submit PAK Final Visual Master for review" }));
+
+    await waitFor(() => expect(submitApprovalAction).toHaveBeenCalledWith({
+      organizationId: asset.organizationId,
+      targetType: "MEDIA_ASSET",
+      targetId: asset.id,
+      publicationIntent: { source: "media-library", assetType: "VIDEO" },
+    }));
+    expect(submitApprovalAction).not.toHaveBeenCalledWith(expect.objectContaining({
+      checksum: expect.anything(),
+      storagePath: expect.anything(),
+    }));
+    expect(await screen.findByRole("link", { name: "Open review request" })).toHaveAttribute(
+      "href",
+      `/approval-center/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa?organization=${asset.organizationId}`,
+    );
   });
 });
