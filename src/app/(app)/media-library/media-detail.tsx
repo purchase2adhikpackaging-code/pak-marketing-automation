@@ -1,5 +1,7 @@
 "use client";
 
+import React from "react";
+
 import type { SafeMediaAsset } from "@/modules/media/read-model";
 
 export function MediaDetail({
