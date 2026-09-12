@@ -18,8 +18,9 @@ describe("authenticated publishing enqueue hardening", () => {
     expect(source).toMatch(/create policy\s+publishing_jobs_insert_authorized/i);
     expect(source).toMatch(/on\s+public\.publishing_production_jobs[\s\S]*for insert[\s\S]*to authenticated/i);
     expect(source).toMatch(/publishing_production_runs/i);
-    expect(source).toMatch(/created_by\s*=\s*auth\.uid\(\)/i);
+    expect(source).toMatch(/r\.organization_id\s*=\s*organization_id/i);
     expect(source).toMatch(/has_org_role[\s\S]*OWNER[\s\S]*ADMIN[\s\S]*EDITOR/i);
+    expect(source).toMatch(/scope_type\s*<>\s*'PORTFOLIO'[\s\S]*OWNER[\s\S]*ADMIN/i);
   });
 
   it("allows trigger-driven summary refresh without requiring a service-role JWT", () => {
@@ -28,5 +29,11 @@ describe("authenticated publishing enqueue hardening", () => {
     expect(refreshBody).not.toMatch(/auth\.role\(\)\s*<>\s*'service_role'/i);
     expect(source).toMatch(/revoke execute on function public\.refresh_publishing_run_summary\(uuid\) from authenticated/i);
     expect(source).toMatch(/grant execute on function public\.refresh_publishing_run_summary\(uuid\) to service_role/i);
+  });
+
+  it("keeps portfolio start and control restricted to owner or admin", () => {
+    const source = sql();
+    expect(source).toMatch(/publishing_runs_insert_authorized[\s\S]*scope_type\s*<>\s*'PORTFOLIO'[\s\S]*OWNER[\s\S]*ADMIN/i);
+    expect(source).toMatch(/v_role\s*=\s*'EDITOR'[\s\S]*v_run\.scope_type\s*=\s*'PORTFOLIO'/i);
   });
 });
