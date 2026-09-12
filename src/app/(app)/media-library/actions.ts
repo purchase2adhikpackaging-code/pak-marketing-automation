@@ -9,6 +9,7 @@ import {
   type MediaLibraryEdgeRequest,
 } from "@/modules/integrations/edge-client";
 import { SupabaseMediaRepository } from "@/modules/media/repository";
+import type { MediaListPage, MediaListQuery } from "@/modules/media/read-model";
 import { SupabaseScenePlanningRepository } from "@/modules/scene-planning/repository";
 
 const EDIT_ROLES: readonly AppRole[] = ["OWNER", "ADMIN", "EDITOR"];
@@ -19,10 +20,51 @@ const mediaIdsSchema = z.object({
   mediaAssetId: z.string().uuid(),
 }).strict();
 
+const listSchema = z.object({
+  organizationId: z.string().uuid(),
+  assetType: z.enum(["IMAGE", "VIDEO", "AUDIO", "DOCUMENT"]).optional(),
+  source: z.enum(["UPLOAD", "GENERATED", "IMPORT"]).optional(),
+  status: z.enum(["ACTIVE", "ARCHIVED", "FAILED"]).optional(),
+  search: z.string().max(100).optional(),
+  cursor: z.object({
+    createdAt: z.string().datetime(),
+    id: z.string().uuid(),
+  }).strict().optional(),
+  limit: z.number().int().positive().max(50).optional(),
+}).strict();
+
+const issueUploadSchema = z.object({
+  organizationId: z.string().uuid(),
+  assetType: z.enum(["IMAGE", "VIDEO", "AUDIO", "DOCUMENT"]),
+  filename: z.string().min(1).max(180),
+  mimeType: z.string().min(1).max(200),
+  sizeBytes: z.number().int().positive().max(512 * 1024 * 1024),
+  displayName: z.string().max(200).optional(),
+}).strict();
+
+const finalizeUploadSchema = z.object({
+  organizationId: z.string().uuid(),
+  sessionId: z.string().uuid(),
+}).strict();
+
 const previewResultSchema = z.object({
   mediaAssetId: z.string().uuid(),
   signedUrl: z.string().url(),
   expiresInSeconds: z.number().int().positive().max(3600),
+}).strict();
+
+const issueUploadResultSchema = z.object({
+  sessionId: z.string().uuid(),
+  signedUploadUrl: z.string().url(),
+  uploadToken: z.string().min(1),
+  storageBucket: z.literal("media-library"),
+  expiresAt: z.string().datetime(),
+}).strict();
+
+const finalizeUploadResultSchema = z.object({
+  sessionId: z.string().uuid(),
+  mediaAssetId: z.string().uuid(),
+  reused: z.boolean(),
 }).strict();
 
 type Actor = { id: string };
@@ -45,6 +87,25 @@ export type MediaPreviewActionResult =
       signedUrl: string;
       expiresInSeconds: number;
     }
+  | { ok: false; error: string };
+
+export type MediaListActionResult =
+  | { ok: true; page: MediaListPage }
+  | { ok: false; error: string };
+
+export type IssueMediaUploadActionResult =
+  | {
+      ok: true;
+      sessionId: string;
+      signedUploadUrl: string;
+      uploadToken: string;
+      storageBucket: "media-library";
+      expiresAt: string;
+    }
+  | { ok: false; error: string };
+
+export type FinalizeMediaUploadActionResult =
+  | { ok: true; sessionId: string; mediaAssetId: string; reused: boolean }
   | { ok: false; error: string };
 
 async function authorizeMember(
@@ -161,6 +222,62 @@ const productionDependencies: MediaLibraryActionDependencies = {
     return invokeMediaLibrary(input);
   },
 };
+
+export async function listMediaAction(input: unknown): Promise<MediaListActionResult> {
+  const parsed = listSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Please check the Media Library filters and try again." };
+
+  try {
+    const authorization = await authorizeMember(parsed.data.organizationId, productionDependencies);
+    if ("error" in authorization) return { ok: false, error: authorization.error };
+    return { ok: true, page: await mediaRepository.list(parsed.data as MediaListQuery) };
+  } catch {
+    return { ok: false, error: "The Media Library catalogue could not be loaded." };
+  }
+}
+
+export async function issueMediaUploadAction(input: unknown): Promise<IssueMediaUploadActionResult> {
+  const parsed = issueUploadSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Please check the selected file and try again." };
+
+  try {
+    const authorization = await authorizeMember(parsed.data.organizationId, productionDependencies);
+    if ("error" in authorization) return { ok: false, error: authorization.error };
+    if (!EDIT_ROLES.includes(authorization.role)) {
+      return { ok: false, error: "You do not have permission to upload media." };
+    }
+
+    const response = await invokeMediaLibrary({
+      operation: "issue-upload",
+      ...parsed.data,
+    });
+    const safe = issueUploadResultSchema.safeParse(response);
+    if (!safe.success) return { ok: false, error: "The secure upload session response was invalid." };
+    return { ok: true, ...safe.data };
+  } catch {
+    return { ok: false, error: "A secure media upload session could not be created." };
+  }
+}
+
+export async function finalizeMediaUploadAction(input: unknown): Promise<FinalizeMediaUploadActionResult> {
+  const parsed = finalizeUploadSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Please check the upload session and try again." };
+
+  try {
+    const authorization = await authorizeMember(parsed.data.organizationId, productionDependencies);
+    if ("error" in authorization) return { ok: false, error: authorization.error };
+    if (!EDIT_ROLES.includes(authorization.role)) {
+      return { ok: false, error: "You do not have permission to finalize media uploads." };
+    }
+
+    const response = await invokeMediaLibrary({ operation: "finalize-upload", ...parsed.data });
+    const safe = finalizeUploadResultSchema.safeParse(response);
+    if (!safe.success) return { ok: false, error: "The media upload finalization response was invalid." };
+    return { ok: true, ...safe.data };
+  } catch {
+    return { ok: false, error: "The media upload could not be finalized." };
+  }
+}
 
 export async function archiveMediaAction(input: unknown): Promise<MediaMutationActionResult> {
   return executeArchiveMediaAction(input, productionDependencies);
