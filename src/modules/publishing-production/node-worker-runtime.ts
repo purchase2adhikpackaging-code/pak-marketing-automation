@@ -11,6 +11,7 @@ import { loadKnowledgeRegistry } from "@/modules/publishing-factory/knowledge-re
 import { publishQaPassedBook } from "./artifact-publisher";
 import { PublishingProductionRepository, type PublishingProductionTransport } from "./repository";
 import { runNodePublishingWorker, type NodePublishingWorkerDependencies, type WorkerProcessOutcome } from "./node-worker";
+import { resolvePublishingWorkerSecret } from "./worker-auth";
 import type { ProductionJob } from "./domain";
 
 const BUCKET = "publishing-books";
@@ -56,9 +57,9 @@ function workerTransport(admin: SupabaseClient): PublishingProductionTransport {
 function internalOpenAITransport(job: ProductionJob): OpenAIResponsesTransport {
   const supabaseUrl = required("NEXT_PUBLIC_SUPABASE_URL");
   const anonKey = required("NEXT_PUBLIC_SUPABASE_ANON_KEY");
-  const workerSecret = required("PUBLISHING_WORKER_SECRET");
   return {
     async create(input) {
+      const workerSecret = process.env.PUBLISHING_WORKER_SECRET?.trim() || await resolvePublishingWorkerSecret();
       const response = await fetch(`${supabaseUrl}/functions/v1/generate-content`, {
         method: "POST",
         headers: {
