@@ -2,47 +2,78 @@ import { describe, expect, it } from "vitest";
 import { handlePublishingWorkerRequest } from "@/modules/publishing-production/node-worker-route";
 
 describe("publishing worker route security", () => {
-  it("rejects missing or invalid bearer secret", async () => {
-    const run = async () => ({ claimed: 0, yielded: 0, completed: 0, failed: 0 });
-    const missing = await handlePublishingWorkerRequest(
+  it("rejects a missing bearer credential before broker authorization", async () => {
+    let authorizeCalls = 0;
+    const response = await handlePublishingWorkerRequest(
       new Request("https://example.test/api/internal/publishing-worker", { method: "POST", body: "{}" }),
-      { secret: "cron-secret", run },
+      {
+        authorize: async () => { authorizeCalls += 1; return true; },
+        run: async () => ({ claimed: 0, yielded: 0, completed: 0, failed: 0 }),
+      },
     );
-    expect(missing.status).toBe(401);
+    expect(response.status).toBe(401);
+    expect(authorizeCalls).toBe(0);
+  });
 
-    const invalid = await handlePublishingWorkerRequest(
+  it("rejects a bearer credential that the trusted broker does not authorize", async () => {
+    const response = await handlePublishingWorkerRequest(
       new Request("https://example.test/api/internal/publishing-worker", {
         method: "POST",
         headers: { authorization: "Bearer wrong" },
         body: "{}",
       }),
-      { secret: "cron-secret", run },
+      {
+        authorize: async (credential) => {
+          expect(credential).toBe("wrong");
+          return false;
+        },
+        run: async () => ({ claimed: 0, yielded: 0, completed: 0, failed: 0 }),
+      },
     );
-    expect(invalid.status).toBe(401);
+    expect(response.status).toBe(401);
+  });
+
+  it("returns service unavailable when trusted broker authorization cannot be checked", async () => {
+    const response = await handlePublishingWorkerRequest(
+      new Request("https://example.test/api/internal/publishing-worker", {
+        method: "POST",
+        headers: { authorization: "Bearer worker-capability" },
+        body: "{}",
+      }),
+      {
+        authorize: async () => { throw new Error("broker unavailable"); },
+        run: async () => ({ claimed: 0, yielded: 0, completed: 0, failed: 0 }),
+      },
+    );
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ error: "WORKER_AUTH_UNAVAILABLE" });
   });
 
   it("rejects credential-like request payload fields", async () => {
     const response = await handlePublishingWorkerRequest(
       new Request("https://example.test/api/internal/publishing-worker", {
         method: "POST",
-        headers: { authorization: "Bearer cron-secret", "content-type": "application/json" },
+        headers: { authorization: "Bearer worker-capability", "content-type": "application/json" },
         body: JSON.stringify({ apiKey: "do-not-accept" }),
       }),
-      { secret: "cron-secret", run: async () => ({ claimed: 0, yielded: 0, completed: 0, failed: 0 }) },
+      {
+        authorize: async () => true,
+        run: async () => ({ claimed: 0, yielded: 0, completed: 0, failed: 0 }),
+      },
     );
     expect(response.status).toBe(400);
   });
 
-  it("runs a single bounded batch with default concurrency four", async () => {
-    let received: { concurrency?: number; workerId: string } | undefined;
+  it("runs a single bounded batch with default concurrency four and the authorized opaque credential", async () => {
+    let received: { concurrency?: number; workerId: string; credential: string } | undefined;
     const response = await handlePublishingWorkerRequest(
       new Request("https://example.test/api/internal/publishing-worker", {
         method: "POST",
-        headers: { authorization: "Bearer cron-secret", "content-type": "application/json" },
+        headers: { authorization: "Bearer worker-capability", "content-type": "application/json" },
         body: JSON.stringify({}),
       }),
       {
-        secret: "cron-secret",
+        authorize: async (credential) => credential === "worker-capability",
         run: async (input) => {
           received = input;
           return { claimed: 0, yielded: 0, completed: 0, failed: 0 };
@@ -52,24 +83,25 @@ describe("publishing worker route security", () => {
     expect(response.status).toBe(200);
     expect(received?.concurrency).toBe(4);
     expect(received?.workerId).toMatch(/^vercel-/);
+    expect(received?.credential).toBe("worker-capability");
   });
 
-  it("schedules exactly one follow-up when a bounded batch claimed work", async () => {
-    let scheduled = 0;
+  it("schedules exactly one follow-up with the same opaque credential when a bounded batch claimed work", async () => {
+    let scheduled: { concurrency: number; credential: string } | undefined;
     const response = await handlePublishingWorkerRequest(
       new Request("https://example.test/api/internal/publishing-worker", {
         method: "POST",
-        headers: { authorization: "Bearer cron-secret", "content-type": "application/json" },
+        headers: { authorization: "Bearer worker-capability", "content-type": "application/json" },
         body: "{}",
       }),
       {
-        secret: "cron-secret",
+        authorize: async () => true,
         run: async () => ({ claimed: 4, yielded: 3, completed: 1, failed: 0 }),
-        scheduleNext: () => { scheduled += 1; },
+        scheduleNext: (input) => { scheduled = input; },
       },
     );
     expect(response.status).toBe(200);
-    expect(scheduled).toBe(1);
+    expect(scheduled).toEqual({ concurrency: 4, credential: "worker-capability" });
   });
 
   it("does not schedule another invocation when the queue is empty", async () => {
@@ -77,11 +109,11 @@ describe("publishing worker route security", () => {
     const response = await handlePublishingWorkerRequest(
       new Request("https://example.test/api/internal/publishing-worker", {
         method: "POST",
-        headers: { authorization: "Bearer cron-secret", "content-type": "application/json" },
+        headers: { authorization: "Bearer worker-capability", "content-type": "application/json" },
         body: "{}",
       }),
       {
-        secret: "cron-secret",
+        authorize: async () => true,
         run: async () => ({ claimed: 0, yielded: 0, completed: 0, failed: 0 }),
         scheduleNext: () => { scheduled += 1; },
       },
@@ -94,10 +126,13 @@ describe("publishing worker route security", () => {
     const response = await handlePublishingWorkerRequest(
       new Request("https://example.test/api/internal/publishing-worker", {
         method: "POST",
-        headers: { authorization: "Bearer cron-secret", "content-type": "application/json" },
+        headers: { authorization: "Bearer worker-capability", "content-type": "application/json" },
         body: JSON.stringify({ concurrency: 33 }),
       }),
-      { secret: "cron-secret", run: async () => ({ claimed: 0, yielded: 0, completed: 0, failed: 0 }) },
+      {
+        authorize: async () => true,
+        run: async () => ({ claimed: 0, yielded: 0, completed: 0, failed: 0 }),
+      },
     );
     expect(response.status).toBe(400);
   });
