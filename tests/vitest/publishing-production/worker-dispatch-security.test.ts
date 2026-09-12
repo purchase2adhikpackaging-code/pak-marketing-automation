@@ -56,27 +56,38 @@ describe("publishing worker dispatch secret and recovery contract", () => {
     expect(sql).toMatch(/'\* \* \* \* \*'/);
   });
 
-  it("authorizes the Vercel worker route through the broker without resolving Vault credentials in the route", () => {
+  it("authorizes the Vercel worker route through the broker without resolving Vault credentials in Vercel", () => {
     const route = source(routePath);
+    const actions = source(actionsPath);
+    const runtime = source(runtimePath);
 
     expect(route).toContain("createPublishingWorkerBrokerClient");
     expect(route).not.toContain("resolvePublishingWorkerSecret");
     expect(route).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
+
+    expect(actions).not.toContain("resolvePublishingWorkerSecret");
+    expect(actions).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
+    expect(actions).not.toContain("PUBLISHING_WORKER_SECRET");
+    expect(actions).not.toContain("CRON_SECRET");
+
+    expect(runtime).not.toContain("resolvePublishingWorkerSecret");
+    expect(runtime).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
+    expect(runtime).not.toContain("PUBLISHING_WORKER_SECRET");
   });
 
-  it("still records the remaining service-role dependencies that later broker-refactor tasks must remove", () => {
+  it("keeps the legacy worker-auth helper out of every active Vercel publishing path", () => {
     const helper = source(authHelperPath);
+    const route = source(routePath);
     const actions = source(actionsPath);
     const runtime = source(runtimePath);
 
     expect(helper).toContain("read_publishing_worker_dispatch_secret");
-    expect(helper).toContain("SUPABASE_SERVICE_ROLE_KEY");
-    expect(actions).toContain("resolvePublishingWorkerSecret");
-    expect(runtime).toContain("resolvePublishingWorkerSecret");
-    expect(runtime).not.toContain('required("PUBLISHING_WORKER_SECRET")');
+    expect(route).not.toContain("worker-auth");
+    expect(actions).not.toContain("worker-auth");
+    expect(runtime).not.toContain("worker-auth");
   });
 
-  it("lets the Edge generation function resolve the same Vault credential through a service-role RPC", () => {
+  it("lets trusted Edge functions resolve the Vault credential while Vercel only presents the opaque capability", () => {
     const edge = source(edgePath);
 
     expect(edge).toMatch(/admin\.rpc\(\s*["']read_publishing_worker_dispatch_secret["']/);
