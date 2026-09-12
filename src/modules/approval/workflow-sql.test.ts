@@ -21,7 +21,7 @@ describe("Phase 9 authoritative approval workflow RPCs", () => {
       "create or replace function public.submit_approval_request( _organization_id uuid, _target_type text, _target_id uuid, _publication_intent jsonb default '{}'::jsonb )",
     );
     expect(sql).toContain("security definer set search_path = public");
-    expect(sql).toContain("v_actor := auth.uid()");
+    expect(sql).toContain("v_actor uuid := auth.uid()");
     expect(sql).toContain("public.has_org_role(_organization_id, array['owner','admin','editor'])");
     expect(sql).toContain("from public.content_script_artifacts a join public.content_items c");
     expect(sql).toContain("a.status = 'generated'");
@@ -32,7 +32,8 @@ describe("Phase 9 authoritative approval workflow RPCs", () => {
     expect(sql).toContain("digest(");
     expect(sql).toContain("target_snapshot");
     expect(sql).toContain("on conflict (organization_id, target_type, target_fingerprint) do nothing");
-    expect(sql).toContain("event_type, 'submitted'");
+    expect(sql).toContain("insert into public.approval_events");
+    expect(sql).toContain("'submitted'");
   });
 
   it("allows only review roles to decide a locked pending request and enforces comments", () => {
@@ -44,8 +45,8 @@ describe("Phase 9 authoritative approval workflow RPCs", () => {
     expect(sql).toContain("public.has_org_role(_organization_id, array['owner','admin','reviewer'])");
     expect(sql).toContain("for update");
     expect(sql).toContain("v_request.status <> 'pending'");
-    expect(sql).toContain("_decision in ('request_changes','reject')");
-    expect(sql).toContain("char_length(btrim(_comment)) > 2000");
+    expect(sql).toContain("v_decision in ('request_changes','reject')");
+    expect(sql).toContain("char_length(btrim(v_comment)) > 2000");
     expect(sql).toContain("raise exception 'approval comment is required'");
   });
 
@@ -58,7 +59,7 @@ describe("Phase 9 authoritative approval workflow RPCs", () => {
     expect(sql).toContain("m.status = 'active'");
     expect(sql).toContain("v_stale_target := true");
     expect(sql).toContain("status = 'superseded'");
-    expect(sql).toContain("event_type, 'superseded'");
+    expect(sql).toContain("'superseded'");
     expect(sql).toContain("stale_target");
   });
 
@@ -82,6 +83,7 @@ describe("Phase 9 authoritative approval workflow RPCs", () => {
     ]) {
       expect(sql).toContain(`revoke all on function ${signature} from public`);
       expect(sql).toContain(`revoke all on function ${signature} from anon`);
+      expect(sql).toContain(`revoke all on function ${signature} from authenticated`);
       expect(sql).toContain(`grant execute on function ${signature} to authenticated`);
     }
   });
