@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useEffect, useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import React, { useEffect, useMemo, useState, useTransition } from "react";
 
+import type { AppRole } from "@/modules/auth/roles";
 import type { ScriptArtifact, ScriptArtifactStatus } from "@/modules/content-studio/artifacts/types";
+import { submitApprovalAction } from "../approval-center/actions";
 import { createScenePlanningProjectAction } from "../scene-planning/actions";
 import { generateTranslationAction, regenerateSourceAction } from "./actions";
 
@@ -13,11 +16,14 @@ const LANGUAGES = [
   { code: "HI", label: "Hindi" },
 ] as const;
 
+const SUBMIT_ROLES: readonly AppRole[] = ["OWNER", "ADMIN", "EDITOR"];
+
 type LanguageCode = (typeof LANGUAGES)[number]["code"];
 type MultilingualContentPanelProps = {
   organizationId: string;
   contentItemId: string;
   artifacts: ScriptArtifact[];
+  role: AppRole;
 };
 
 function actionForTarget(artifact: ScriptArtifact | undefined): { label: string; ariaLabel: string; disabled: boolean } {
@@ -34,12 +40,19 @@ function stateMessage(status: ScriptArtifactStatus | undefined): string | null {
   return null;
 }
 
-export function MultilingualContentPanel({ organizationId, contentItemId, artifacts: initialArtifacts }: MultilingualContentPanelProps) {
+export function MultilingualContentPanel({
+  organizationId,
+  contentItemId,
+  artifacts: initialArtifacts,
+  role,
+}: MultilingualContentPanelProps) {
   const router = useRouter();
   const [artifacts, setArtifacts] = useState(initialArtifacts);
   const [error, setError] = useState<string | null>(null);
   const [pendingLanguage, setPendingLanguage] = useState<LanguageCode | null>(null);
   const [scenePlanningArtifactId, setScenePlanningArtifactId] = useState<string | null>(null);
+  const [reviewPendingArtifactId, setReviewPendingArtifactId] = useState<string | null>(null);
+  const [reviewRequestIds, setReviewRequestIds] = useState<Record<string, string>>({});
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => setArtifacts(initialArtifacts), [initialArtifacts]);
@@ -107,6 +120,28 @@ export function MultilingualContentPanel({ organizationId, contentItemId, artifa
     });
   }
 
+  function submitForReview(artifact: ScriptArtifact) {
+    setError(null);
+    setReviewPendingArtifactId(artifact.id);
+    startTransition(async () => {
+      const response = await submitApprovalAction({
+        organizationId,
+        targetType: "CONTENT_ARTIFACT",
+        targetId: artifact.id,
+        publicationIntent: {
+          source: "content-studio",
+          language: artifact.language,
+        },
+      });
+      setReviewPendingArtifactId(null);
+      if (!response.ok) {
+        setError(response.error);
+        return;
+      }
+      setReviewRequestIds((current) => ({ ...current, [artifact.id]: response.requestId }));
+    });
+  }
+
   return (
     <section className="mt-8" aria-label="Multilingual scripts">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -128,8 +163,11 @@ export function MultilingualContentPanel({ organizationId, contentItemId, artifa
           const action = actionForTarget(artifact);
           const busy = isPending && pendingLanguage === code;
           const sceneBusy = isPending && scenePlanningArtifactId === artifact?.id;
+          const reviewBusy = isPending && reviewPendingArtifactId === artifact?.id;
           const message = stateMessage(artifact?.status);
-          const scenePlanningEligible = artifact?.status === "GENERATED" && Boolean(artifact.scriptText?.trim());
+          const generatedEligible = artifact?.status === "GENERATED" && Boolean(artifact.scriptText?.trim());
+          const reviewEligible = generatedEligible && SUBMIT_ROLES.includes(role);
+          const reviewRequestId = artifact ? reviewRequestIds[artifact.id] : undefined;
 
           return (
             <article key={code} data-testid="language-card" className="flex min-h-[24rem] flex-col rounded-2xl border border-slate-800 bg-slate-950/60 p-5 shadow-sm">
@@ -160,10 +198,31 @@ export function MultilingualContentPanel({ organizationId, contentItemId, artifa
                   </button>
                 )}
 
-                {scenePlanningEligible && artifact ? (
+                {generatedEligible && artifact ? (
                   <button type="button" onClick={() => createScenePlan(artifact)} disabled={sceneBusy} aria-label={`Create Scene Plan from ${label}`} className="inline-flex min-h-10 w-full items-center justify-center rounded-xl bg-white px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50">
                     {sceneBusy ? "Creating Scene Plan…" : "Create Scene Plan"}
                   </button>
+                ) : null}
+
+                {reviewEligible && artifact ? (
+                  reviewRequestId ? (
+                    <Link
+                      href={`/approval-center/${reviewRequestId}?organization=${organizationId}`}
+                      className="inline-flex min-h-10 w-full items-center justify-center rounded-xl border border-emerald-800 px-3 py-2 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-950/30"
+                    >
+                      Open review request
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => submitForReview(artifact)}
+                      disabled={reviewBusy}
+                      aria-label={`Submit ${label} for review`}
+                      className="inline-flex min-h-10 w-full items-center justify-center rounded-xl border border-emerald-800 px-3 py-2 text-sm font-semibold text-emerald-200 transition hover:bg-emerald-950/30 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {reviewBusy ? "Submitting for review…" : "Submit for review"}
+                    </button>
+                  )
                 ) : null}
               </div>
             </article>
