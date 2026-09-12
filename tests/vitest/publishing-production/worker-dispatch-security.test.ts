@@ -56,15 +56,21 @@ describe("publishing worker dispatch secret and recovery contract", () => {
     expect(sql).toMatch(/'\* \* \* \* \*'/);
   });
 
-  it("resolves the dispatch secret server-side instead of requiring a Vercel worker-secret env var", () => {
-    const helper = source(authHelperPath);
+  it("authorizes the Vercel worker route through the broker without resolving Vault credentials in the route", () => {
     const route = source(routePath);
+
+    expect(route).toContain("createPublishingWorkerBrokerClient");
+    expect(route).not.toContain("resolvePublishingWorkerSecret");
+    expect(route).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
+  });
+
+  it("still records the remaining service-role dependencies that later broker-refactor tasks must remove", () => {
+    const helper = source(authHelperPath);
     const actions = source(actionsPath);
     const runtime = source(runtimePath);
 
     expect(helper).toContain("read_publishing_worker_dispatch_secret");
     expect(helper).toContain("SUPABASE_SERVICE_ROLE_KEY");
-    expect(route).toContain("resolvePublishingWorkerSecret");
     expect(actions).toContain("resolvePublishingWorkerSecret");
     expect(runtime).toContain("resolvePublishingWorkerSecret");
     expect(runtime).not.toContain('required("PUBLISHING_WORKER_SECRET")');
