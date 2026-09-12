@@ -52,7 +52,7 @@ export function ApprovalCenterClient({ organizations }: { organizations: Approva
     () => organizations.find((candidate) => candidate.id === organizationId) ?? organizations[0],
     [organizationId, organizations],
   );
-  const activeTab = STATUS_TABS.find((tab) => tab.status === activeStatus) ?? STATUS_TABS[0];
+  const activeTab = STATUS_TABS.find((tab) => tab.status === activeStatus) ?? STATUS_TABS[0]!;
 
   if (!organization) {
     return (
@@ -61,6 +61,8 @@ export function ApprovalCenterClient({ organizations }: { organizations: Approva
       </div>
     );
   }
+
+  const currentOrganization = organization;
 
   function selectOrganization(nextId: string) {
     const next = organizations.find((candidate) => candidate.id === nextId);
@@ -75,7 +77,7 @@ export function ApprovalCenterClient({ organizations }: { organizations: Approva
     setError(null);
     startTransition(async () => {
       const response = await listApprovalRequestsAction({
-        organizationId: organization.id,
+        organizationId: currentOrganization.id,
         status,
         limit: 50,
       });
@@ -95,7 +97,7 @@ export function ApprovalCenterClient({ organizations }: { organizations: Approva
           <label className="block max-w-xl flex-1 space-y-2">
             <span className="text-sm font-medium text-slate-200">Organization</span>
             <select
-              value={organization.id}
+              value={currentOrganization.id}
               onChange={(event) => selectOrganization(event.target.value)}
               className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none focus:border-slate-500"
               disabled={isPending}
@@ -105,7 +107,7 @@ export function ApprovalCenterClient({ organizations }: { organizations: Approva
               ))}
             </select>
           </label>
-          <p className="text-sm text-slate-400">Current role: <span className="font-semibold text-slate-200">{organization.role}</span></p>
+          <p className="text-sm text-slate-400">Current role: <span className="font-semibold text-slate-200">{currentOrganization.role}</span></p>
         </div>
       </section>
 
@@ -115,7 +117,7 @@ export function ApprovalCenterClient({ organizations }: { organizations: Approva
           <div>
             <h3 className="text-base font-semibold text-white">Scene Planning review stays authoritative</h3>
             <p className="mt-1 text-sm text-slate-300">
-              {organization.sceneReviewRequired} scene plans require domain review in Scene Planning.
+              {currentOrganization.sceneReviewRequired} scene plans require domain review in Scene Planning.
             </p>
           </div>
           <Link href="/scene-planning" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-indigo-700 px-4 py-2 text-sm font-semibold text-indigo-100 hover:bg-indigo-950/60">
@@ -172,7 +174,7 @@ export function ApprovalCenterClient({ organizations }: { organizations: Approva
                   </p>
                 </div>
                 <Link
-                  href={`/approval-center/${item.id}?organization=${organization.id}`}
+                  href={`/approval-center/${item.id}?organization=${currentOrganization.id}`}
                   className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-slate-200"
                 >
                   Review request
