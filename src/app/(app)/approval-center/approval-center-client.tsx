@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, useTransition } from "react";
+import React, { useMemo, useState, useTransition } from "react";
 
 import type { AppRole } from "@/modules/auth/roles";
 import type { ApprovalListPage, ApprovalQueueItem } from "@/modules/approval/read-model";
