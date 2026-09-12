@@ -10,7 +10,7 @@ export function MediaDetail({
   onClose,
 }: {
   asset: SafeMediaAsset;
-  signedUrl?: string;
+  signedUrl: string | undefined;
   previewPending: boolean;
   onPreview(): void;
   onClose(): void;
