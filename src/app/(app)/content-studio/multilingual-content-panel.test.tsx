@@ -2,10 +2,12 @@ import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { AppRole } from "@/modules/auth/roles";
 import type { ScriptArtifact } from "@/modules/content-studio/artifacts/types";
-import { MultilingualContentPanel } from "./multilingual-content-panel";
-import { generateTranslationAction, regenerateSourceAction } from "./actions";
+import { submitApprovalAction } from "../approval-center/actions";
 import { createScenePlanningProjectAction } from "../scene-planning/actions";
+import { generateTranslationAction, regenerateSourceAction } from "./actions";
+import { MultilingualContentPanel } from "./multilingual-content-panel";
 
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
@@ -15,6 +17,9 @@ vi.mock("./actions", () => ({
 }));
 vi.mock("../scene-planning/actions", () => ({
   createScenePlanningProjectAction: vi.fn(),
+}));
+vi.mock("../approval-center/actions", () => ({
+  submitApprovalAction: vi.fn(),
 }));
 
 const organizationId = "11111111-1111-4111-8111-111111111111";
@@ -37,9 +42,14 @@ function artifact(overrides: Partial<ScriptArtifact> = {}): ScriptArtifact {
   };
 }
 
-function renderPanel(artifacts: ScriptArtifact[]) {
+function renderPanel(artifacts: ScriptArtifact[], role: AppRole = "EDITOR") {
   return render(
-    <MultilingualContentPanel organizationId={organizationId} contentItemId={contentItemId} artifacts={artifacts} />,
+    <MultilingualContentPanel
+      organizationId={organizationId}
+      contentItemId={contentItemId}
+      artifacts={artifacts}
+      role={role}
+    />,
   );
 }
 
@@ -49,6 +59,7 @@ describe("MultilingualContentPanel", () => {
     vi.mocked(generateTranslationAction).mockReset();
     vi.mocked(regenerateSourceAction).mockReset();
     vi.mocked(createScenePlanningProjectAction).mockReset();
+    vi.mocked(submitApprovalAction).mockReset();
   });
 
   it("renders exactly English, Polish, and Hindi cards and identifies the canonical source", () => {
@@ -94,7 +105,7 @@ describe("MultilingualContentPanel", () => {
     expect(screen.getByRole("button", { name: "Refresh Hindi translation" }).textContent).toContain("Refresh translation");
 
     rerender(
-      <MultilingualContentPanel organizationId={organizationId} contentItemId={contentItemId} artifacts={[
+      <MultilingualContentPanel organizationId={organizationId} contentItemId={contentItemId} role="EDITOR" artifacts={[
         artifact(),
         artifact({ id: "55555555-5555-4555-8555-555555555555", language: "PL", isSource: false, status: "FAILED", revision: 2, sourceRevision: 3 }),
         artifact({ id: "66666666-6666-4666-8666-666666666666", language: "HI", isSource: false, status: "GENERATING", revision: 2, sourceRevision: 3 }),
@@ -127,5 +138,44 @@ describe("MultilingualContentPanel", () => {
     fireEvent.click(screen.getByRole("button", { name: "Regenerate English source" }));
     expect(await screen.findByText("Content artifact generation is temporarily unavailable.")).toBeTruthy();
     expect(document.body.textContent).not.toContain("provider raw");
+  });
+
+  it("offers review submission only for generated nonempty artifacts and submit-capable roles", () => {
+    const { rerender } = renderPanel([artifact()], "EDITOR");
+    expect(screen.getByRole("button", { name: "Submit English for review" })).toBeTruthy();
+
+    rerender(<MultilingualContentPanel organizationId={organizationId} contentItemId={contentItemId} role="REVIEWER" artifacts={[artifact()]} />);
+    expect(screen.queryByRole("button", { name: "Submit English for review" })).toBeNull();
+
+    rerender(<MultilingualContentPanel organizationId={organizationId} contentItemId={contentItemId} role="EDITOR" artifacts={[
+      artifact({ status: "STALE" }),
+      artifact({ id: "44444444-4444-4444-8444-444444444444", language: "PL", isSource: false, status: "FAILED", scriptText: "" }),
+      artifact({ id: "55555555-5555-4555-8555-555555555555", language: "HI", isSource: false, status: "GENERATING", scriptText: "" }),
+    ]} />);
+    expect(screen.queryByRole("button", { name: /for review/ })).toBeNull();
+  });
+
+  it("submits only safe target identifiers/context and surfaces the returned existing-or-new review", async () => {
+    vi.mocked(submitApprovalAction).mockResolvedValue({
+      ok: true,
+      requestId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    });
+    renderPanel([artifact()], "OWNER");
+
+    fireEvent.click(screen.getByRole("button", { name: "Submit English for review" }));
+    await waitFor(() => expect(submitApprovalAction).toHaveBeenCalledWith({
+      organizationId,
+      targetType: "CONTENT_ARTIFACT",
+      targetId: "33333333-3333-4333-8333-333333333333",
+      publicationIntent: { source: "content-studio", language: "EN" },
+    }));
+    expect(submitApprovalAction).not.toHaveBeenCalledWith(expect.objectContaining({
+      revision: expect.anything(),
+      scriptText: expect.anything(),
+    }));
+    expect(await screen.findByRole("link", { name: "Open review request" })).toHaveAttribute(
+      "href",
+      `/approval-center/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa?organization=${organizationId}`,
+    );
   });
 });
