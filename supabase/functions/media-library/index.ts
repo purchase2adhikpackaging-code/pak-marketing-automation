@@ -4,6 +4,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MANAGER_ROLES = new Set(["OWNER", "ADMIN", "EDITOR"]);
+const ADMIN_ROLES = new Set(["OWNER", "ADMIN"]);
 const PREVIEW_TTL_SECONDS = 300;
 const UPLOAD_SESSION_TTL_MS = 15 * 60 * 1000;
 const MEDIA_BUCKET = "media-library";
@@ -39,7 +40,13 @@ type PreviewBody = {
   mediaAssetId: string;
 };
 
-type RequestBody = IssueUploadBody | FinalizeUploadBody | PreviewBody;
+type DeleteBody = {
+  operation: "delete";
+  organizationId: string;
+  mediaAssetId: string;
+};
+
+type RequestBody = IssueUploadBody | FinalizeUploadBody | PreviewBody | DeleteBody;
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
@@ -129,9 +136,13 @@ function parseBody(value: unknown): RequestBody | null {
     return { operation: "finalize-upload", organizationId: input.organizationId, sessionId: input.sessionId };
   }
 
-  if (input.operation === "preview") {
+  if (input.operation === "preview" || input.operation === "delete") {
     if (typeof input.mediaAssetId !== "string" || !UUID_RE.test(input.mediaAssetId)) return null;
-    return { operation: "preview", organizationId: input.organizationId, mediaAssetId: input.mediaAssetId };
+    return {
+      operation: input.operation,
+      organizationId: input.organizationId,
+      mediaAssetId: input.mediaAssetId,
+    };
   }
 
   return null;
@@ -202,6 +213,35 @@ Deno.serve(async (req: Request) => {
       mediaAssetId: media.id,
       signedUrl: signed.signedUrl,
       expiresInSeconds: PREVIEW_TTL_SECONDS,
+    });
+  }
+
+  if (body.operation === "delete") {
+    if (!ADMIN_ROLES.has(role)) return json(403, { error: "FORBIDDEN" });
+
+    const { data: deletedIdentity, error: deleteError } = await admin.rpc("delete_media_asset_if_unreferenced", {
+      _organization_id: body.organizationId,
+      _media_asset_id: body.mediaAssetId,
+      _actor_user_id: user.id,
+    });
+    if (deleteError) {
+      const message = String(deleteError.message ?? "");
+      if (/retained by active generation lineage/i.test(message)) return json(409, { error: "MEDIA_IN_USE" });
+      if (/not found/i.test(message)) return json(404, { error: "MEDIA_NOT_FOUND" });
+      if (/forbidden/i.test(message)) return json(403, { error: "FORBIDDEN" });
+      return json(409, { error: "MEDIA_DELETE_FAILED" });
+    }
+
+    const identity = asRecord(deletedIdentity);
+    const storageBucket = typeof identity?.storageBucket === "string" ? identity.storageBucket : "";
+    const storagePath = typeof identity?.storagePath === "string" ? identity.storagePath : "";
+    if (!storageBucket || !storagePath) return json(500, { error: "MEDIA_DELETE_RESULT_INVALID" });
+
+    const { error: storageError } = await admin.storage.from(storageBucket).remove([storagePath]);
+    return json(200, {
+      mediaAssetId: body.mediaAssetId,
+      deleted: true,
+      storageCleanupPending: Boolean(storageError),
     });
   }
 
