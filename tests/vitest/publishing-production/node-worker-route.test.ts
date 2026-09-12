@@ -54,6 +54,42 @@ describe("publishing worker route security", () => {
     expect(received?.workerId).toMatch(/^vercel-/);
   });
 
+  it("schedules exactly one follow-up when a bounded batch claimed work", async () => {
+    let scheduled = 0;
+    const response = await handlePublishingWorkerRequest(
+      new Request("https://example.test/api/internal/publishing-worker", {
+        method: "POST",
+        headers: { authorization: "Bearer cron-secret", "content-type": "application/json" },
+        body: "{}",
+      }),
+      {
+        secret: "cron-secret",
+        run: async () => ({ claimed: 4, yielded: 3, completed: 1, failed: 0 }),
+        scheduleNext: () => { scheduled += 1; },
+      },
+    );
+    expect(response.status).toBe(200);
+    expect(scheduled).toBe(1);
+  });
+
+  it("does not schedule another invocation when the queue is empty", async () => {
+    let scheduled = 0;
+    const response = await handlePublishingWorkerRequest(
+      new Request("https://example.test/api/internal/publishing-worker", {
+        method: "POST",
+        headers: { authorization: "Bearer cron-secret", "content-type": "application/json" },
+        body: "{}",
+      }),
+      {
+        secret: "cron-secret",
+        run: async () => ({ claimed: 0, yielded: 0, completed: 0, failed: 0 }),
+        scheduleNext: () => { scheduled += 1; },
+      },
+    );
+    expect(response.status).toBe(200);
+    expect(scheduled).toBe(0);
+  });
+
   it("rejects concurrency outside the governed range", async () => {
     const response = await handlePublishingWorkerRequest(
       new Request("https://example.test/api/internal/publishing-worker", {
