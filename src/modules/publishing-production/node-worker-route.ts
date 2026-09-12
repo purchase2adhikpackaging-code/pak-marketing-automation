@@ -20,6 +20,7 @@ export async function handlePublishingWorkerRequest(
   dependencies: {
     secret: string | undefined;
     run(input: { workerId: string; concurrency?: number }): Promise<NodePublishingWorkerResult>;
+    scheduleNext?(input: { concurrency: number }): void;
   },
 ): Promise<Response> {
   if (!new Set(["GET", "POST"]).has(request.method)) return json(405, { error: "METHOD_NOT_ALLOWED" });
@@ -49,6 +50,7 @@ export async function handlePublishingWorkerRequest(
   const workerId = `vercel-${crypto.randomUUID()}`;
   try {
     const result = await dependencies.run({ workerId, concurrency });
+    if (result.claimed > 0) dependencies.scheduleNext?.({ concurrency });
     return json(200, { ok: true, ...result });
   } catch (error) {
     return json(500, {
