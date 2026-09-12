@@ -11,8 +11,9 @@ async function handle(request: Request): Promise<Response> {
     async authorize(credential) {
       return createPublishingWorkerBrokerClient({ credential }).authorize();
     },
-    run: ({ workerId, concurrency }) => runConfiguredPublishingWorker({
+    run: ({ workerId, concurrency, credential }) => runConfiguredPublishingWorker({
       workerId,
+      credential,
       ...(concurrency !== undefined ? { concurrency } : {}),
     }),
     scheduleNext({ concurrency, credential }) {
