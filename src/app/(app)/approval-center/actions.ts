@@ -4,9 +4,7 @@ import { z } from "zod";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { AppRole } from "@/modules/auth/roles";
-import {
-  SupabaseApprovalRepository,
-} from "@/modules/approval/repository";
+import { SupabaseApprovalRepository } from "@/modules/approval/repository";
 import type {
   ApprovalDetail,
   ApprovalListPage,
@@ -124,7 +122,15 @@ export async function executeSubmitApprovalAction(
     if (!SUBMIT_ROLES.includes(authorization.role)) {
       return { ok: false, error: "You do not have permission to submit approval requests." };
     }
-    const requestId = await dependencies.submit(parsed.data);
+    const submission: SubmitApprovalInput = {
+      organizationId: parsed.data.organizationId,
+      targetType: parsed.data.targetType,
+      targetId: parsed.data.targetId,
+      ...(parsed.data.publicationIntent !== undefined
+        ? { publicationIntent: parsed.data.publicationIntent }
+        : {}),
+    };
+    const requestId = await dependencies.submit(submission);
     return { ok: true, requestId };
   } catch {
     return { ok: false, error: "The approval request could not be submitted." };
@@ -144,7 +150,13 @@ export async function executeDecideApprovalAction(
     if (!DECIDE_ROLES.includes(authorization.role)) {
       return { ok: false, error: "You do not have permission to decide approval requests." };
     }
-    const decision = await dependencies.decide(parsed.data);
+    const decisionInput: DecideApprovalInput = {
+      organizationId: parsed.data.organizationId,
+      requestId: parsed.data.requestId,
+      decision: parsed.data.decision,
+      ...(parsed.data.comment !== undefined ? { comment: parsed.data.comment } : {}),
+    };
+    const decision = await dependencies.decide(decisionInput);
     return {
       ok: true,
       requestId: decision.approvalRequestId,
@@ -169,7 +181,13 @@ export async function executeListApprovalRequestsAction(
     if (!REVIEW_ROLES.includes(authorization.role)) {
       return { ok: false, error: "You do not have permission to view the Approval Center queue." };
     }
-    return { ok: true, page: await dependencies.list(parsed.data) };
+    const listInput: ApprovalListQuery = {
+      organizationId: parsed.data.organizationId,
+      ...(parsed.data.status !== undefined ? { status: parsed.data.status } : {}),
+      ...(parsed.data.targetType !== undefined ? { targetType: parsed.data.targetType } : {}),
+      ...(parsed.data.limit !== undefined ? { limit: parsed.data.limit } : {}),
+    };
+    return { ok: true, page: await dependencies.list(listInput) };
   } catch {
     return { ok: false, error: "The Approval Center queue could not be loaded." };
   }
