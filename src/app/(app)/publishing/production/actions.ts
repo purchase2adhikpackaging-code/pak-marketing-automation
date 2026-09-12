@@ -1,7 +1,5 @@
 "use server";
 
-import { after } from "next/server";
-import { headers } from "next/headers";
 import type { AppRole } from "@/modules/auth/roles";
 import type { BookJob } from "@/modules/publishing-factory/domain";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -13,7 +11,6 @@ import {
   loadProgrammeCurriculumFromDisk,
 } from "@/modules/publishing-production/server-curriculum";
 import { createAuthenticatedPublishingRepository } from "@/modules/publishing-production/server-repository";
-import { resolvePublishingWorkerSecret } from "@/modules/publishing-production/worker-auth";
 
 export interface ProductionActionDependencies {
   getActorMembership(organizationId: string): Promise<{ actorId: string; role: AppRole } | null>;
@@ -165,32 +162,9 @@ async function productionDependencies(): Promise<ProductionActionDependencies> {
     enqueueJobs: (input) => repository.enqueueJobs(input),
 
     async kick() {
-      let secret = process.env.CRON_SECRET?.trim() || process.env.PUBLISHING_WORKER_SECRET?.trim();
-      if (!secret) {
-        try {
-          secret = await resolvePublishingWorkerSecret();
-        } catch {
-          return;
-        }
-      }
-
-      const requestHeaders = await headers();
-      const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
-      if (!host) return;
-      const protocol = requestHeaders.get("x-forwarded-proto") ?? "https";
-      const url = `${protocol}://${host}/api/internal/publishing-worker`;
-      after(async () => {
-        try {
-          await fetch(url, {
-            method: "POST",
-            headers: { authorization: `Bearer ${secret}`, "content-type": "application/json" },
-            body: "{}",
-            cache: "no-store",
-          });
-        } catch {
-          // Supabase pg_cron remains the durable fallback; a failed kick must not undo a persisted run.
-        }
-      });
+      // Durable publishing runs are deliberately awakened by the Supabase pg_cron/pg_net
+      // recovery dispatcher. The user-facing Vercel action never resolves or stores the
+      // privileged worker capability.
     },
 
     async controlRun(runId, state) {
