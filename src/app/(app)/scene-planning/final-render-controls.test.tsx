@@ -78,8 +78,8 @@ describe("FinalRenderControls", () => {
         finalMediaAssetId: "55555555-5555-4555-8555-555555555555",
       },
     }} />);
-    expect(screen.getByRole("link", { name: "Open final video in Media Library" })).toHaveAttribute(
-      "href",
+    const finalMediaLink = screen.getByRole("link", { name: "Open final video in Media Library" });
+    expect(finalMediaLink.getAttribute("href")).toBe(
       "/media-library?asset=55555555-5555-4555-8555-555555555555",
     );
     expect(screen.getByText(/visual master/i)).not.toBeNull();
