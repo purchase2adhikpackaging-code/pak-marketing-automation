@@ -1,8 +1,8 @@
 # PAK Marketing Automation — Development Roadmap
 
 **Document ID:** PAK-RM-001  
-**Version:** 1.1  
-**Status:** Current roadmap after Phase 7
+**Version:** 1.2  
+**Status:** Current roadmap after Phase 8
 
 ## Governance rule
 
@@ -157,7 +157,7 @@ External operational acceptance:
 - therefore the first real paid end-to-end LTX render remains a controlled acceptance step to run when a valid organization credential/credits are supplied;
 - this deferred paid smoke does not represent missing engineering, but paid rendering must not be relied on operationally until that check succeeds.
 
-## Phase 8 — Final video assembly & Media Library expansion — NEXT
+## Phase 8 — Final video assembly & Media Library expansion — IMPLEMENTED
 
 Requirements:
 - PRD-VID-005
@@ -167,24 +167,31 @@ Requirements:
 - UX-SCENE-003
 - UX-MEDIA-001..004
 
-Deliverables:
-- final assembly durable job
-- component shot/media readiness validation
-- final video composition/order pipeline
-- final QA/readiness state
-- final organization-scoped video asset
-- Media Library operator catalogue/list
-- generated/uploaded/imported asset visibility
-- preview/detail/lineage
-- controlled upload flow
-- archive/delete/storage authorization
-- signed/authorized access where required
+Delivered:
+- deterministic `FINAL_VIDEO_ASSEMBLY` durable job and immutable component snapshot
+- approved/current/blocker-free plan and required-shot media readiness validation
+- PAK-owned `PAK_MASTER_1080P_V1` final render profile
+- Vault-authenticated Supabase worker claim/complete/fail control plane
+- dedicated Railway FFmpeg/ffprobe render worker with no Supabase service-role credential
+- private signed-input/signed-output render flow
+- final organization-scoped `media_assets` identity and lineage
+- operational Media Library catalogue/detail/preview/upload/archive/delete boundaries
+- private `media-library` uploads plus existing private `generated-media` compatibility
+- browser mutation hardening for authoritative media/assembly state
+- Scene Planning final-render readiness/status controls
+- secret-safe worker runtime observability
 
-Exit criteria:
-- approved current plan with successful required shots can produce one final PAK-owned video asset;
-- no final render can start with missing/failed/stale required components;
-- generated Phase 7 assets are visible and traceable in Media Library;
-- Media Library critical workflows pass desktop/mobile and storage/RLS verification.
+Verification:
+- TDD RED/GREEN coverage including live-discovered claim-RPC ambiguity regression
+- exact-head typecheck, lint, unit, production build, worker tests/container smoke and Playwright
+- live Phase 8 migrations through `phase_8_video_assembly_claim_qualification`
+- live `video-assembly-worker` and `media-library` Edge Functions
+- unauthorized worker probe verified 401; Vault-authenticated claim path verified
+- real zero-provider-cost two-clip live render completed through claim → signed downloads → FFmpeg → signed upload → finalize
+- final fixture output verified 1920×1080, 1.00s MP4 with persisted checksum/lineage before controlled cleanup
+- exact-head Railway deployment verified successful
+- fixture storage/database residue removed and fixture seeder disabled behind JWT
+- Supabase security/performance advisors rerun; remaining non-blocking findings documented for maintenance
 
 ## Phase 9 — Approval Center
 
