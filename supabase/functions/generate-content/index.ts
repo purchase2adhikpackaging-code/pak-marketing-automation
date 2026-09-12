@@ -44,12 +44,18 @@ Deno.serve(async (req: Request) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const publishingWorkerSecret = Deno.env.get("PUBLISHING_WORKER_SECRET");
   if (!supabaseUrl || !serviceRoleKey) return json(500, { error: "SERVER_MISCONFIGURED" });
 
   const admin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+
+  const { data: publishingWorkerSecretData, error: publishingWorkerSecretError } = await admin.rpc(
+    "read_publishing_worker_dispatch_secret",
+  );
+  const publishingWorkerSecret = !publishingWorkerSecretError && typeof publishingWorkerSecretData === "string"
+    ? publishingWorkerSecretData.trim()
+    : "";
 
   let body: RequestBody;
   try {
