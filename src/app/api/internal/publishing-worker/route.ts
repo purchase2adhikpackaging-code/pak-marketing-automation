@@ -11,7 +11,10 @@ async function handle(request: Request): Promise<Response> {
     async authorize(credential) {
       return createPublishingWorkerBrokerClient({ credential }).authorize();
     },
-    run: ({ workerId, concurrency }) => runConfiguredPublishingWorker({ workerId, concurrency }),
+    run: ({ workerId, concurrency }) => runConfiguredPublishingWorker({
+      workerId,
+      ...(concurrency !== undefined ? { concurrency } : {}),
+    }),
     scheduleNext({ concurrency, credential }) {
       const url = new URL("/api/internal/publishing-worker", request.url);
       after(async () => {
