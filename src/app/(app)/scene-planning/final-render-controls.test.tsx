@@ -82,7 +82,7 @@ describe("FinalRenderControls", () => {
     expect(finalMediaLink.getAttribute("href")).toBe(
       "/media-library?asset=55555555-5555-4555-8555-555555555555",
     );
-    expect(screen.getByText(/visual master/i)).not.toBeNull();
+    expect(screen.getByRole("heading", { name: "Final visual master" })).not.toBeNull();
     expect(screen.getByText(/does not add narration, music, or provider audio/i)).not.toBeNull();
   });
 });
