@@ -8,8 +8,9 @@ const source = readFileSync(
 );
 
 describe("background publishing provider security", () => {
-  it("requires a server-only worker secret for internal production calls", () => {
-    expect(source).toContain('Deno.env.get("PUBLISHING_WORKER_SECRET")');
+  it("requires the service-role Vault worker credential for internal production calls", () => {
+    expect(source).toMatch(/admin\.rpc\(\s*["']read_publishing_worker_dispatch_secret["']/);
+    expect(source).not.toContain('Deno.env.get("PUBLISHING_WORKER_SECRET")');
     expect(source).toContain('req.headers.get("x-publishing-worker-secret")');
     expect(source).toMatch(/productionJobId/);
   });
