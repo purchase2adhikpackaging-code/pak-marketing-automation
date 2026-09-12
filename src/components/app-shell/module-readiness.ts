@@ -1,9 +1,13 @@
 export type ModuleReadinessStatus = "Planned" | "Foundation only";
 
-export type ImplementedWorkflowHref = "/dashboard" | "/content-studio" | "/knowledge-base" | "/settings";
+export type ImplementedWorkflowHref =
+  | "/dashboard"
+  | "/content-studio"
+  | "/knowledge-base"
+  | "/media-library"
+  | "/settings";
 
 export type B3ModuleRoute =
-  | "/media-library"
   | "/manual-generation"
   | "/ai-representative"
   | "/campus-locations"
@@ -31,21 +35,6 @@ export type ModuleReadinessConfig = {
 };
 
 export const B3_MODULE_READINESS = {
-  "/media-library": {
-    route: "/media-library",
-    title: "Media Library",
-    description: "Catalog reusable and generated media assets with tenant-safe storage references and provenance.",
-    status: "Foundation only",
-    roadmapPhase: "Phase 8",
-    explanation:
-      "Storage and media-reference foundations exist, but the operator asset catalogue and upload workflow are not enabled in this release.",
-    dependency:
-      "Media operations follow Scene Planning and the approved media-generation workflow. Use implemented content and knowledge workflows until that operator surface is released.",
-    relatedLinks: [
-      { href: "/content-studio", label: "Open Content Studio" },
-      { href: "/knowledge-base", label: "Open Knowledge Base" },
-    ],
-  },
   "/manual-generation": {
     route: "/manual-generation",
     title: "Manual Generation",
