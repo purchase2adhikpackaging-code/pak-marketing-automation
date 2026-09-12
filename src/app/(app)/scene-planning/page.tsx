@@ -2,6 +2,8 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { z } from "zod";
+import { SupabaseFinalAssemblyReadRepository } from "@/modules/video/assembly/read-repository";
+import { FinalRenderControls } from "./final-render-controls";
 import { ScenePlanningWorkspace } from "./scene-planning-workspace";
 import { loadScenePlanningWorkspaceData } from "./workspace-data";
 
@@ -25,13 +27,16 @@ export default async function ScenePlanningPage({
   const workspace = parsedProjectId?.success
     ? await loadScenePlanningWorkspaceData(parsedProjectId.data)
     : null;
+  const finalAssembly = workspace?.plan
+    ? await new SupabaseFinalAssemblyReadRepository().load(workspace.organizationId, workspace.plan.id)
+    : null;
 
   return (
     <section className="max-w-7xl">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">PAK Workspace</p>
       <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">Scene Planning</h2>
       <p className="mt-4 max-w-3xl text-base leading-7 text-slate-400">
-        Convert approved Content Studio artifacts into provider-neutral, versioned scene and shot plans. Canonical narration, visual continuity, deterministic quality checks, source freshness, and approval remain authoritative; only approved current shots can proceed to Phase 7 video generation.
+        Convert approved Content Studio artifacts into provider-neutral, versioned scene and shot plans. Canonical narration, visual continuity, deterministic quality checks, source freshness, and approval remain authoritative; approved current shots can proceed through generation and then into the Phase 8 final visual master.
       </p>
 
       {!projectParam ? (
@@ -52,7 +57,19 @@ export default async function ScenePlanningPage({
           This project does not exist in your current organization scope, or your membership does not permit access. No cross-organization project data is exposed.
         </RouteMessage>
       ) : (
-        <ScenePlanningWorkspace {...workspace} />
+        <>
+          <ScenePlanningWorkspace {...workspace} />
+          {workspace.plan && finalAssembly ? (
+            <div className="mt-6">
+              <FinalRenderControls
+                organizationId={workspace.organizationId}
+                planVersionId={workspace.plan.id}
+                actorRole={workspace.actorRole}
+                view={finalAssembly}
+              />
+            </div>
+          ) : null}
+        </>
       )}
     </section>
   );
