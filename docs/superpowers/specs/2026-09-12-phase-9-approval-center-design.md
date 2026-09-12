@@ -184,7 +184,8 @@ Constraints/invariants:
 - content targets require `target_revision` and no `target_checksum`;
 - media targets require `target_checksum` and no `target_revision`;
 - one authoritative request per `(organization_id, target_type, target_fingerprint)`;
-- target-identifying columns, target fingerprint and target snapshot are immutable after insert;
+- target-identifying columns, target fingerprint, target snapshot and publication intent are immutable after insert;
+- `publication_intent` is context only, never authorization, and its serialized payload is bounded to 8 KiB;
 - APPROVED/CHANGES_REQUESTED/REJECTED require decision actor/time;
 - SUPERSEDED requires superseded time/reason;
 - PENDING has no decision actor/time;
@@ -211,7 +212,8 @@ Rules:
 
 - USER events require an actor user.
 - SYSTEM events may have no user actor.
-- `CHANGES_REQUESTED` and `REJECTED` require a non-empty bounded comment.
+- decision comments are bounded to 2,000 characters after trimming;
+- `CHANGES_REQUESTED` and `REJECTED` require a non-empty comment after trimming;
 - event target version/checksum must match the parent request.
 - authenticated clients receive no direct INSERT/UPDATE/DELETE privileges.
 - UPDATE/DELETE is also blocked by immutable database guards so privileged accidental mutation cannot silently rewrite history.
@@ -230,8 +232,9 @@ The authenticated submission boundary:
 4. verifies same-organization lineage;
 5. verifies target eligibility;
 6. constructs exact snapshot and fingerprint server-side;
-7. returns the existing request when the same exact fingerprint was already submitted, rather than creating conflicting duplicate requests;
-8. otherwise creates a `PENDING` request and immutable `SUBMITTED` event atomically.
+7. normalizes and bounds optional publication intent without treating it as authorization;
+8. returns the existing request when the same exact fingerprint was already submitted, rather than creating conflicting duplicate requests;
+9. otherwise creates a `PENDING` request and immutable `SUBMITTED` event atomically.
 
 No approval snapshot, revision, checksum, script text, storage path or current status is trusted from browser JSON.
 
@@ -253,9 +256,9 @@ Valid explicit decision transitions:
 
 Comment rules:
 
-- Approve: comment optional.
-- Request changes: comment required.
-- Reject: comment required.
+- Approve: comment optional, maximum 2,000 characters after trimming.
+- Request changes: non-empty comment required, maximum 2,000 characters after trimming.
+- Reject: non-empty comment required, maximum 2,000 characters after trimming.
 
 Every successful decision atomically updates the request envelope and appends exactly one immutable event.
 
@@ -277,7 +280,7 @@ A database-level guard/trigger observes substantive `content_script_artifacts` c
 
 For prior `PENDING`, `CHANGES_REQUESTED` or `APPROVED` generic requests bound to the previous revision, it atomically:
 
-- marks the request `SUPERSEDED` when not already terminal-superceded;
+- marks the request `SUPERSEDED` when not already terminal-superseded;
 - records `superseded_at` and a normalized reason;
 - appends one SYSTEM `SUPERSEDED` event.
 
@@ -345,6 +348,7 @@ ANALYST does not receive the operational approval queue or private reviewer comm
 - Direct authenticated INSERT/UPDATE/DELETE on `approval_requests`: revoked.
 - Direct authenticated INSERT/UPDATE/DELETE on `approval_events`: revoked.
 - Anonymous access: none.
+- Authenticated RPC execution is granted only to the intended narrow functions; each SECURITY DEFINER function pins `search_path`, re-checks `auth.uid()`, organization membership and role internally, and receives no trust from browser-supplied organization/target metadata.
 - Service-role access exists only for trusted backend/system supersession and maintenance paths.
 
 ### 10.3 Tenant integrity
@@ -513,7 +517,8 @@ The database `approval_events` ledger, not application logs, is the authoritativ
 - required tables/constraints/indexes;
 - one request per exact fingerprint;
 - target field shape by target type;
-- immutable request identity/snapshot columns;
+- immutable request identity/snapshot/publication-intent columns;
+- bounded publication intent and decision comments;
 - immutable event UPDATE/DELETE guards;
 - direct authenticated mutation revoked;
 - submit/decision RPC execute grants only as intended;
@@ -585,7 +590,7 @@ Before release, verify:
 - content decision re-checks exact revision/current status;
 - media decision re-checks exact checksum/current ACTIVE status;
 - request/comment length bounds prevent unbounded payloads;
-- JSON publication intent is size-bounded and treated as context, not authorization;
+- JSON publication intent is size-bounded, immutable after submission and treated as context, not authorization;
 - signed preview URLs are short-lived and not persisted in approval snapshots/events;
 - Scene Planning approval authority remains untouched.
 
