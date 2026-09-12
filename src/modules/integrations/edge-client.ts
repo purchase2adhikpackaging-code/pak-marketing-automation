@@ -18,6 +18,19 @@ export type VideoGenerationEdgeRequest = {
   attemptId: string;
 };
 
+export type MediaLibraryEdgeRequest =
+  | {
+      operation: "issue-upload";
+      organizationId: string;
+      assetType: "IMAGE" | "VIDEO" | "AUDIO" | "DOCUMENT";
+      filename: string;
+      mimeType: string;
+      sizeBytes: number;
+      displayName?: string;
+    }
+  | { operation: "finalize-upload"; organizationId: string; sessionId: string }
+  | { operation: "preview" | "delete"; organizationId: string; mediaAssetId: string };
+
 async function productionAccessToken(): Promise<string | null> {
   const supabase = await createServerSupabaseClient();
   const { data, error } = await supabase.auth.getSession();
@@ -98,4 +111,15 @@ export function invokeVideoGenerationWithDependencies<T>(
 
 export function invokeVideoGeneration<T>(body: VideoGenerationEdgeRequest): Promise<T> {
   return invokeVideoGenerationWithDependencies<T>(body, productionDependencies());
+}
+
+export function invokeMediaLibraryWithDependencies<T>(
+  body: MediaLibraryEdgeRequest,
+  dependencies: EdgeInvokeDependencies,
+): Promise<T> {
+  return invokeEdgeFunction<T>("media-library", body, dependencies);
+}
+
+export function invokeMediaLibrary<T>(body: MediaLibraryEdgeRequest): Promise<T> {
+  return invokeMediaLibraryWithDependencies<T>(body, productionDependencies());
 }
