@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import type { ApprovalDetail } from "@/modules/approval/read-model";
 import {
   executeDecideApprovalAction,
   executeLoadApprovalDetailAction,
@@ -13,6 +14,34 @@ const organizationId = "11111111-1111-4111-8111-111111111111";
 const targetId = "22222222-2222-4222-8222-222222222222";
 const requestId = "33333333-3333-4333-8333-333333333333";
 const actorId = "44444444-4444-4444-8444-444444444444";
+const checksum = `sha256:${"a".repeat(64)}`;
+
+function mediaDetail(status: ApprovalDetail["status"] = "PENDING"): ApprovalDetail {
+  return {
+    id: requestId,
+    organizationId,
+    targetType: "MEDIA_ASSET",
+    targetId,
+    targetChecksum: checksum,
+    targetFingerprint: `sha256:${"b".repeat(64)}`,
+    target: {
+      type: "MEDIA_ASSET",
+      mediaAssetId: targetId,
+      assetType: "VIDEO",
+      displayName: "Review target",
+      mimeType: "video/mp4",
+      checksum,
+      metadata: {},
+    },
+    publicationIntent: {},
+    status,
+    requestedAt: "2026-09-12T08:00:00.000Z",
+    createdAt: "2026-09-12T08:00:00.000Z",
+    updatedAt: "2026-09-12T08:00:00.000Z",
+    events: [],
+    knowledgeSources: [],
+  };
+}
 
 function dependencies(role: "OWNER" | "ADMIN" | "EDITOR" | "REVIEWER" | "ANALYST" | null): ApprovalCenterActionDependencies {
   return {
@@ -89,15 +118,26 @@ describe("Approval Center server actions", () => {
     expect(analyst.getDetail).not.toHaveBeenCalled();
   });
 
-  it("permits approval media previews only to operational review roles and blocks ANALYST", async () => {
+  it("binds approval media previews to the exact immutable request checksum and blocks superseded/analyst access", async () => {
     const reviewer = dependencies("REVIEWER");
-    const allowed = await executePreviewApprovalMediaAction({ organizationId, mediaAssetId: targetId }, reviewer);
+    reviewer.getDetail = vi.fn().mockResolvedValue(mediaDetail());
+    const allowed = await executePreviewApprovalMediaAction({ organizationId, requestId }, reviewer);
     expect(allowed.ok).toBe(true);
-    expect(reviewer.previewMedia).toHaveBeenCalledWith({ operation: "preview", organizationId, mediaAssetId: targetId });
+    expect(reviewer.previewMedia).toHaveBeenCalledWith({
+      operation: "preview",
+      organizationId,
+      mediaAssetId: targetId,
+      expectedChecksum: checksum,
+    });
+
+    const superseded = dependencies("REVIEWER");
+    superseded.getDetail = vi.fn().mockResolvedValue(mediaDetail("SUPERSEDED"));
+    expect((await executePreviewApprovalMediaAction({ organizationId, requestId }, superseded)).ok).toBe(false);
+    expect(superseded.previewMedia).not.toHaveBeenCalled();
 
     const analyst = dependencies("ANALYST");
-    const denied = await executePreviewApprovalMediaAction({ organizationId, mediaAssetId: targetId }, analyst);
-    expect(denied.ok).toBe(false);
+    analyst.getDetail = vi.fn().mockResolvedValue(mediaDetail());
+    expect((await executePreviewApprovalMediaAction({ organizationId, requestId }, analyst)).ok).toBe(false);
     expect(analyst.previewMedia).not.toHaveBeenCalled();
   });
 
