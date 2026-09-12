@@ -130,7 +130,7 @@ describe("ApprovalReviewClient", () => {
     expect(screen.getByText("Exact snapshotted railway safety script.")).toBeInTheDocument();
     expect(screen.getByText(/Revision 4/)).toBeInTheDocument();
     expect(screen.getByText(/Source revision 7/)).toBeInTheDocument();
-    expect(screen.getByText(/EN/)).toBeInTheDocument();
+    expect(screen.getByText("EN")).toBeInTheDocument();
     expect(screen.getByText("Safety handbook")).toBeInTheDocument();
     expect(screen.getByText("Immutable safety handbook snapshot.")).toBeInTheDocument();
     expect(screen.getByText(/non-authoritative review context/i)).toBeInTheDocument();
