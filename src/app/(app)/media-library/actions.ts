@@ -247,9 +247,11 @@ export async function issueMediaUploadAction(input: unknown): Promise<IssueMedia
       return { ok: false, error: "You do not have permission to upload media." };
     }
 
+    const { displayName, ...requiredUploadFields } = parsed.data;
     const response = await invokeMediaLibrary({
       operation: "issue-upload",
-      ...parsed.data,
+      ...requiredUploadFields,
+      ...(displayName !== undefined ? { displayName } : {}),
     });
     const safe = issueUploadResultSchema.safeParse(response);
     if (!safe.success) return { ok: false, error: "The secure upload session response was invalid." };
