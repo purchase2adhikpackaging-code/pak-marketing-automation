@@ -12,6 +12,7 @@ export interface ScenePlannerInput {
   qualityProfile: "STANDARD" | "PREMIUM" | "CINEMATIC" | string;
   targetPlatforms: string[];
   productionConstraints?: string[];
+  institutionalBrand?: Record<string, unknown>;
   visualBible: Record<string, unknown>;
   replan?: {
     scope: "SHOT" | "SCENE";
@@ -72,6 +73,12 @@ NON-NEGOTIABLE NARRATION RULE
 DO NOT rewrite, paraphrase, shorten, expand, translate, or invent narration.
 The canonical narration below is authoritative. Every narrated shot must point to an exact [start,end) character range using narrationStartChar and narrationEndChar, and narrationText must be byte-for-byte equivalent to that source slice.
 Silent/B-roll shots must use null narrationStartChar and narrationEndChar with an empty narrationText.
+
+INSTITUTIONAL BRAND AUTHORITY
+- INSTITUTIONAL_BRAND is the organization-level identity and default-brand authority supplied server-side.
+- If an officialPrimaryLogoAssetId is present, the official logo asset identity is authoritative and must not be replaced, inferred, redrawn, or substituted from Visual Bible instructions.
+- Visual Bible remains the project creative-direction authority for presentation, cinematography, layout, palette refinements, and logo treatment; it may refine how the official logo is presented but cannot silently substitute another logo identity.
+- Institutional palette, typography, voice, logo-usage and visual constraints are defaults/guardrails. Explicit project creative direction may refine presentation only where it does not contradict official identity or safety constraints.
 
 PLANNING MODEL
 - Scene = narrative unit.
@@ -136,6 +143,9 @@ QUALITY_PROFILE: ${input.qualityProfile}
 TARGET_PLATFORMS: ${input.targetPlatforms.join(", ")}
 PRODUCTION_CONSTRAINTS:
 ${stableJson(input.productionConstraints ?? [])}
+
+INSTITUTIONAL_BRAND:
+${stableJson(input.institutionalBrand ?? {})}
 
 VISUAL_BIBLE:
 ${stableJson(input.visualBible)}
