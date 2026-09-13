@@ -5,6 +5,7 @@ import { z } from "zod";
 import { AppError } from "@/lib/errors/app-error";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { can } from "@/modules/auth/authorization";
+import { getE2EFixtureRole } from "@/modules/auth/e2e-fixture-server";
 import type { AppRole } from "@/modules/auth/roles";
 import {
   SupabaseKnowledgeRepository,
@@ -25,6 +26,12 @@ import {
   createFileKnowledgeDocumentSchema,
   createUrlKnowledgeDocumentSchema,
 } from "@/modules/knowledge-ingestion/schema";
+import {
+  createE2EKnowledgeDraft,
+  E2E_FIXTURE_DOCUMENT_ID,
+  E2E_FIXTURE_MEDIA_ASSET_ID,
+  E2E_FIXTURE_ORGANIZATION_ID,
+} from "@/modules/testing/e2e-organization-fixtures";
 
 type Actor = { id: string };
 type Membership = { role: AppRole } | null;
@@ -404,7 +411,31 @@ export async function deleteKnowledgeAction(input: unknown): Promise<DeleteKnowl
 }
 
 export async function ingestKnowledgeFileAction(input: unknown): Promise<KnowledgeIngestionActionResult> {
-  return executeIngestKnowledgeFileAction(input, productionIngestionDependencies());
+  const parsed = createFileKnowledgeDocumentSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "Please check the knowledge source and try again." };
+  }
+
+  const fixtureRole = await getE2EFixtureRole();
+  if (fixtureRole) {
+    if (parsed.data.organizationId !== E2E_FIXTURE_ORGANIZATION_ID) {
+      return { ok: false, error: "You do not have permission to manage Knowledge Base records for this organization." };
+    }
+    if (fixtureRole !== "OWNER" && fixtureRole !== "ADMIN" && fixtureRole !== "EDITOR") {
+      return { ok: false, error: "You do not have permission to manage Knowledge Base records for this organization." };
+    }
+    if (parsed.data.mediaAssetId !== E2E_FIXTURE_MEDIA_ASSET_ID) {
+      return { ok: false, error: "Knowledge source could not be ingested. Check the source and try again." };
+    }
+
+    return {
+      ok: true,
+      documentId: E2E_FIXTURE_DOCUMENT_ID,
+      record: createE2EKnowledgeDraft(parsed.data.sourceLabel),
+    };
+  }
+
+  return executeIngestKnowledgeFileAction(parsed.data, productionIngestionDependencies());
 }
 
 export async function ingestKnowledgeUrlAction(input: unknown): Promise<KnowledgeIngestionActionResult> {
