@@ -2,25 +2,35 @@
 
 **Date:** 2026-09-13
 **Execution branch:** `feature/knowledge-research-zero-secret-exec`
-**Execution base:** PR #40 head `7dca58923b79e8e61a069922285e3b2dec65274e`
-**Status:** Execution workspace prepared; implementation has not started.
+**Current execution head before this handoff refresh:** `7830f14620671abd0e6ba1d5b72425c2539e1742`
+**Latest verified foundation / PR #40 head:** `ea7d53d4259c48b2c709870d2e1fdb542e5c647c`
+**Status:** Execution preparation complete; implementation has not started.
 
 ## Governing design and plan
 
-The approved design and implementation plan currently live on `feature/knowledge-research-zero-secret` and must be carried into this execution branch before Task 1.
-
-Cherry-pick this contiguous documentation range:
-
-```bash
-git cherry-pick ca29cfcd143ac588ef3f942814a3262688657ff6^..ca3cdb706ee68a587045ba9785f6a409955f1055
-```
-
-This brings in:
+The approved design and implementation plan are already present on this execution branch:
 
 - `docs/superpowers/specs/2026-09-13-knowledge-research-zero-secret-design.md`
 - `docs/superpowers/plans/2026-09-13-knowledge-research-zero-secret.md`
 
-After cherry-pick, treat the spec as binding authority and the plan as the execution argument.
+No documentation cherry-pick remains. The execution branch was merged forward to the latest PR #40 foundation head and carries the exact approved spec/plan blobs.
+
+Treat the design spec as binding authority and the implementation plan as the execution argument.
+
+## Foundation verification
+
+PR #40 remained open and draft when last checked. Its head was:
+
+`ea7d53d4259c48b2c709870d2e1fdb542e5c647c` — `fix: guard Core Knowledge inserts by role`
+
+GitHub Actions CI for that exact foundation head completed successfully (`CI` run 34772863241, conclusion `success`).
+
+GitHub combined status also reported two Vercel failures, both pointing to the Vercel build-rate-limit page:
+
+- `Vercel – pak-marketing-automation`
+- `Vercel – pak-staging-schema-probe`
+
+Treat those as external platform/quota status unless later evidence shows an application failure. Do not waive any application CI gate.
 
 ## Required execution method
 
@@ -28,19 +38,20 @@ Use `superpowers:subagent-driven-development` in Codex.
 
 Before Task 1:
 
-1. Read the complete design spec and implementation plan.
-2. Verify this branch still descends from the latest `foundation/org-profile-brand-knowledge` / PR #40 head. If PR #40 advanced, integrate the newer foundation head before implementation.
-3. Use `superpowers:using-git-worktrees` and create/verify the isolated worktree.
-4. Create the SDD workspace/ledger for this exact plan and perform the required pre-flight plan conflict scan.
-5. Resume at Task 1 only; no implementation task has been completed yet.
+1. Re-check PR #40 head. If it advanced beyond `ea7d53d4259c48b2c709870d2e1fdb542e5c647c`, integrate the newer foundation head first.
+2. Use `superpowers:using-git-worktrees` and create/verify the isolated worktree.
+3. Run the SDD workspace helper for this exact plan and create/check the plan-scoped ledger.
+4. Read the complete design spec and implementation plan once.
+5. Perform the required pre-flight conflict scan and record its table/rulings in the ledger.
+6. Start **Task 1 only**. No implementation task has been completed yet.
 
-For each task: fresh implementer -> tests/commit/self-review -> task reviewer -> fix loop if required -> ledger completion. Do not skip per-task review. After all tasks, perform the broad whole-branch review and `verification-before-completion` before any completion claim.
+For every task: fresh implementer -> tests/commit/self-review -> task reviewer -> fix loop if required -> ledger completion. Do not skip per-task review. After all tasks, perform the broad whole-branch review and `verification-before-completion` before any completion claim.
 
 ## Non-negotiable product/security constraints
 
 - Never touch Lovable.
 - Add **no new API key, access key, secret key, OAuth credential, cookie, external login or browser session**.
-- Do not ask the user for any Exa key. If Exa no-key MCP stops working, return `CREDENTIAL_REQUIRED` and leave Research disabled.
+- Do not ask for any Exa key. If Exa no-key MCP stops working, return `CREDENTIAL_REQUIRED` and leave Research disabled.
 - Do not install full Agent-Reach, OpenCLI, `mcporter`, or login-backed social tooling.
 - Research v1 is Knowledge Base -> Research, review-first.
 - Only OWNER/ADMIN/EDITOR / existing `knowledge:manage` actors may use Research in v1.
@@ -52,8 +63,14 @@ For each task: fresh implementer -> tests/commit/self-review -> task reviewer ->
 - TDD RED -> GREEN for every slice.
 - No single-agent unchecked coding path.
 
-## Current repository facts to preserve
+## Runtime note
 
-PR #40 currently contains Core Knowledge, document/URL Knowledge ingestion and the safe URL fetch/extraction boundary. The research feature must extend those facilities rather than duplicating them.
+This ChatGPT harness does not expose a Codex fresh-subagent dispatch primitive. A local shell is available, but it cannot resolve `github.com`, so it cannot clone the repository to construct the required local worktree/SDD ledger either. GitHub connector operations were sufficient to reconcile the execution branch and preserve the exact docs, but they are not a substitute for the mandated fresh-implementer/reviewer SDD loop.
 
-No research implementation code has been written yet. The next action is **Task 1 from the implementation plan** after the documentation cherry-pick and SDD pre-flight setup.
+Therefore no implementation code was started here. Do **not** reinterpret this as permission to implement Task 1 in a single-agent path.
+
+## Exact next action
+
+In a Codex session with repository/worktree access, open `feature/knowledge-research-zero-secret-exec`, verify PR #40 has not advanced, initialize the SDD worktree/workspace/ledger, run the pre-flight scan, and dispatch the Task 1 implementer from:
+
+`docs/superpowers/plans/2026-09-13-knowledge-research-zero-secret.md`
