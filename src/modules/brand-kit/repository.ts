@@ -75,6 +75,13 @@ function mapBrandKit(row: BrandKitRow, assets: BrandAssetRow[]): OrganizationBra
     if (asset.role === "APPROVED_IMAGERY") approvedImageryAssetIds.push(asset.media_asset_id);
     else byRole.set(asset.role, asset.media_asset_id);
   }
+
+  const primaryLogoAssetId = byRole.get("PRIMARY_LOGO");
+  const lightLogoAssetId = byRole.get("LIGHT_LOGO");
+  const darkLogoAssetId = byRole.get("DARK_LOGO");
+  const brandMarkAssetId = byRole.get("BRAND_MARK");
+  const faviconAssetId = byRole.get("FAVICON");
+
   return {
     organizationId: row.organization_id,
     ...(row.primary_color ? { primaryColor: row.primary_color } : {}),
@@ -84,11 +91,11 @@ function mapBrandKit(row: BrandKitRow, assets: BrandAssetRow[]): OrganizationBra
     ...(row.brand_voice ? { brandVoice: row.brand_voice } : {}),
     ...(row.logo_usage_rules ? { logoUsageRules: row.logo_usage_rules } : {}),
     ...(row.visual_constraints ? { visualConstraints: row.visual_constraints } : {}),
-    ...(byRole.get("PRIMARY_LOGO") ? { primaryLogoAssetId: byRole.get("PRIMARY_LOGO") } : {}),
-    ...(byRole.get("LIGHT_LOGO") ? { lightLogoAssetId: byRole.get("LIGHT_LOGO") } : {}),
-    ...(byRole.get("DARK_LOGO") ? { darkLogoAssetId: byRole.get("DARK_LOGO") } : {}),
-    ...(byRole.get("BRAND_MARK") ? { brandMarkAssetId: byRole.get("BRAND_MARK") } : {}),
-    ...(byRole.get("FAVICON") ? { faviconAssetId: byRole.get("FAVICON") } : {}),
+    ...(primaryLogoAssetId ? { primaryLogoAssetId } : {}),
+    ...(lightLogoAssetId ? { lightLogoAssetId } : {}),
+    ...(darkLogoAssetId ? { darkLogoAssetId } : {}),
+    ...(brandMarkAssetId ? { brandMarkAssetId } : {}),
+    ...(faviconAssetId ? { faviconAssetId } : {}),
     approvedImageryAssetIds,
     revision: row.revision,
     ...(row.updated_by ? { updatedBy: row.updated_by } : {}),
