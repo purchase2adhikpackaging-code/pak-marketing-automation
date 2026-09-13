@@ -73,6 +73,7 @@ describe("publishing production runner end-to-end orchestration", () => {
 
     const actionDependencies: ProductionActionDependencies = {
       getActorMembership: async () => ({ actorId, role: "ADMIN" as AppRole }),
+      isRecoveryConfigured: async () => true,
       plan: async () => ({
         jobs: plannedBooks.map((job) => ({ job, curriculumText: `${job.subjectCode} governed curriculum` })),
         exclusions: [],
