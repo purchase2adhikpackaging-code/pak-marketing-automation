@@ -6,6 +6,10 @@ const migrationPath = join(
   process.cwd(),
   "supabase/migrations/202609120004_publishing_worker_dispatch.sql",
 );
+const readinessMigrationPath = join(
+  process.cwd(),
+  "supabase/migrations/202609120008_publishing_worker_recovery_readiness.sql",
+);
 const authHelperPath = join(
   process.cwd(),
   "src/modules/publishing-production/worker-auth.ts",
@@ -54,6 +58,17 @@ describe("publishing worker dispatch secret and recovery contract", () => {
     expect(sql).toContain("Authorization");
     expect(sql).toContain("Bearer ");
     expect(sql).toMatch(/'\* \* \* \* \*'/);
+  });
+
+  it("exposes only a boolean recovery-readiness check to authenticated callers", () => {
+    const sql = source(readinessMigrationPath);
+
+    expect(sql).toMatch(/create or replace function\s+public\.publishing_worker_recovery_ready\(\)/i);
+    expect(sql).toContain("pak-publishing-worker-recovery");
+    expect(sql).toMatch(/from\s+cron\.job/i);
+    expect(sql).toMatch(/revoke all on function\s+public\.publishing_worker_recovery_ready\(\)\s+from public/i);
+    expect(sql).toMatch(/revoke all on function\s+public\.publishing_worker_recovery_ready\(\)\s+from anon/i);
+    expect(sql).toMatch(/grant execute on function\s+public\.publishing_worker_recovery_ready\(\)\s+to authenticated/i);
   });
 
   it("authorizes the Vercel worker route through the broker without resolving Vault credentials in Vercel", () => {
