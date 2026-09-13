@@ -19,11 +19,14 @@ describe("organizationGenerationContextRequestSchema", () => {
     });
   });
 
-  it("rejects duplicate Knowledge IDs and oversized task context", () => {
-    expect(() => organizationGenerationContextRequestSchema.parse({
+  it("accepts duplicate selected IDs so the authoritative resolver can collapse them in first-requested order", () => {
+    expect(organizationGenerationContextRequestSchema.parse({
       organizationId,
-      selectedKnowledgeRecordIds: [first, first],
-    })).toThrow();
+      selectedKnowledgeRecordIds: [first, second, first],
+    }).selectedKnowledgeRecordIds).toEqual([first, second, first]);
+  });
+
+  it("rejects oversized task context", () => {
     expect(() => organizationGenerationContextRequestSchema.parse({
       organizationId,
       additionalContext: "x".repeat(12001),
