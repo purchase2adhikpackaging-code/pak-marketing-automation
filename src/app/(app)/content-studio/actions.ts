@@ -14,7 +14,11 @@ import { regenerateSourceArtifact } from "@/modules/content-studio/artifacts/sou
 import { generateTranslationArtifact } from "@/modules/content-studio/artifacts/translation-service";
 import type { ScriptArtifact } from "@/modules/content-studio/artifacts/types";
 import { SupabaseContentItemRepository } from "@/modules/content-studio/repository";
-import { contentGenerationRequestSchema, type ContentGenerationRequest } from "@/modules/content-studio/schema";
+import {
+  contentGenerationRequestSchema,
+  MAX_CONTENT_GENERATION_CONTEXT_CHARACTERS,
+  type ContentGenerationRequest,
+} from "@/modules/content-studio/schema";
 import { generateContentScript } from "@/modules/content-studio/service";
 import type { ContentItem } from "@/modules/content-studio/types";
 import { generationContextRepository } from "@/modules/generation-context/repository";
@@ -99,11 +103,17 @@ function composeOrganizationGenerationContext(context: OrganizationGenerationCon
     ...(brand.primaryLogoAssetId ? [`Official primary logo asset ID: ${brand.primaryLogoAssetId}`] : []),
   ];
 
-  return [
+  const composed = [
     profileLines.join("\n"),
     brandLines.join("\n"),
     ...(context.knowledgeContext ? [context.knowledgeContext] : []),
   ].join("\n\n");
+
+  if (composed.length > MAX_CONTENT_GENERATION_CONTEXT_CHARACTERS) {
+    throw new Error("Authoritative organization grounding context is too large.");
+  }
+
+  return composed;
 }
 
 export async function executeGenerateContentAction(
