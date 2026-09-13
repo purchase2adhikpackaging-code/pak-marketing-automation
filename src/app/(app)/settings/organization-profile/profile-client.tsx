@@ -45,10 +45,7 @@ function formFromProfile(profile: OrganizationProfile): ProfileForm {
 
 function parseStringMap(value: string): Record<string, string> {
   const parsed: unknown = JSON.parse(value || "{}");
-  if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
-    throw new Error("Expected an object.");
-  }
-
+  if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") throw new Error("Expected an object.");
   const result: Record<string, string> = {};
   for (const [key, entry] of Object.entries(parsed)) {
     if (typeof entry !== "string") throw new Error("Values must be strings.");
@@ -62,11 +59,7 @@ function optional(value: string): string | undefined {
   return trimmed || undefined;
 }
 
-export function OrganizationProfileClient({
-  organizations,
-}: {
-  organizations: OrganizationProfileWorkspace[];
-}) {
+export function OrganizationProfileClient({ organizations }: { organizations: OrganizationProfileWorkspace[] }) {
   const [workspaces, setWorkspaces] = useState(organizations);
   const [selectedId, setSelectedId] = useState(organizations[0]?.id ?? "");
   const selected = useMemo(
@@ -75,17 +68,8 @@ export function OrganizationProfileClient({
   );
   const [form, setForm] = useState<ProfileForm>(() =>
     selected ? formFromProfile(selected.profile) : {
-      officialName: "",
-      shortName: "",
-      about: "",
-      address: "",
-      primaryEmail: "",
-      primaryPhone: "",
-      website: "",
-      defaultLanguage: "en",
-      timezone: "Europe/Warsaw",
-      socialLinksJson: "{}",
-      legalIdentifiersJson: "{}",
+      officialName: "", shortName: "", about: "", address: "", primaryEmail: "", primaryPhone: "", website: "",
+      defaultLanguage: "en", timezone: "Europe/Warsaw", socialLinksJson: "{}", legalIdentifiersJson: "{}",
     },
   );
   const [message, setMessage] = useState<string>();
@@ -97,14 +81,10 @@ export function OrganizationProfileClient({
     setMessage(undefined);
   }, [selected]);
 
-  if (!selected) {
-    return <p className="mt-6 text-sm text-slate-400">No organization workspace is available.</p>;
-  }
+  if (!selected) return <p className="mt-6 text-sm text-slate-400">No organization workspace is available.</p>;
 
   const canEdit = selected.role === "OWNER" || selected.role === "ADMIN";
-  const setField = (field: keyof ProfileForm, value: string) => {
-    setForm((current) => ({ ...current, [field]: value }));
-  };
+  const setField = (field: keyof ProfileForm, value: string) => setForm((current) => ({ ...current, [field]: value }));
 
   const save = () => {
     let socialLinks: Record<string, string>;
@@ -117,18 +97,25 @@ export function OrganizationProfileClient({
       return;
     }
 
+    const shortName = optional(form.shortName);
+    const about = optional(form.about);
+    const address = optional(form.address);
+    const primaryEmail = optional(form.primaryEmail);
+    const primaryPhone = optional(form.primaryPhone);
+    const website = optional(form.website);
+
     setMessage(undefined);
     startTransition(async () => {
       const result = await saveOrganizationProfileAction({
         organizationId: selected.id,
         profile: {
           officialName: form.officialName,
-          ...(optional(form.shortName) ? { shortName: optional(form.shortName) } : {}),
-          ...(optional(form.about) ? { about: optional(form.about) } : {}),
-          ...(optional(form.address) ? { address: optional(form.address) } : {}),
-          ...(optional(form.primaryEmail) ? { primaryEmail: optional(form.primaryEmail) } : {}),
-          ...(optional(form.primaryPhone) ? { primaryPhone: optional(form.primaryPhone) } : {}),
-          ...(optional(form.website) ? { website: optional(form.website) } : {}),
+          ...(shortName ? { shortName } : {}),
+          ...(about ? { about } : {}),
+          ...(address ? { address } : {}),
+          ...(primaryEmail ? { primaryEmail } : {}),
+          ...(primaryPhone ? { primaryPhone } : {}),
+          ...(website ? { website } : {}),
           socialLinks,
           defaultLanguage: form.defaultLanguage,
           timezone: form.timezone,
@@ -136,17 +123,8 @@ export function OrganizationProfileClient({
           expectedRevision: selected.profile.revision,
         },
       });
-
-      if (!result.ok) {
-        setMessage(result.error);
-        return;
-      }
-
-      setWorkspaces((current) =>
-        current.map((workspace) =>
-          workspace.id === selected.id ? { ...workspace, profile: result.profile } : workspace,
-        ),
-      );
+      if (!result.ok) { setMessage(result.error); return; }
+      setWorkspaces((current) => current.map((workspace) => workspace.id === selected.id ? { ...workspace, profile: result.profile } : workspace));
       setMessage("Organization Profile saved.");
     });
   };
@@ -156,27 +134,8 @@ export function OrganizationProfileClient({
 
   return (
     <div className="mt-7 space-y-6">
-      {workspaces.length > 1 ? (
-        <label className={labelClass}>
-          Organization
-          <select
-            className={inputClass}
-            value={selected.id}
-            onChange={(event) => setSelectedId(event.target.value)}
-          >
-            {workspaces.map((workspace) => (
-              <option key={workspace.id} value={workspace.id}>{workspace.label}</option>
-            ))}
-          </select>
-        </label>
-      ) : null}
-
-      {!canEdit ? (
-        <p className="rounded-lg border border-slate-800 bg-slate-900/50 px-4 py-3 text-sm text-slate-300">
-          Owner or Admin access is required to edit Organization Profile. You can review the current authoritative values.
-        </p>
-      ) : null}
-
+      {workspaces.length > 1 ? <label className={labelClass}>Organization<select className={inputClass} value={selected.id} onChange={(event) => setSelectedId(event.target.value)}>{workspaces.map((workspace) => <option key={workspace.id} value={workspace.id}>{workspace.label}</option>)}</select></label> : null}
+      {!canEdit ? <p className="rounded-lg border border-slate-800 bg-slate-900/50 px-4 py-3 text-sm text-slate-300">Owner or Admin access is required to edit Organization Profile. You can review the current authoritative values.</p> : null}
       <div className="grid gap-5 md:grid-cols-2">
         <label className={labelClass}>Official name<input aria-label="Official name" className={inputClass} disabled={!canEdit} value={form.officialName} onChange={(event) => setField("officialName", event.target.value)} /></label>
         <label className={labelClass}>Short name<input aria-label="Short name" className={inputClass} disabled={!canEdit} value={form.shortName} onChange={(event) => setField("shortName", event.target.value)} /></label>
@@ -190,13 +149,8 @@ export function OrganizationProfileClient({
         <label className={`${labelClass} md:col-span-2`}>Social links (JSON)<textarea aria-label="Social links (JSON)" className={`${inputClass} min-h-28 font-mono`} disabled={!canEdit} value={form.socialLinksJson} onChange={(event) => setField("socialLinksJson", event.target.value)} /></label>
         <label className={`${labelClass} md:col-span-2`}>Legal identifiers (JSON)<textarea aria-label="Legal identifiers (JSON)" className={`${inputClass} min-h-28 font-mono`} disabled={!canEdit} value={form.legalIdentifiersJson} onChange={(event) => setField("legalIdentifiersJson", event.target.value)} /></label>
       </div>
-
       <div className="flex items-center gap-4">
-        {canEdit ? (
-          <button type="button" disabled={isPending} onClick={save} className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-60">
-            {isPending ? "Saving…" : "Save Organization Profile"}
-          </button>
-        ) : null}
+        {canEdit ? <button type="button" disabled={isPending} onClick={save} className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-60">{isPending ? "Saving…" : "Save Organization Profile"}</button> : null}
         <span className="text-xs text-slate-500">Revision {selected.profile.revision}</span>
         {message ? <span role="status" className="text-sm text-slate-300">{message}</span> : null}
       </div>
