@@ -1,10 +1,10 @@
 # PAK Knowledge Research — Zero-Secret Research Design
 
 **Date:** 2026-09-13  
-**Status:** Proposed design approved in chat; implementation not started  
+**Status:** Design self-reviewed; awaiting user review; implementation not started  
 **Repository:** `purchase2adhikpackaging-code/pak-marketing-automation`  
 **Design branch:** `feature/knowledge-research-zero-secret`  
-**Base:** current `foundation/org-profile-brand-knowledge` head at design start (`b2e0b03ba43e8e01d9935a04d80c086d9b6dc79e`)  
+**Base:** `foundation/org-profile-brand-knowledge` head at design start (`b2e0b03ba43e8e01d9935a04d80c086d9b6dc79e`)  
 **Related active PR:** #40 — Organization Profile, Brand Kit & Knowledge Ingestion
 
 ## 1. Goal
@@ -13,15 +13,15 @@ Add a **Research** tab inside the existing PAK Knowledge Base so authorized user
 
 The feature must add useful internet research capability without introducing any new user-managed API key, access token, OAuth credential, cookie, browser login, or secret key.
 
-The approved product choice is review-first:
+Approved flow:
 
-`Research query -> Suggested research sources -> Human review -> Create Knowledge Draft -> Existing Knowledge review -> Explicit activation`
+`Research query -> Suggested public sources -> Human review -> Create Knowledge Draft -> Existing Knowledge review -> Explicit activation`
 
 Internet research is never automatically trusted grounding.
 
 ## 2. Architectural position
 
-This is a Knowledge Base extension, not a replacement for the existing Knowledge Base lifecycle and not a second content store.
+This is a Knowledge Base extension, not a replacement lifecycle and not a second trusted-content store.
 
 The existing architecture remains authoritative for:
 
@@ -32,38 +32,39 @@ The existing architecture remains authoritative for:
 - Core Knowledge authority;
 - immutable generation provenance;
 - private Media Library storage;
-- document/URL ingestion security boundaries introduced by the organization-profile/brand/knowledge foundation work.
+- document/URL ingestion security boundaries on the active foundation branch.
 
-The research subsystem adds a **public-source discovery and review layer** before existing Knowledge creation.
+The research subsystem adds a **public-source discovery and review layer before Knowledge creation**.
 
-## 3. Why not install the full Agent-Reach runtime
+## 3. Agent-Reach relationship
 
-Agent-Reach is useful as a routing/reference model for internet research, but its full installation is intentionally **not** embedded into the PAK application runtime.
+Agent-Reach is used as the reference model for credential-free internet research routing, but the full Agent-Reach runtime is intentionally **not embedded** into PAK.
 
 Reasons:
 
-1. Full Agent-Reach orchestrates multiple CLIs and login-backed channels that PAK does not need for this slice.
-2. Some Agent-Reach channels can depend on cookies, local browser sessions, platform logins, or platform-specific credentials.
-3. PAK already has a provider-neutral integration architecture and strict server-side security boundaries.
-4. Pulling a desktop/CLI-oriented multi-channel runtime directly into Next.js/Supabase would unnecessarily widen the attack and operational surface.
+1. Full Agent-Reach orchestrates multiple desktop/CLI and login-backed channels that PAK does not need here.
+2. Some channels depend on cookies, local browser sessions, platform logins or credentials.
+3. PAK already has provider-neutral server boundaries, organization isolation and established security/provenance contracts.
+4. Pulling the full multi-channel runtime into Next.js/Supabase would widen the operational and attack surface without improving this bounded use case.
 
-PAK therefore adopts only the **credential-free research capabilities and routing concepts** needed for this feature behind its own typed server-side adapter boundary.
+PAK therefore implements only the approved **zero-secret research subset** behind its own typed server-side adapter boundary.
 
 ## 4. Credential policy — hard requirement
 
-### 4.1 Allowed
+### 4.1 Allowed provider paths
 
-The first release may use only providers/transports that require **no new credential** from PAK or the organization:
+The first release may use only transports that require **no new credential** from PAK or the organization:
 
-- Exa public MCP search endpoint, while it remains available without an API key;
-- Jina Reader public URL-reading endpoint, while it remains available without an API key;
-- ordinary public RSS/Atom feeds fetched over HTTPS.
+- Exa public MCP search endpoint, only while its no-key path remains operational;
+- PAK's existing safe public-URL fetch/extraction boundary for selected source reading;
+- ordinary public RSS/Atom feeds fetched over HTTPS;
+- Jina Reader only as an optional no-key readability fallback if implementation proves it necessary; the feature must not depend on Jina for correctness.
 
-Existing PAK infrastructure credentials already required by the application may continue to be used for PAK authentication/database/runtime operations. They are not research-provider credentials.
+Existing PAK infrastructure credentials required for PAK authentication/database/runtime operations remain unchanged and are not research-provider credentials.
 
-### 4.2 Forbidden in this feature
+### 4.2 Forbidden
 
-The feature must not request, store, add to Vault, or depend on:
+This feature must not request, store, add to Vault, or depend on:
 
 - Exa API keys;
 - Twitter/X cookies or tokens;
@@ -73,9 +74,9 @@ The feature must not request, store, add to Vault, or depend on:
 - Google/YouTube API keys;
 - OpenCLI browser session access;
 - any new API/access/secret key;
-- any user password supplied for external research sources.
+- any external account password.
 
-If a provider later changes from no-key access to credential-required access, that provider must fail closed and be disabled until a separate product decision explicitly approves a credentialed integration.
+If a provider changes from no-key access to credential-required access, that route fails closed with `CREDENTIAL_REQUIRED` and is disabled. PAK must not prompt the user for a key as a fallback.
 
 ## 5. Scope
 
@@ -83,31 +84,30 @@ If a provider later changes from no-key access to credential-required access, th
 
 - Knowledge Base `Research` tab.
 - Organization-scoped research queries.
-- Public web discovery through a provider-neutral research adapter.
-- Safe source reading for selected public URLs.
-- Optional RSS/Atom discovery/reading where directly relevant.
+- Public web discovery through a provider-neutral adapter.
 - Persisted research runs and candidates for review/audit.
-- Human review and selective conversion to existing DRAFT `knowledge_records`.
-- Source provenance retained when a candidate becomes Knowledge.
-- RBAC, tenant isolation, URL safety, rate limits, timeout/size bounds, safe errors and deterministic tests.
+- Safe source reading only after user selection.
+- Human review and explicit conversion to existing DRAFT Knowledge.
+- Source provenance retained on conversion.
+- RBAC, RLS, tenant isolation, URL safety, timeout/size/rate bounds and safe errors.
+- Deterministic provider fakes for CI.
 
 ### 5.2 Out of scope
 
-- Social-account login or social scraping requiring authenticated sessions.
+- Authenticated social research requiring cookies/logins.
 - Publishing, commenting, liking or messaging.
-- Automatic activation of Knowledge.
-- Automatic promotion to Core Knowledge.
-- Automatic content generation directly from unreviewed research candidates.
+- Automatic activation or automatic Core Knowledge promotion.
+- Direct model grounding from research candidates.
 - Vector database/RAG redesign.
 - General-purpose browser automation.
-- Replacing current document/URL ingestion.
-- Installing the full Agent-Reach package in the browser, Next.js app bundle or Supabase database runtime.
+- Replacing existing document/URL ingestion.
+- Installing the full Agent-Reach package in the browser, app bundle or database runtime.
 - Paid research providers.
 - YouTube transcript extraction in the first release.
 
 ## 6. Product requirements
 
-The following design-local requirement IDs are authoritative for this slice until synchronized into the governing PRD/TRD/UX/traceability documents during implementation.
+These design-local IDs govern this slice until synchronized into the product PRD/TRD/UX/traceability documents during implementation.
 
 ### PRD-RSCH-001 — Research entry point
 
@@ -115,11 +115,11 @@ Knowledge Base exposes a `Research` tab alongside the existing Knowledge managem
 
 ### PRD-RSCH-002 — RBAC
 
-Only users with existing `knowledge:manage` permission may create research runs, inspect full candidates through the research workflow, or create Knowledge drafts from candidates. Read-only Knowledge users do not receive research mutation authority.
+Only actors with existing `knowledge:manage` permission may create research runs or convert candidates to Knowledge drafts. Read-only Knowledge users gain no research mutation authority.
 
 ### PRD-RSCH-003 — Tenant isolation
 
-Every persisted research run and candidate belongs to exactly one organization. Cross-organization reads/mutations are denied by RLS and server-side authorization.
+Every persisted research run and candidate belongs to exactly one organization. Cross-organization reads/mutations are denied by RLS and server authorization.
 
 ### PRD-RSCH-004 — Zero-secret execution
 
@@ -127,86 +127,81 @@ Research execution must not require or accept any new API key, access token, OAu
 
 ### PRD-RSCH-005 — Review first
 
-A research result is a **candidate**, not Knowledge. No result becomes `knowledge_records` until an authorized user deliberately selects `Create Knowledge Draft`.
+A result is a **research candidate**, not Knowledge. No candidate becomes `knowledge_records` until an authorized user deliberately chooses `Create Knowledge Draft`.
 
 ### PRD-RSCH-006 — DRAFT only
 
-Research-to-Knowledge conversion always creates `knowledge_records.status = DRAFT`. Existing activation actions remain the only route to ACTIVE.
+Research conversion always creates `knowledge_records.status = DRAFT`. Existing Knowledge activation remains the only path to ACTIVE.
 
 ### PRD-RSCH-007 — Provenance
 
-Converted Knowledge retains enough source metadata to identify the originating research candidate, provider, canonical source URL, retrieval time and source snapshot/fingerprint where available.
+Converted Knowledge preserves the canonical source URL and research-origin metadata while reusing the established Knowledge/document provenance model.
 
 ### PRD-RSCH-008 — Source safety
 
-Source reading follows the existing safe URL ingestion boundary: public `http/https` only, validated DNS/redirect hops, no loopback/private/link-local/cloud-metadata targets, bounded response sizes and sanitized text.
+Source reading reuses the existing public URL security boundary: public `http/https` only, validated redirect hops, loopback/private/link-local/cloud-metadata rejection, DNS rebinding protection where implemented, bounded bytes and sanitized text.
 
-### PRD-RSCH-009 — Bounded results
+### PRD-RSCH-009 — Bounded execution
 
-Query length, result count, candidate text, fetched source bytes, redirect count, execution time and persisted snapshot sizes are explicitly bounded.
+Query length, result count, candidate excerpt size, source bytes, extracted text, redirect count, provider timeout and per-actor/org concurrency are explicitly bounded.
 
 ### PRD-RSCH-010 — Fail closed
 
-Provider authentication/terms changes, malformed responses, timeouts, rate limits and unsafe source URLs return normalized non-secret failures. They never cause a fallback to credentialed providers.
+Malformed responses, provider auth changes, rate limits, timeouts and unsafe source URLs produce normalized non-secret failures. No failure may trigger a credentialed fallback.
 
 ### PRD-RSCH-011 — No direct grounding
 
-Content Studio and generation-context resolution continue to use ACTIVE Knowledge only. `research_candidates` never enter prompts or generation context directly.
+Content Studio/generation context continue to consume only existing eligible ACTIVE Knowledge. `research_candidates` never enter prompts or generation context directly.
 
 ### PRD-RSCH-012 — Auditability
 
-Research runs store safe metadata sufficient to explain what was queried, which provider path was used, when it ran, and which candidate was converted to which Knowledge record.
+PAK can explain what was queried, which no-secret provider route was used, when it ran, which source was selected and which DRAFT Knowledge record resulted.
 
 ## 7. UX design
 
-### 7.1 Knowledge Base tabs
+### 7.1 Knowledge Base views
 
-The existing Knowledge Base surface gains two top-level views:
+The existing Knowledge Base gains two views:
 
 - `Knowledge`
 - `Research`
 
-The current manual create/edit/activate/archive/delete experience remains under `Knowledge` with no lifecycle regression.
+Manual create/edit/activate/archive/delete remains under `Knowledge` unchanged.
 
-### 7.2 Research tab layout
+### 7.2 Research tab
 
-For a selected organization, the Research tab contains:
+For the selected organization, the Research tab provides:
 
-1. **Search input** — bounded research question/topic.
-2. **Search button** — disabled while a run is executing.
-3. **Run status** — searching, completed, partial, failed.
-4. **Suggested source cards** — each card shows:
-   - source title;
-   - hostname/source label;
-   - canonical URL;
-   - provider path (`Exa`, `Jina`, `RSS` as applicable);
-   - concise excerpt;
-   - retrieval timestamp;
-   - source-read status;
-   - `Read source`;
-   - `Create Knowledge Draft`.
-5. **Converted state** — after conversion, card links to the created DRAFT Knowledge record and cannot silently create duplicates from repeated clicks.
+1. bounded topic/question input;
+2. `Search public sources` action;
+3. searching/completed/partial/failed run status;
+4. source cards showing title, hostname, canonical URL, provider route, concise excerpt and retrieval time;
+5. `Open source` external link;
+6. `Create Knowledge Draft` action;
+7. converted state linking to the resulting DRAFT Knowledge record.
 
-### 7.3 Research result trust language
+Repeated conversion clicks must not create duplicate Knowledge records.
 
-The UI clearly states that research results are external public sources and require review. It must not label an internet result as `approved`, `verified`, `official` or `trusted` merely because it was returned by a provider.
+### 7.3 Trust language
 
-### 7.4 Error states
+The UI states that returned items are **external public sources requiring review**. A provider result must never be labelled `verified`, `official`, `approved` or `trusted` merely because it was returned by search.
 
-Errors are actionable but secret-safe, e.g.:
+### 7.4 Error language
+
+User-facing errors are normalized, for example:
 
 - `Research provider is temporarily unavailable.`
 - `This source could not be read safely.`
-- `This public source redirected to a blocked network destination.`
-- `Research service currently requires credentials and has been disabled.`
+- `This source redirected to a blocked network destination.`
+- `This research route now requires credentials and has been disabled.`
 
-Raw provider payloads, stack traces, internal network details and secrets are never rendered.
+Raw provider payloads, stack traces, internal network data and secrets are never rendered.
 
 ## 8. Data model
 
 ### 8.1 `research_runs`
 
-Proposed organization-scoped table:
+Organization-scoped table:
 
 - `id uuid primary key`
 - `organization_id uuid not null`
@@ -215,16 +210,14 @@ Proposed organization-scoped table:
 - `status text not null` (`RUNNING|COMPLETED|PARTIAL|FAILED`)
 - `result_count integer not null default 0`
 - `failure_code text nullable`
-- `failure_metadata jsonb nullable` — strictly safe/normalized metadata only
+- `failure_metadata jsonb nullable` — schema-allowlisted safe metadata only
 - `created_by uuid nullable`
 - `created_at timestamptz not null`
 - `completed_at timestamptz nullable`
 
-`provider` records the provider route used for the run, not a credential/config object.
-
 ### 8.2 `research_candidates`
 
-Proposed organization-scoped table:
+Organization-scoped table:
 
 - `id uuid primary key`
 - `organization_id uuid not null`
@@ -233,303 +226,256 @@ Proposed organization-scoped table:
 - `title text not null`
 - `canonical_url text not null`
 - `source_host text not null`
-- `excerpt text not null`
-- `source_text_snapshot text nullable` — bounded sanitized text only
-- `source_fingerprint text nullable`
+- `excerpt text not null` — bounded provider excerpt only
+- `result_fingerprint text nullable`
 - `retrieved_at timestamptz not null`
 - `review_status text not null` (`SUGGESTED|CONVERTED|DISMISSED`)
 - `knowledge_record_id uuid nullable`
 - `created_at timestamptz not null`
 
+Research candidates deliberately do **not** persist full article/page snapshots. Full selected-source text is fetched only through PAK's existing safe URL boundary at conversion time and stored through the established Knowledge/document provenance model.
+
 ### 8.3 Invariants
 
-- candidate organization must match research-run organization;
-- linked Knowledge organization must match candidate organization;
+- candidate organization equals run organization;
+- linked Knowledge organization equals candidate organization;
+- browser cannot insert authoritative research rows or set conversion linkage;
+- candidate conversion is idempotent;
+- one candidate creates at most one Knowledge record;
 - `knowledge_record_id` is set only by authoritative conversion logic;
-- a candidate may create at most one authoritative Knowledge draft;
-- conversion is idempotent;
-- browser cannot directly insert authoritative research rows or set conversion linkage;
-- research candidates do not reuse `knowledge_records.status`; they remain a separate pre-Knowledge review state;
-- no secret/token/cookie fields exist in either table.
+- no secret/token/cookie field exists in either research table.
 
-## 9. Provider-neutral research contracts
+## 9. Provider-neutral research contract
 
-Proposed server-only domain interface:
+Server-only domain interface:
 
 ```ts
 export interface PublicResearchProvider {
   search(input: PublicResearchQuery): Promise<PublicResearchSearchResult>;
 }
-
-export interface PublicSourceReader {
-  read(input: PublicSourceReadRequest): Promise<PublicSourceReadResult>;
-}
 ```
 
-Domain models contain only provider-neutral fields such as title, canonical URL, excerpt, retrieved timestamp and safe provider metadata.
+Domain output contains only normalized fields such as title, canonical URL, excerpt, retrieved time and safe provider metadata.
 
-Provider-specific MCP/HTTP payloads remain inside adapters.
+Provider-specific MCP/HTTP payloads stay inside adapters.
 
-### 9.1 Exa search adapter
+### 9.1 Exa no-key adapter
 
-The initial search adapter may call Exa's public MCP endpoint only while the no-key route is operational.
+The initial search adapter uses Exa's public MCP route only while no-key access remains supported.
 
-Requirements:
+Implementation requirements:
 
-- no auth header generated from PAK secrets;
+- server-only execution;
+- no auth header sourced from PAK secrets;
+- direct typed MCP client/transport rather than a required global `mcporter` CLI installation;
 - bounded result count;
-- strict response schema validation;
-- normalized timeout/rate-limit/provider failure mapping;
-- no provider-returned HTML rendered directly;
-- URLs pass canonicalization/safety checks before source reading.
+- strict response validation;
+- normalized timeout/rate-limit/provider errors;
+- no provider HTML rendered directly;
+- canonicalized result URLs before persistence/use.
 
-If the endpoint begins requiring authentication, the adapter returns `CREDENTIAL_REQUIRED` and is disabled rather than asking the user for a key.
+If Exa begins requiring authentication, the adapter returns `CREDENTIAL_REQUIRED` and the feature remains usable through manual Knowledge/URL ingestion rather than collecting a key.
 
-### 9.2 Jina Reader adapter
+### 9.2 Source reading
 
-Jina Reader may be used to obtain readable text for an already-selected public URL.
+The authoritative source reader is the existing PAK safe URL ingestion/extraction boundary from the active foundation work. Research must reuse it rather than create a second arbitrary URL-fetcher.
 
-PAK must still enforce its own URL safety boundary before and across redirects. A third-party reader does not replace PAK SSRF controls or source validation.
+Jina Reader is optional only if a later implementation step proves a readability gap. If used, PAK still validates the public URL first, does not expose private content to Jina, and does not treat Jina as a substitute for the authoritative PAK URL safety rules.
 
-### 9.3 RSS/Atom adapter
+### 9.3 RSS/Atom
 
-RSS/Atom may be fetched directly for explicitly supported public HTTPS feeds. Feed entries are normalized into the same candidate shape. Feed parsing is bounded and script/HTML content is sanitized.
+RSS/Atom support is optional within the first implementation plan and may be added only through bounded HTTPS fetch/parsing with the same public-network safety principles. It must not delay the core Exa -> candidate -> DRAFT workflow.
 
 ## 10. Server execution boundary
 
-Research calls occur server-side only.
-
-The browser sends safe intent:
+The browser sends only safe intent:
 
 ```text
 organizationId + query
 ```
 
-or, for candidate enrichment/conversion:
+or:
 
 ```text
 organizationId + researchCandidateId
 ```
 
-The browser does **not** submit authoritative provider responses, source snapshots, fingerprints, provider identity overrides, conversion status, or target Knowledge status.
+The browser does **not** send authoritative provider responses, provider overrides, source text, fingerprints, conversion state or target Knowledge status.
 
 The server:
 
-1. authenticates actor;
+1. authenticates the actor;
 2. resolves organization membership;
 3. checks `knowledge:manage`;
-4. applies input/rate bounds;
-5. invokes the allowlisted no-secret research adapter;
+4. applies query/rate bounds;
+5. invokes the allowlisted no-secret provider adapter;
 6. validates/canonicalizes returned URLs;
-7. persists normalized run/candidate records under the organization;
-8. optionally reads a selected source through the existing safe URL boundary;
-9. converts an approved candidate through an authoritative transaction/RPC to DRAFT Knowledge.
+7. persists normalized run/candidate metadata;
+8. on explicit conversion, reloads the candidate by organization;
+9. safely fetches/extracts the selected URL through the established URL boundary;
+10. finalizes candidate -> URL provenance -> DRAFT Knowledge through an authoritative idempotent transaction.
 
 ## 11. Research-to-Knowledge conversion
 
-Conversion must reuse the existing Knowledge repository/domain rules wherever possible.
+Conversion must **reuse or factor the existing URL-ingestion finalization path**, not create a competing URL-ingestion lifecycle.
 
-Authoritative conversion behavior:
+Required behavior:
 
-- validates actor and `knowledge:manage` permission;
-- reloads candidate by `organization_id + candidate_id`;
-- rejects cross-org or missing candidate;
-- if already converted, returns the existing Knowledge record rather than creating another;
-- composes bounded Knowledge title/content from the reviewed candidate/source snapshot;
-- writes `source_type = URL` (or the existing compatible URL/source enum);
-- writes source label/URL provenance;
-- creates `status = DRAFT` only;
-- atomically links `research_candidates.knowledge_record_id` to the new record;
-- never sets `is_core = true`;
-- never auto-activates.
+- authorize `knowledge:manage`;
+- reload the candidate server-side;
+- reject cross-org/missing/dismissed candidates;
+- safe-fetch and sanitize selected source content using existing URL-security/extraction code;
+- create the established URL `knowledge_document`/revision provenance where the current foundation architecture requires it;
+- create only DRAFT Knowledge;
+- atomically link the candidate to the created Knowledge record;
+- never set `is_core = true`;
+- never activate automatically;
+- if already converted, return the existing Knowledge record.
 
-Where application-level repository composition cannot guarantee idempotent conversion under concurrency, a narrow SQL RPC/transaction becomes the authoritative boundary.
+### 11.1 Idempotency and concurrency
 
-## 12. Relationship with existing document/URL ingestion
+External source fetching occurs before final database finalization. The final database operation locks/rechecks the candidate and is idempotent:
 
-The active foundation work already introduces safe document and URL ingestion. Research must **reuse**, not duplicate, those controls.
+- first successful finalizer creates/links the DRAFT Knowledge record;
+- concurrent/retried finalizers return the already-linked record;
+- an uncertain RPC response is safe to reconcile by re-reading the candidate link rather than blindly creating another record.
 
-Reuse targets include:
+If the then-current URL ingestion code cannot share this atomic boundary cleanly, implementation must factor a common server/SQL finalizer used by both URL ingestion and research conversion rather than duplicating provenance rules.
 
-- public URL canonicalization;
-- redirect-hop validation;
+## 12. Relationship with active Knowledge ingestion work
+
+The active foundation branch already introduces safe document and URL ingestion. Research reuses:
+
+- URL canonicalization;
+- redirect validation;
 - DNS/private-network rejection;
-- bounded extraction/sanitization patterns;
+- bounded extraction/sanitization;
 - DRAFT-only Knowledge creation discipline;
-- existing Knowledge revision/provenance semantics.
+- Knowledge document/revision provenance;
+- existing Knowledge revision/CAS semantics.
 
-Research differs from URL ingestion only in the discovery stage: a provider suggests public sources before the user elects to ingest/convert one.
+Research differs only by adding a discovery/review stage before the user chooses a URL to convert.
 
 ## 13. RBAC and RLS
 
 ### 13.1 Application authorization
 
-Research mutation permission maps to existing `knowledge:manage`.
-
-No new broad role is introduced.
+Research mutation maps to existing `knowledge:manage`. No new broad role is introduced.
 
 ### 13.2 Database authorization
 
-Both research tables enable RLS.
+`research_runs` and `research_candidates` enable RLS and use existing organization membership helpers/conventions.
 
-Policies must follow existing organization membership helpers/conventions. At minimum:
+Required protections:
 
-- organization members with appropriate read visibility can see allowed research state only as required by UX;
-- create/update/conversion operations are performed through guarded server actions and/or narrow RPCs;
-- authenticated browser clients cannot forge cross-org rows;
-- `anon` receives no research-table privileges;
-- conversion linkage cannot be arbitrarily changed by ordinary clients.
+- `anon` receives no research privileges;
+- cross-tenant select/insert/update is denied;
+- browser clients cannot forge conversion linkage;
+- authoritative mutation occurs through guarded server actions and narrow RPCs where atomicity is required;
+- same-org parent/child/link invariants are database enforced.
 
-The implementation plan must define exact grants/policies after inspecting the then-current branch schema and existing Knowledge policies.
+Exact policies/grants are derived from the then-current branch during planning/implementation.
 
 ## 14. Security design
 
 ### 14.1 SSRF
 
-Every URL that PAK itself reads must pass the existing URL-safety implementation, including redirect-hop validation and DNS pinning/rebinding protection where applicable.
+Every source URL PAK reads passes the existing URL-safety implementation, including redirect-hop checks and DNS rebinding protection already established on the foundation branch.
 
 ### 14.2 Prompt/content injection
 
-External source text is untrusted data.
+External source text is untrusted data. Research candidates never reach generation models directly. Only explicitly activated Knowledge can later enter the existing generation-context resolver.
 
-Research candidates are not sent directly to generation models. After conversion, only ACTIVE Knowledge may later enter the existing generation-context resolver, which preserves the established grounding boundary.
+AI summarization of raw research is not part of this slice.
 
-Any future AI summarization of research must treat source text as quoted data and must be separately designed; it is not part of this slice.
+### 14.3 XSS
 
-### 14.3 XSS/content safety
-
-Provider HTML is never injected into the UI. Persisted excerpts/snapshots are plain sanitized text. URLs are encoded/rendered through safe links.
+Provider HTML is never injected into the UI. Excerpts are normalized plain text and links are safely encoded.
 
 ### 14.4 Resource exhaustion
 
-Implementation defines and tests hard limits for:
+Implementation defines hard limits for query length, result count, provider timeout, redirects, source bytes, extracted characters, candidate count/size and concurrent research runs per actor/organization.
 
-- query length;
-- results per run;
-- concurrent research operations per actor/org;
-- provider timeout;
-- redirects;
-- source bytes;
-- extracted text characters;
-- persisted candidate count/size.
+### 14.5 Egress
 
-### 14.5 Egress allowlist
-
-The server-side research adapter may connect only to the explicitly approved public research endpoints and the validated public source URL being read. No generic arbitrary internal proxy endpoint is created.
+The research search adapter connects only to explicitly allowlisted no-secret research endpoints. Selected-source fetch uses the existing validated public-URL path. No generic internal proxy is introduced.
 
 ### 14.6 Privacy
 
-Research queries may contain business topics but must not be populated automatically with candidate/client PII. The UI should advise users not to search using sensitive personal data. Provider requests must not include PAK secrets or private Knowledge content in this slice.
+Research queries must not be automatically populated with candidate/client PII, private Knowledge, secrets or private document contents. UI copy warns against searching with sensitive personal data.
 
 ## 15. Reliability and provider drift
 
-No-key public services may change behavior without notice.
+No-key services can change without notice. Therefore:
 
-Therefore:
-
-- adapter health is treated as external dependency health, not PAK auth health;
-- provider schema is validated at runtime;
-- unexpected auth challenge becomes `CREDENTIAL_REQUIRED`;
-- no automatic fallback may introduce credentials;
-- no-key providers can be disabled independently;
-- existing Knowledge Base remains fully usable when Research is unavailable;
-- research failures never block manual Knowledge or document/URL ingestion.
-
-A future credentialed provider would require a separate design/approval and existing Integration Vault rules.
+- provider responses are runtime-schema validated;
+- auth challenges become `CREDENTIAL_REQUIRED`;
+- no automatic credential fallback exists;
+- research failure never blocks manual Knowledge or document/URL ingestion;
+- provider routes can be disabled independently;
+- existing Knowledge Base remains fully usable when Research is unavailable.
 
 ## 16. Observability
 
-Persist safe operational metadata:
+Persist/log only safe operational metadata such as research run ID, organization ID, provider, status, duration metric, result count, normalized failure code and authorized actor reference.
 
-- research run ID;
-- organization ID;
-- provider;
-- status;
-- duration bucket/metric;
-- result count;
-- normalized failure code;
-- actor ID in authorized audit context.
-
-Do not log:
-
-- cookies;
-- auth headers;
-- external account credentials;
-- full private Knowledge context;
-- raw unbounded provider responses.
+Never log cookies, auth headers, passwords, external credentials, unbounded raw provider payloads or private Knowledge context.
 
 ## 17. Testing strategy
 
-Implementation follows TDD RED -> GREEN for every behavior slice.
+Implementation follows TDD RED -> GREEN per slice.
 
-### 17.1 Unit/contract tests
+### 17.1 Unit/contract
 
-- research query schema bounds;
+Cover:
+
+- query schema bounds;
 - provider-neutral result validation;
-- Exa adapter normal response;
-- malformed provider payload;
+- Exa normal response;
+- malformed payload;
 - timeout/rate limit;
-- `CREDENTIAL_REQUIRED` fail-closed behavior;
-- URL canonicalization and unsafe URL rejection;
-- Jina/RSS normalization;
+- `CREDENTIAL_REQUIRED` fail-closed path;
+- URL canonicalization and unsafe source rejection;
+- candidate persistence normalization;
 - candidate-to-DRAFT conversion;
-- conversion idempotency;
+- conversion idempotency/concurrency;
 - no auto-activation/no Core mutation.
 
-### 17.2 Authorization tests
+### 17.2 Authorization
 
-- OWNER/ADMIN/EDITOR according to current `knowledge:manage` contract;
-- read-only roles denied mutation;
-- unauthenticated denied;
-- cross-org candidate/run access denied.
+Cover current `knowledge:manage` roles, read-only denial, unauthenticated denial and cross-org denial.
 
-### 17.3 SQL/RLS tests
+### 17.3 SQL/RLS
 
-- RLS enabled;
-- anon denied;
-- cross-tenant select/insert/update denied;
-- authoritative conversion linkage protected;
-- same-org foreign-key/invariant guards;
-- DRAFT-only conversion.
+Verify RLS enabled, anon denied, cross-tenant operations denied, same-org invariants enforced, conversion linkage protected and DRAFT-only finalization.
 
-### 17.4 UI tests
+### 17.4 UI
 
-- Research tab visible in Knowledge Base;
-- role-aware controls;
-- loading/empty/error/partial states;
-- candidate cards render safe metadata;
-- `Create Knowledge Draft` produces DRAFT state;
-- repeated conversion does not duplicate Knowledge;
-- existing Knowledge tab behavior remains intact.
+Verify Research tab, organization context, role-aware controls, loading/empty/error/partial states, safe candidate metadata, external source links, DRAFT conversion and no regression to existing Knowledge UI.
 
 ### 17.5 E2E
 
-Playwright deterministic provider fake verifies:
+Playwright uses a deterministic provider fake to verify:
 
-`Knowledge Base -> Research -> query -> candidates -> inspect -> Create Knowledge Draft -> Knowledge tab -> DRAFT record`
+`Knowledge Base -> Research -> query -> candidates -> Create Knowledge Draft -> Knowledge -> DRAFT record`
 
-No live Exa/Jina request is required in CI.
+CI does not depend on live Exa/Jina availability.
 
 ### 17.6 Live acceptance
 
-A controlled non-secret live smoke may verify the public provider path in a staging/production-like runtime only after deterministic CI is green. Live-provider availability is not fabricated by tests.
+After deterministic exact-head gates are green, a controlled no-secret live smoke may verify the public Exa route and one safe source conversion in a staging/production-like runtime using reversible synthetic data.
 
-## 18. Deployment and runtime
+## 18. Runtime/deployment
 
-Preferred first implementation stays within the existing PAK server/Supabase architecture.
+Preferred implementation stays inside the existing PAK server/Supabase architecture.
 
-No separate Railway research worker is required unless runtime constraints discovered during implementation prove it necessary. If a new worker would become necessary, implementation stops and the architecture is re-reviewed before adding infrastructure.
+No separate Railway research worker, global `mcporter` installation, browser extension or desktop session is required. If implementation discovers that a new long-running worker is technically necessary, work stops and architecture is re-reviewed before infrastructure is added.
 
-No new research credential is added to:
+No new research credential is added to Vercel environment variables, Supabase Vault, Railway variables or organization Integration Settings.
 
-- Vercel environment variables;
-- Supabase Vault;
-- Railway variables;
-- organization Integration Settings.
+## 19. Governing-document synchronization
 
-## 19. Governing-document updates required during implementation
-
-Before the feature is declared complete, implementation must synchronize:
+Before completion, implementation updates as required:
 
 - `docs/product/PAK_MASTER_PRD.md`
 - `docs/product/PAK_MASTER_TRD.md`
@@ -540,49 +486,50 @@ Before the feature is declared complete, implementation must synchronize:
 - `docs/product/PAK_DEVELOPMENT_ROADMAP.md`
 - `docs/product/PAK_TRACEABILITY_MATRIX.md`
 
-The feature should be scheduled so it does not disrupt completion/merge readiness of the active organization-profile/brand/knowledge foundation work.
+The feature must not disrupt completion/merge readiness of active PR #40.
 
 ## 20. Engineering governance
 
-Implementation must use the governed development workflow:
+Implementation uses the governed development workflow:
 
-1. Supervisor/Orchestrator — protects scope, architecture and completion criteria.
-2. Architecture Agent — checks compatibility with Knowledge, integration, tenancy and security contracts.
-3. Planning Agent — writes the implementation plan and dependency order.
-4. Coding Agent — implements only approved slices with TDD.
-5. Typecheck/Test Agent — verifies focused tests through full CI gates.
-6. E2E Verification Agent — runs Playwright/runtime validation where applicable.
-7. Integration/Release Agent — reconciles migrations/docs/CI/PR readiness and rollout evidence.
+1. Supervisor/Orchestrator protects scope, architecture and completion criteria.
+2. Architecture Agent checks Knowledge, integration, tenancy and security compatibility.
+3. Planning Agent writes dependency-ordered implementation tasks.
+4. Coding Agent implements approved slices with TDD.
+5. Typecheck/Test Agent verifies focused through full CI gates.
+6. E2E Verification Agent performs Playwright/runtime proof where applicable.
+7. Integration/Release Agent reconciles migrations, docs, CI, PR readiness and rollout evidence.
 
-These are development roles, not runtime agents inside PAK.
+These are development roles, not runtime PAK agents.
 
 ## 21. Acceptance criteria
 
-The feature is complete only when all of the following are true:
+The feature is complete only when:
 
-1. Knowledge Base has a Research tab integrated with the existing organization context.
-2. Authorized users can perform bounded public research without adding any new key/token/secret/login.
-3. Search results are persisted as organization-scoped research candidates, not Knowledge.
-4. A candidate becomes Knowledge only after an explicit authorized action.
-5. Converted Knowledge is DRAFT and cannot auto-activate or auto-Core.
-6. Content Studio/generation never consumes research candidates directly.
-7. Research-to-Knowledge conversion is idempotent and provenance-preserving.
-8. RLS/RBAC prevents cross-organization access and unauthorized mutation.
-9. Unsafe/private-network source URLs are rejected through the existing URL-safety boundary.
-10. Existing manual Knowledge and document/URL ingestion remain fully functional if research providers fail.
-11. Provider drift to credential-required access fails closed; no credential prompt/fallback is introduced.
-12. Deterministic unit, SQL/RLS, typecheck, lint, build and Playwright gates are green on exact HEAD.
-13. Required governing docs/traceability/readiness evidence are updated.
-14. No Lovable changes or credits are used.
-15. No new API/access/secret key is required anywhere in PAK for this feature.
+1. Knowledge Base contains a Research tab in existing organization context.
+2. Authorized research works without any new key/token/secret/login.
+3. Search results persist as organization-scoped candidates, not Knowledge.
+4. A candidate becomes Knowledge only through explicit authorized conversion.
+5. Conversion creates DRAFT only and never auto-activates or auto-Core.
+6. Full selected-source text is fetched through the existing safe URL boundary rather than persisted blindly from search results.
+7. Research candidates never directly enter Content Studio/generation grounding.
+8. Conversion is idempotent, concurrency-safe and provenance-preserving.
+9. RLS/RBAC blocks cross-org/unauthorized access.
+10. Unsafe/private-network URLs are rejected.
+11. Existing manual Knowledge and document/URL ingestion continue to work if research is unavailable.
+12. Provider drift to credential-required access fails closed without a credential prompt.
+13. Deterministic unit, SQL/RLS, typecheck, lint, build and Playwright gates are green on exact HEAD.
+14. Governing docs/traceability/readiness evidence are synchronized.
+15. Lovable is untouched.
+16. No new API/access/secret key is required anywhere in PAK for this feature.
 
 ## 22. Implementation sequencing constraint
 
-Because PR #40 is active and modifies the same Knowledge Base area, this feature must not be implemented by independently duplicating or racing unfinished foundation code.
+PR #40 is active and modifies the same Knowledge Base/ingestion area. This feature must not race or duplicate unfinished foundation code.
 
-The implementation plan must begin from the then-current repository state and choose one safe integration route:
+The implementation plan must start from the then-current repository state and use one safe route:
 
-- implement after the relevant PR #40 Knowledge Base/ingestion seams are complete and stable; or
-- if PR #40 remains open, base the feature branch on its verified head and preserve its exact invariants.
+- preferably wait until the relevant PR #40 Knowledge Base/URL-ingestion seams are complete and verified, then implement on top; or
+- if PR #40 remains open but those seams are verified, base the feature work on its current head and preserve its exact invariants.
 
-In either case, current repository state plus governing docs take precedence over this design if the foundation evolves. Any material architectural conflict requires an explicit design update before code changes.
+Current repository state plus governing docs override this design if the foundation evolves. Any material conflict requires an explicit design amendment before code changes.
