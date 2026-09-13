@@ -24,17 +24,38 @@ describe("knowledge URL safety", () => {
       "http://192.168.1.2/internal",
       "http://169.254.169.254/latest/meta-data",
       "http://[::1]/admin",
+      "http://[::ffff:7f00:1]/admin",
+      "http://[::ffff:a00:1]/internal",
+      "http://[::ffff:a9fe:a9fe]/latest/meta-data",
     ]) {
       await expect(validateKnowledgeSourceUrl(unsafe, publicResolver)).rejects.toThrow(/unsafe|unsupported/i);
     }
   });
 
-  it("rejects hostnames resolving to private, loopback, link-local or metadata destinations", async () => {
-    const cases = ["127.0.0.1", "10.10.0.1", "172.31.9.4", "192.168.2.2", "169.254.20.10", "::1", "fc00::1", "fe80::1"];
+  it("rejects hostnames resolving to private, loopback, link-local, metadata or mapped IPv4 destinations", async () => {
+    const cases = [
+      "127.0.0.1",
+      "10.10.0.1",
+      "172.31.9.4",
+      "192.168.2.2",
+      "169.254.20.10",
+      "::1",
+      "fc00::1",
+      "fe80::1",
+      "::ffff:7f00:1",
+      "::ffff:a00:1",
+      "::ffff:a9fe:a9fe",
+    ];
     for (const address of cases) {
       const resolver: ResolveHostname = vi.fn().mockResolvedValue([address]);
       await expect(validateKnowledgeSourceUrl("https://safe-looking.example/path", resolver)).rejects.toThrow(/unsafe/i);
     }
+  });
+
+  it("still permits mapped IPv4 form when the embedded IPv4 destination is public", async () => {
+    const resolver: ResolveHostname = vi.fn().mockResolvedValue(["::ffff:5db8:d822"]);
+    await expect(validateKnowledgeSourceUrl("https://safe-looking.example/path", resolver))
+      .resolves.toBe("https://safe-looking.example/path");
   });
 
   it("revalidates every redirect target instead of following redirects implicitly", async () => {
