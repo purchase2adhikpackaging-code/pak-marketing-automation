@@ -1,154 +1,58 @@
 # PAK Knowledge Research — Zero-Secret Research Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` (recommended) or `superpowers:executing-plans` to implement this plan task-by-task.
 
-**Goal:** Add a review-first `Research` tab to PAK Knowledge Base that discovers current public web sources through a credential-free Exa MCP route, lets authorized users inspect sources safely, and converts an explicitly selected source into existing DRAFT Knowledge without introducing any new API/access/secret key.
+**Goal:** Add a review-first `Research` tab to PAK Knowledge Base that discovers current public web sources through Exa's credential-free MCP endpoint, lets authorized users inspect sources safely, and converts an explicitly selected source into existing **DRAFT** Knowledge without introducing any new API key, access token, OAuth credential, cookie, browser login, or secret key.
 
-**Architecture:** Extend the current Knowledge Base rather than introducing a parallel trusted-content system. Persist organization-scoped research runs/candidates, keep public search behind a typed server-only provider adapter, reuse the existing URL safety/extraction and Knowledge ingestion lifecycle, and make research-candidate conversion atomic/idempotent while preserving DRAFT-only activation discipline.
+**Architecture:** Extend the existing Knowledge Base. A new authenticated Supabase Edge Function owns live Exa search and authoritative research-row writes using Supabase's already-provided Edge runtime service-role credential; the browser can submit only `organizationId + query` or `organizationId + candidateId`. PAK's existing Node DNS-pinned URL-safety/extraction boundary owns source preview and conversion. Research candidates are untrusted pre-Knowledge metadata and never become generation grounding directly.
 
-**Tech Stack:** Next.js 15 App Router, React 19, TypeScript 5.9, Supabase/Postgres/RLS, Zod 4, Vitest 3, Playwright 1.55, `@modelcontextprotocol/sdk` client transport for the fixed public Exa MCP endpoint, existing Node DNS-pinned URL fetcher/extractor.
+**Tech Stack:** Next.js 15 App Router, React 19, TypeScript 5.9, Supabase/Postgres/RLS/Edge Functions, Zod 4, Vitest 3, Playwright 1.55, MCP TypeScript client v2 (`@modelcontextprotocol/client@2.0.0`) imported only by the Edge Function, and the existing Node DNS-pinned Knowledge URL fetcher/extractor.
 
 **Spec:** `docs/superpowers/specs/2026-09-13-knowledge-research-zero-secret-design.md`
 
 ## Execution Base
 
-The design branch was created before the active foundation branch finished advancing. Before implementation starts, create the execution worktree/branch from the **latest** `foundation/org-profile-brand-knowledge` HEAD (inspected during planning at `d679f54c377038f31c2836bf0fc9dbd18775abd1`) and carry this spec + plan into that execution branch. Do not implement against the stale planning branch snapshot. If the foundation branch advances again, re-inspect and integrate it before Task 1.
+The planning branch was created before the active foundation branch finished advancing. At implementation start, create the execution branch/worktree from the **latest** `foundation/org-profile-brand-knowledge` HEAD, then carry this spec and plan into it. The foundation HEAD inspected during planning was `d679f54c377038f31c2836bf0fc9dbd18775abd1`; re-check it immediately before Task 1 and use the newer head if it advanced. Do not implement against the stale planning-branch snapshot.
 
-## Global Constraints
+The current foundation already contains:
+- Core Knowledge authority and manager UI;
+- document/URL Knowledge ingestion;
+- `KnowledgeIngestionService.ingestUrl()` with DRAFT-only finalization;
+- `src/modules/knowledge-ingestion/url-safety.ts` with redirect-hop validation, private/loopback/link-local rejection, DNS validation, DNS-pinned fetch, byte/time bounds and text sanitization;
+- Supabase Edge Functions that authenticate a bearer JWT, resolve membership using the Edge runtime's existing `SUPABASE_SERVICE_ROLE_KEY`, and perform privileged persistence without exposing the service role to the browser.
+
+## Non-negotiable constraints
 
 - Never touch Lovable.
-- No new API key, access token, OAuth credential, cookie, external account login, browser session, or secret key may be introduced.
-- Do not add Exa/Jina/social credentials to Supabase Vault, Vercel, Railway, `.env`, browser storage, or Settings.
-- The fixed no-key Exa MCP endpoint is the only search provider in the first release. If it starts requiring credentials, return `CREDENTIAL_REQUIRED` and fail closed.
-- Do not install the full Agent-Reach runtime, OpenCLI, `mcporter`, Twitter/Reddit/Facebook/Instagram/LinkedIn login tooling, or desktop/browser-session dependencies.
-- Reuse existing `src/modules/knowledge-ingestion/url-safety.ts`; do not create a second SSRF/network-safety implementation.
-- Reuse existing Knowledge URL ingestion/extraction; research results never bypass the current DRAFT-only Knowledge lifecycle.
-- Research candidates are untrusted public-source suggestions. They never enter Content Studio, generation-context, Scene Planning, or prompts directly.
-- Only `knowledge:manage` actors (OWNER/ADMIN/EDITOR) may run research, preview source content, dismiss candidates, or create Knowledge drafts from candidates.
-- REVIEWER/ANALYST gain no research mutation/read surface in this slice.
-- Browser input is intent only: `organizationId + query` or `organizationId + candidateId`. Browser never submits provider output, canonical URL overrides, source text, fingerprints, provider identifiers, conversion status, or Knowledge status.
-- `research_runs` and `research_candidates` are organization-scoped, RLS-enabled, and have no secret fields.
-- Persist only bounded title/URL/hostname/excerpt/provider/retrieval metadata. Do not persist full article text in research tables.
-- Search bounds for first release: query 3–300 chars; maximum 8 candidates/run; candidate title 500 chars; URL 2048 chars; hostname 255 chars; excerpt 4000 chars; provider call timeout 12 seconds.
-- Search requests must not include private Knowledge, user files, client/candidate PII, integration secrets, or organization credentials.
-- Existing Knowledge Base revision/CAS, Core Knowledge, provenance, RBAC/RLS, and private Media Library behavior must not regress.
-- Every feature/bug slice uses TDD RED → GREEN; exact-head typecheck/lint/unit/build/E2E evidence is required before completion claims.
-- Implementation execution follows the governed roles: Supervisor/Orchestrator → Architecture → Planning → Coding → Typecheck/Test → E2E Verification → Integration/Release; no single-agent unchecked coding path.
+- Add **no new API/access/secret key** anywhere: not Vault, `.env`, Vercel, Railway, Supabase secrets, Settings, browser storage or database columns.
+- The existing `SUPABASE_SERVICE_ROLE_KEY` automatically available to deployed Supabase Edge Functions is platform infrastructure already used by PAK; this feature must not create, rotate, copy, expose or request a new service-role secret.
+- Do not install Agent-Reach, OpenCLI, `mcporter`, Twitter/Reddit/Facebook/Instagram/LinkedIn tooling, or any browser-session/cookie integration.
+- The only search provider in v1 is the fixed endpoint `https://mcp.exa.ai/mcp`. If it starts requiring credentials, return `CREDENTIAL_REQUIRED` and disable research. Do not prompt for a key and do not fall back to a credentialed provider.
+- Use MCP client v2.0.0 (`npm:@modelcontextprotocol/client@2.0.0`) in the Edge Function; do not add the obsolete monolithic v1 `@modelcontextprotocol/sdk` package to the Next.js app.
+- Search input bounds: query 3–300 chars; maximum 8 results; title 500 chars; URL 2048 chars; host 255 chars; excerpt 4000 chars; provider timeout 12 seconds.
+- Only OWNER/ADMIN/EDITOR (`knowledge:manage`) may search, preview, dismiss or convert research candidates. REVIEWER/ANALYST receive no Research tab/read surface in v1.
+- The Edge Function accepts intent only. It never accepts provider output, candidate title/excerpt/URL, provider identity, status, Knowledge status, API key or auth headers for Exa from the caller.
+- `research_runs` and `research_candidates` have RLS enabled, manager-only SELECT, and **no authenticated table writes**. Search/dismiss writes occur only inside the authenticated Edge Function after it verifies membership.
+- Search persistence may store only bounded metadata: title, syntactically canonical public HTTP(S) URL, host, excerpt, retrieval time and provider identity. It does not persist full article text.
+- Search-time URL validation rejects malformed URLs, credentials-in-URL, localhost names and private/reserved literal IPs. Full DNS/redirect/rebinding validation occurs before any PAK source fetch by reusing existing `fetchSafeKnowledgeUrl`/URL ingestion.
+- Research candidates are never passed directly to Content Studio, generation context, Scene Planning or an LLM.
+- Conversion is explicit, idempotent, DRAFT-only and never sets `is_core = true`.
+- Preserve existing manual Knowledge, document/URL ingestion, Core Knowledge, CAS/revision, provenance, RLS/RBAC and private Media behavior.
+- TDD RED → GREEN for every implementation slice. No success claim without fresh exact-head typecheck/lint/unit/build/Playwright and required live RLS/runtime evidence.
+- Execute through the governed roles: Supervisor/Orchestrator → Architecture → Planning → Coding → Typecheck/Test → E2E Verification → Integration/Release.
 
 ---
 
-## File Structure
+## Task 1 — Research contracts, bounds and safe browser intent
 
-### New research domain
+**Create:**
+- `src/modules/knowledge-research/types.ts`
+- `src/modules/knowledge-research/schema.ts`
+- `src/modules/knowledge-research/schema.test.ts`
 
-- `src/modules/knowledge-research/types.ts` — provider-neutral run/candidate/result types and hard bounds.
-- `src/modules/knowledge-research/schema.ts` — Zod schemas for safe browser intent and provider normalization.
-- `src/modules/knowledge-research/provider.ts` — `PublicResearchProvider` contract and normalized provider errors.
-- `src/modules/knowledge-research/exa-mcp-provider.ts` — server-only Exa MCP adapter, fixed endpoint, no auth.
-- `src/modules/knowledge-research/repository.ts` — Supabase persistence/RPC adapter for research state.
-- `src/modules/knowledge-research/service.ts` — search orchestration, URL validation, provider normalization, preview and conversion orchestration.
-
-### Knowledge Base UI/actions
-
-- `src/app/(app)/knowledge-base/research-actions.ts` — authenticated server actions for search, source preview, dismiss and conversion.
-- `src/app/(app)/knowledge-base/research-panel.tsx` — focused client UI for the Research tab.
-- `src/app/(app)/knowledge-base/research-panel.test.tsx` — component tests.
-- Modify `src/app/(app)/knowledge-base/knowledge-base-manager.tsx` — add Knowledge/Research view switching without expanding research internals into the manager.
-- Modify/add manager tests only for tab/RBAC integration.
-
-### Database
-
-- `supabase/migrations/20260913180000_knowledge_research.sql` — tables, constraints, indexes, RLS/grants and guarded run/candidate RPCs.
-- `supabase/migrations/20260913180030_research_candidate_conversion.sql` — atomic/idempotent candidate → existing URL-ingestion DRAFT finalization boundary.
-
-### Existing ingestion reuse
-
-- Modify `src/modules/knowledge-ingestion/ingestion-service.ts` only to expose a server-only reusable URL-ingestion finalizer seam; normal URL ingestion behavior must remain byte-for-byte equivalent at the domain level.
-- Modify `src/modules/knowledge-ingestion/repository.ts` only as required for the new finalizer RPC adapter.
-- Add regression tests proving ordinary document/URL ingestion remains unchanged.
-
-### Product docs/readiness
-
-- Modify `docs/product/PAK_MASTER_PRD.md`.
-- Modify `docs/product/PAK_MASTER_TRD.md`.
-- Modify `docs/product/PAK_BACKEND_SCHEMA.md`.
-- Modify `docs/product/PAK_UI_UX_SPEC.md`.
-- Modify `docs/product/PAK_SYSTEM_WORKFLOWS.md`.
-- Modify `docs/product/PAK_INTEGRATION_SPEC.md`.
-- Modify `docs/product/PAK_DEVELOPMENT_ROADMAP.md`.
-- Modify `docs/product/PAK_TRACEABILITY_MATRIX.md`.
-- Modify readiness tests only where the Knowledge Base maturity description changes.
-
----
-
-### Task 1: Research domain contracts and strict input bounds
-
-**Files:**
-- Create: `src/modules/knowledge-research/types.ts`
-- Create: `src/modules/knowledge-research/schema.ts`
-- Create: `src/modules/knowledge-research/schema.test.ts`
-
-**Interfaces:**
-- Produces `ResearchRun`, `ResearchCandidate`, `ResearchRunStatus`, `ResearchCandidateStatus`, `PublicResearchHit`, `ResearchSearchInput`, `ResearchCandidateInput`.
-- Produces constants `MAX_RESEARCH_QUERY_CHARS = 300`, `MAX_RESEARCH_RESULTS = 8`, `MAX_RESEARCH_TITLE_CHARS = 500`, `MAX_RESEARCH_URL_CHARS = 2048`, `MAX_RESEARCH_HOST_CHARS = 255`, `MAX_RESEARCH_EXCERPT_CHARS = 4000`, `RESEARCH_PROVIDER_TIMEOUT_MS = 12000`.
-- Browser schemas accept only `organizationId/query` or `organizationId/candidateId`.
-
-- [ ] **Step 1: Write RED schema tests**
+**Contract:**
 
 ```ts
-import { describe, expect, it } from "vitest";
-import {
-  researchCandidateInputSchema,
-  researchSearchInputSchema,
-} from "./schema";
-import { MAX_RESEARCH_QUERY_CHARS } from "./types";
-
-describe("knowledge research schemas", () => {
-  it("accepts only organizationId + bounded query for search", () => {
-    const input = {
-      organizationId: "11111111-1111-4111-8111-111111111111",
-      query: "Poland railway recruitment trends 2026",
-    };
-    expect(researchSearchInputSchema.parse(input)).toEqual(input);
-    expect(() => researchSearchInputSchema.parse({ ...input, query: "x".repeat(MAX_RESEARCH_QUERY_CHARS + 1) })).toThrow();
-    expect(() => researchSearchInputSchema.parse({ ...input, provider: "CUSTOM" })).toThrow();
-    expect(() => researchSearchInputSchema.parse({ ...input, apiKey: "secret" })).toThrow();
-  });
-
-  it("accepts only organizationId + candidateId for candidate actions", () => {
-    expect(researchCandidateInputSchema.safeParse({
-      organizationId: "11111111-1111-4111-8111-111111111111",
-      candidateId: "22222222-2222-4222-8222-222222222222",
-    }).success).toBe(true);
-    expect(researchCandidateInputSchema.safeParse({
-      organizationId: "11111111-1111-4111-8111-111111111111",
-      candidateId: "22222222-2222-4222-8222-222222222222",
-      sourceUrl: "https://attacker.example",
-    }).success).toBe(false);
-  });
-});
-```
-
-- [ ] **Step 2: Run the focused test and confirm RED**
-
-Run:
-
-```bash
-npm test -- src/modules/knowledge-research/schema.test.ts
-```
-
-Expected: FAIL because the research module does not exist.
-
-- [ ] **Step 3: Implement strict types/constants/schemas**
-
-Core type shape:
-
-```ts
-export const RESEARCH_PROVIDERS = ["EXA_MCP"] as const;
-export type ResearchProvider = (typeof RESEARCH_PROVIDERS)[number];
-export type ResearchRunStatus = "RUNNING" | "COMPLETED" | "PARTIAL" | "FAILED";
-export type ResearchCandidateStatus = "SUGGESTED" | "CONVERTED" | "DISMISSED";
-
 export const MAX_RESEARCH_QUERY_CHARS = 300;
 export const MAX_RESEARCH_RESULTS = 8;
 export const MAX_RESEARCH_TITLE_CHARS = 500;
@@ -157,86 +61,30 @@ export const MAX_RESEARCH_HOST_CHARS = 255;
 export const MAX_RESEARCH_EXCERPT_CHARS = 4000;
 export const RESEARCH_PROVIDER_TIMEOUT_MS = 12_000;
 
-export type PublicResearchHit = {
-  title: string;
-  url: string;
-  excerpt: string;
-  retrievedAt: string;
-};
+export type ResearchRunStatus = "RUNNING" | "COMPLETED" | "PARTIAL" | "FAILED";
+export type ResearchCandidateStatus = "SUGGESTED" | "CONVERTED" | "DISMISSED";
+export type ResearchProvider = "EXA_MCP";
 ```
 
-Schemas must use `.strict()` so provider names, API keys, source text and URLs cannot be browser-authoritative fields.
+`researchSearchInputSchema` must be strict and accept only `{ organizationId, query }`. `researchCandidateInputSchema` must be strict and accept only `{ organizationId, candidateId }`.
 
-- [ ] **Step 4: Run focused tests + typecheck**
-
-```bash
-npm test -- src/modules/knowledge-research/schema.test.ts
-npm run typecheck
-```
-
-Expected: PASS.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/modules/knowledge-research/types.ts src/modules/knowledge-research/schema.ts src/modules/knowledge-research/schema.test.ts
-git commit -m "feat: add knowledge research domain contracts"
-```
+- [ ] Write RED tests proving extra fields such as `provider`, `apiKey`, `sourceUrl`, `excerpt`, `status` and `knowledgeStatus` are rejected.
+- [ ] Run `npm test -- src/modules/knowledge-research/schema.test.ts` and confirm RED.
+- [ ] Implement types/constants/strict schemas.
+- [ ] Run `npm test -- src/modules/knowledge-research/schema.test.ts && npm run typecheck` and confirm GREEN.
+- [ ] Commit: `feat: add knowledge research domain contracts`.
 
 ---
 
-### Task 2: Research database schema, RLS and guarded persistence RPCs
+## Task 2 — Research tables, manager-only RLS and write lockout
 
-**Files:**
-- Create: `supabase/migrations/20260913180000_knowledge_research.sql`
-- Create: `src/modules/knowledge-research/schema-sql.test.ts`
-- Create: `src/modules/knowledge-research/repository.ts`
-- Create: `src/modules/knowledge-research/repository.test.ts`
+**Create:**
+- `supabase/migrations/20260913180000_knowledge_research.sql`
+- `src/modules/knowledge-research/schema-sql.test.ts`
+- `src/modules/knowledge-research/repository.ts`
+- `src/modules/knowledge-research/repository.test.ts`
 
-**Interfaces:**
-- Produces `research_runs` and `research_candidates`.
-- Uses existing DB helpers `public.is_org_member(uuid)` and `public.has_org_role(uuid, text[])`.
-- Browser/authenticated clients receive SELECT only through manager-scoped RLS; direct INSERT/UPDATE/DELETE table grants are revoked.
-- Produces guarded RPCs `create_research_run`, `complete_research_run`, `fail_research_run`, `dismiss_research_candidate`.
-- Repository exposes `createRun`, `completeRun`, `failRun`, `listCandidates`, `getCandidate`, `dismissCandidate`.
-
-- [ ] **Step 1: Write RED SQL-source tests for exact invariants**
-
-```ts
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
-
-const sql = readFileSync(resolve("supabase/migrations/20260913180000_knowledge_research.sql"), "utf8");
-
-describe("knowledge research migration", () => {
-  it("creates tenant-scoped research tables and blocks browser writes", () => {
-    expect(sql).toContain("create table public.research_runs");
-    expect(sql).toContain("create table public.research_candidates");
-    expect(sql).toContain("alter table public.research_runs enable row level security");
-    expect(sql).toContain("alter table public.research_candidates enable row level security");
-    expect(sql).toContain("array['OWNER','ADMIN','EDITOR']");
-    expect(sql).toMatch(/revoke\s+insert,\s*update,\s*delete[\s\S]*research_runs/i);
-    expect(sql).toMatch(/revoke\s+insert,\s*update,\s*delete[\s\S]*research_candidates/i);
-  });
-
-  it("contains no credential columns", () => {
-    expect(sql).not.toMatch(/api_key|access_token|secret|cookie|password/i);
-  });
-});
-```
-
-- [ ] **Step 2: Run RED tests**
-
-```bash
-npm test -- src/modules/knowledge-research/schema-sql.test.ts
-```
-
-Expected: FAIL because migration does not exist.
-
-- [ ] **Step 3: Implement the migration**
-
-Required table invariants:
+**Database model:**
 
 ```sql
 create table public.research_runs (
@@ -247,7 +95,6 @@ create table public.research_runs (
   status text not null check (status in ('RUNNING','COMPLETED','PARTIAL','FAILED')),
   result_count integer not null default 0 check (result_count between 0 and 8),
   failure_code text,
-  failure_metadata jsonb,
   created_by uuid references auth.users(id) on delete set null,
   created_at timestamptz not null default now(),
   completed_at timestamptz,
@@ -264,7 +111,8 @@ create table public.research_candidates (
   source_host text not null check (char_length(source_host) between 1 and 255),
   excerpt text not null check (char_length(excerpt) between 1 and 4000),
   retrieved_at timestamptz not null,
-  review_status text not null default 'SUGGESTED' check (review_status in ('SUGGESTED','CONVERTED','DISMISSED')),
+  review_status text not null default 'SUGGESTED'
+    check (review_status in ('SUGGESTED','CONVERTED','DISMISSED')),
   knowledge_record_id uuid,
   created_at timestamptz not null default now(),
   unique (organization_id, id),
@@ -275,393 +123,176 @@ create table public.research_candidates (
 );
 ```
 
-Add indexes on `(organization_id, created_at desc)`, `(research_run_id)`, `(organization_id, review_status, created_at desc)` and a partial unique index preventing more than one candidate from linking to the same Knowledge record.
+Add indexes on `(organization_id, created_at desc)`, `(research_run_id)`, and `(organization_id, review_status, created_at desc)`. Add a partial unique index on non-null `knowledge_record_id`.
 
-RLS SELECT policy for both tables must require:
+RLS SELECT for both tables:
 
 ```sql
 public.has_org_role(organization_id, array['OWNER','ADMIN','EDITOR'])
 ```
 
-Guarded RPCs must perform the same role check using `auth.uid()` through `has_org_role`; they must set provider to `EXA_MCP` internally and never accept provider/credential fields from the caller.
+Explicitly revoke INSERT/UPDATE/DELETE on both tables from `anon` and `authenticated`; grant only SELECT to `authenticated` under RLS. There is no browser-callable RPC that accepts provider-result rows.
 
-- [ ] **Step 4: Write repository RED tests with an injected persistence port**
-
-Test that:
-- run creation sends only org/query;
-- completion persists at most 8 normalized candidates;
-- candidate lookup always scopes by organization;
-- dismiss is idempotent and cannot modify CONVERTED rows.
-
-Use concrete fixture IDs and assert exact calls, not snapshots.
-
-- [ ] **Step 5: Implement `SupabaseKnowledgeResearchRepository`**
+**Repository contract:** read-only from normal Next.js user session:
 
 ```ts
 export interface KnowledgeResearchRepository {
-  createRun(input: { organizationId: string; query: string; actorUserId: string }): Promise<ResearchRun>;
-  completeRun(input: { runId: string; organizationId: string; candidates: PublicResearchHit[] }): Promise<ResearchCandidate[]>;
-  failRun(input: { runId: string; organizationId: string; failureCode: string }): Promise<void>;
+  listRuns(organizationId: string): Promise<ResearchRun[]>;
   listCandidates(runId: string, organizationId: string): Promise<ResearchCandidate[]>;
   getCandidate(candidateId: string, organizationId: string): Promise<ResearchCandidate | null>;
-  dismissCandidate(candidateId: string, organizationId: string): Promise<ResearchCandidate>;
+  getKnowledgeRecord(recordId: string, organizationId: string): Promise<KnowledgeRecord | null>;
 }
 ```
 
-Map DB rows explicitly through `unknown -> ResearchRunRow/ResearchCandidateRow`; do not weaken generated Supabase types globally.
-
-- [ ] **Step 6: Run focused unit tests + typecheck**
-
-```bash
-npm test -- src/modules/knowledge-research/schema-sql.test.ts src/modules/knowledge-research/repository.test.ts
-npm run typecheck
-```
-
-Expected: PASS.
-
-- [ ] **Step 7: Commit**
-
-```bash
-git add supabase/migrations/20260913180000_knowledge_research.sql src/modules/knowledge-research/schema-sql.test.ts src/modules/knowledge-research/repository.ts src/modules/knowledge-research/repository.test.ts
-git commit -m "feat: add tenant-safe knowledge research persistence"
-```
+- [ ] Write RED SQL-source tests for tables, bounds, composite organization FKs, indexes, RLS, manager role list and direct-write revocations.
+- [ ] Add a negative SQL-source assertion that no `api_key`, `access_token`, `cookie`, `password`, `secret_value` or full `source_text` column exists.
+- [ ] Run `npm test -- src/modules/knowledge-research/schema-sql.test.ts` and confirm RED.
+- [ ] Implement migration.
+- [ ] Write RED repository tests proving every candidate/run query scopes by organization and returns no cross-org row.
+- [ ] Implement explicit `unknown -> ResearchRunRow/ResearchCandidateRow` mapping without weakening generated Supabase types.
+- [ ] Run focused tests + `npm run typecheck`; confirm GREEN.
+- [ ] Commit: `feat: add tenant-safe knowledge research persistence`.
 
 ---
 
-### Task 3: Credential-free Exa MCP provider adapter
+## Task 3 — Authenticated zero-secret Exa Edge Function
 
-**Files:**
-- Modify: `package.json`
-- Modify: lockfile
-- Create: `src/modules/knowledge-research/provider.ts`
-- Create: `src/modules/knowledge-research/exa-mcp-provider.ts`
-- Create: `src/modules/knowledge-research/exa-mcp-provider.test.ts`
+**Create:**
+- `supabase/functions/knowledge-research/index.ts`
+- `supabase/functions/knowledge-research/normalize.ts`
+- `src/modules/knowledge-research/exa-normalize.test.ts`
+- `src/modules/knowledge-research/edge-source-contract.test.ts`
 
-**Interfaces:**
-- Adds `@modelcontextprotocol/sdk` as a runtime library; it is protocol plumbing, not a provider credential.
-- Produces `PublicResearchProvider.search({ query, maxResults, signal })`.
-- Production endpoint is the constant `https://mcp.exa.ai/mcp`; no endpoint URL is accepted from browser input or environment variables.
-- Calls MCP tool `web_search_exa` with `query` and bounded `numResults` only.
-- No Authorization/Cookie/API-key header is attached.
-
-- [ ] **Step 1: Write RED adapter tests around an injected MCP client port**
+**Do not modify `package.json` for MCP.** The Edge Function imports exactly:
 
 ```ts
-it("calls the fixed no-key Exa search tool with bounded arguments", async () => {
-  const calls: unknown[] = [];
-  const provider = new ExaMcpResearchProvider({
-    callTool: async (input) => {
-      calls.push(input);
-      return {
-        content: [{
-          type: "text",
-          text: JSON.stringify({ results: [{ title: "Rail report", url: "https://example.com/report", text: "Railway hiring expanded." }] }),
-        }],
-      };
-    },
-  });
-
-  const results = await provider.search({ query: "railway hiring", maxResults: 8 });
-  expect(calls).toEqual([{ name: "web_search_exa", arguments: { query: "railway hiring", numResults: 8 } }]);
-  expect(results[0]?.url).toBe("https://example.com/report");
-});
+import { Client, StreamableHTTPClientTransport } from "npm:@modelcontextprotocol/client@2.0.0";
 ```
 
-Also test:
-- malformed result payload → `PROVIDER_INVALID_RESPONSE`;
-- HTTP/auth-like MCP failure → `CREDENTIAL_REQUIRED` when failure indicates authentication is now required;
-- timeout/abort → `PROVIDER_TIMEOUT`;
-- returned result count is truncated to `MAX_RESEARCH_RESULTS`;
-- title/excerpt are plain bounded strings.
-
-- [ ] **Step 2: Run RED provider tests**
-
-```bash
-npm test -- src/modules/knowledge-research/exa-mcp-provider.test.ts
-```
-
-Expected: FAIL because provider classes do not exist.
-
-- [ ] **Step 3: Install only the official MCP client SDK**
-
-```bash
-npm install @modelcontextprotocol/sdk
-```
-
-Do not install Agent-Reach, `mcporter`, OpenCLI or any social CLI.
-
-- [ ] **Step 4: Implement normalized provider errors and adapter**
-
-```ts
-export type ResearchProviderFailureCode =
-  | "CREDENTIAL_REQUIRED"
-  | "PROVIDER_TIMEOUT"
-  | "PROVIDER_RATE_LIMITED"
-  | "PROVIDER_UNAVAILABLE"
-  | "PROVIDER_INVALID_RESPONSE";
-
-export interface PublicResearchProvider {
-  search(input: {
-    query: string;
-    maxResults: number;
-    signal?: AbortSignal;
-  }): Promise<PublicResearchHit[]>;
-}
-```
-
-Production client construction:
+Production endpoint is a source constant:
 
 ```ts
 const EXA_MCP_ENDPOINT = new URL("https://mcp.exa.ai/mcp");
-const transport = new StreamableHTTPClientTransport(EXA_MCP_ENDPOINT);
-const client = new Client({ name: "pak-knowledge-research", version: "1.0.0" });
 ```
 
-Connect, call the tool, validate/normalize the response, then close in `finally`. The adapter must not read any Exa credential from `process.env` or Vault.
+The Edge Function request body is one of:
 
-- [ ] **Step 5: Run provider tests, typecheck and dependency grep**
-
-```bash
-npm test -- src/modules/knowledge-research/exa-mcp-provider.test.ts
-npm run typecheck
-grep -R "EXA_API\|EXA_KEY\|apiKey.*exa\|mcp.exa.ai.*Authorization" -n src package.json || true
+```ts
+{ action: "search", organizationId: string, query: string }
+{ action: "dismiss", organizationId: string, candidateId: string }
 ```
 
-Expected: tests/typecheck PASS and grep has no credential plumbing.
+No other keys are accepted.
 
-- [ ] **Step 6: Commit**
+**Authentication/authorization pattern:** follow `supabase/functions/integration-vault/index.ts`:
+1. require Bearer token;
+2. use existing Edge runtime `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY`;
+3. `admin.auth.getUser(token)`;
+4. load membership by organization/user;
+5. require role OWNER/ADMIN/EDITOR;
+6. only then perform search/dismiss.
 
-```bash
-git add package.json package-lock.json src/modules/knowledge-research/provider.ts src/modules/knowledge-research/exa-mcp-provider.ts src/modules/knowledge-research/exa-mcp-provider.test.ts
-git commit -m "feat: add zero-secret Exa research adapter"
-```
+**Search flow:**
+1. insert `research_runs` RUNNING using admin client;
+2. connect MCP client to fixed Exa endpoint with no Exa auth material;
+3. call `web_search_exa` with `{ query, numResults: 8 }`;
+4. normalize provider response to at most 8 hits;
+5. syntactically canonicalize each URL; reject URL credentials, non-http(s), localhost names and private/reserved literal IPs; strip fragments;
+6. dedupe by canonical URL;
+7. insert bounded candidates with `provider='EXA_MCP'`;
+8. mark run COMPLETED/PARTIAL; on normalized failure mark FAILED;
+9. always close MCP client/transport in `finally`.
+
+If provider response indicates authentication/credential is now required, map to `CREDENTIAL_REQUIRED`, mark run FAILED and return a safe error. Never read an Exa key from `Deno.env`.
+
+`normalize.ts` contains pure functions only, so Vitest can import and test response normalization and URL syntax filtering.
+
+- [ ] Write RED normalization tests for bounded results, duplicate URLs, fragment removal, malformed URL, `user:pass@host`, localhost and private literal IPv4/IPv6 rejection.
+- [ ] Write RED source-contract tests asserting fixed endpoint, `@modelcontextprotocol/client@2.0.0`, `web_search_exa`, `numResults`, membership role list, service-role runtime use, and **absence** of `EXA_API_KEY`, `EXA_KEY`, Authorization-to-Exa, OpenCLI and `mcporter`.
+- [ ] Run `npm test -- src/modules/knowledge-research/exa-normalize.test.ts src/modules/knowledge-research/edge-source-contract.test.ts` and confirm RED.
+- [ ] Implement `normalize.ts` and Edge Function.
+- [ ] Run focused tests and `npm run typecheck`; confirm GREEN for app code/source tests.
+- [ ] During implementation, run a local/remote read-only MCP compatibility probe that calls `listTools()` and confirms `web_search_exa` exists before finalizing parsing assumptions. Record the observed tool schema in the provider test fixture; do not persist credentials because none are used.
+- [ ] Commit: `feat: add zero-secret Exa research edge function`.
 
 ---
 
-### Task 4: Search orchestration, authorization and safe candidate persistence
+## Task 4 — Next.js research actions and safe Edge invocation
 
-**Files:**
-- Create: `src/modules/knowledge-research/service.ts`
-- Create: `src/modules/knowledge-research/service.test.ts`
-- Create: `src/app/(app)/knowledge-base/research-actions.ts`
-- Create: `src/app/(app)/knowledge-base/research-actions.test.ts`
+**Create:**
+- `src/app/(app)/knowledge-base/research-actions.ts`
+- `src/app/(app)/knowledge-base/research-actions.test.ts`
+- `src/modules/knowledge-research/edge-client.ts`
+- `src/modules/knowledge-research/edge-client.test.ts`
 
-**Interfaces:**
-- `KnowledgeResearchService.search()` creates RUNNING row, calls provider with a 12s abort, validates every returned URL through existing `validateKnowledgeSourceUrl`, deduplicates by canonical URL, persists at most 8 candidates, and completes/fails the run.
-- Server action reuses authenticated actor + membership authorization and maps exactly to existing `knowledge:manage`.
+The Next.js server action remains the UI boundary. It validates strict intent, authenticates current user, re-checks `knowledge:manage`, gets the user's current Supabase access token, and calls the deployed `knowledge-research` Edge Function with that user token. It does not send provider output and does not use service role.
 
-- [ ] **Step 1: Write RED service tests**
+**Action contracts:**
 
 ```ts
-it("validates and deduplicates provider URLs before persistence", async () => {
-  const persisted: PublicResearchHit[][] = [];
-  const service = new KnowledgeResearchService({
-    repository: fakeRepository({ onComplete: (hits) => persisted.push(hits) }),
-    provider: fakeProvider([
-      { title: "A", url: "https://example.com/a#fragment", excerpt: "one", retrievedAt: "2026-09-13T12:00:00.000Z" },
-      { title: "A duplicate", url: "https://example.com/a", excerpt: "two", retrievedAt: "2026-09-13T12:00:00.000Z" },
-    ]),
-    validateUrl: async (url) => new URL(url).origin + new URL(url).pathname,
-  });
-
-  await service.search({ organizationId: ORG_ID, query: "rail", actorUserId: USER_ID });
-  expect(persisted[0]).toHaveLength(1);
-});
-```
-
-Also test unsafe/private URL rejection, provider failure normalization, no credential fallback, and max-result truncation.
-
-- [ ] **Step 2: Write RED action tests**
-
-Test exact cases:
-- unauthenticated → `You must be signed in to use Knowledge Research.`;
-- REVIEWER/ANALYST → permission denied;
-- OWNER/ADMIN/EDITOR → service called;
-- malformed query rejected before provider call;
-- provider failure returns safe message without raw payload.
-
-- [ ] **Step 3: Run RED tests**
-
-```bash
-npm test -- src/modules/knowledge-research/service.test.ts src/app/\(app\)/knowledge-base/research-actions.test.ts
-```
-
-Expected: FAIL.
-
-- [ ] **Step 4: Implement service and guarded action**
-
-Production action contract:
-
-```ts
-export type ResearchSearchActionResult =
+export async function searchKnowledgeResearchAction(input: unknown): Promise<
   | { ok: true; run: ResearchRun; candidates: ResearchCandidate[] }
-  | { ok: false; error: string; code?: "CREDENTIAL_REQUIRED" | "TEMPORARY_UNAVAILABLE" };
+  | { ok: false; error: string; code?: "CREDENTIAL_REQUIRED" | "TEMPORARY_UNAVAILABLE" }
+>;
 
-export async function searchKnowledgeResearchAction(input: unknown): Promise<ResearchSearchActionResult>;
+export async function dismissKnowledgeResearchCandidateAction(input: unknown): Promise<
+  | { ok: true; candidate: ResearchCandidate }
+  | { ok: false; error: string }
+>;
 ```
 
-Use existing server Supabase auth to resolve actor/membership; never use service-role for ordinary user research.
+The Edge client endpoint is derived only from the existing public Supabase project URL; no new endpoint secret/config is introduced.
 
-- [ ] **Step 5: Run focused tests + full existing Knowledge action regression**
-
-```bash
-npm test -- src/modules/knowledge-research/service.test.ts src/app/\(app\)/knowledge-base/research-actions.test.ts src/app/\(app\)/knowledge-base/actions.test.ts src/app/\(app\)/knowledge-base/ingestion-actions.test.ts
-npm run typecheck
-```
-
-Expected: PASS.
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add src/modules/knowledge-research/service.ts src/modules/knowledge-research/service.test.ts src/app/\(app\)/knowledge-base/research-actions.ts src/app/\(app\)/knowledge-base/research-actions.test.ts
-git commit -m "feat: orchestrate governed public knowledge research"
-```
+- [ ] Write RED tests: unauthenticated denied; REVIEWER/ANALYST denied; OWNER/ADMIN/EDITOR allowed; malformed/extra fields rejected before Edge call; user token forwarded; no provider payload can be passed.
+- [ ] Write Edge-client RED tests for safe mapping of 401/403, `CREDENTIAL_REQUIRED`, provider timeout/rate limit and malformed response.
+- [ ] Run focused tests and confirm RED.
+- [ ] Implement action + Edge client.
+- [ ] Run focused tests plus existing Knowledge actions/ingestion action regression and `npm run typecheck`.
+- [ ] Commit: `feat: govern Knowledge Research actions`.
 
 ---
 
-### Task 5: Safe on-demand source preview using the existing URL boundary
+## Task 5 — Safe on-demand source preview through existing URL safety
 
-**Files:**
-- Modify: `src/modules/knowledge-research/service.ts`
-- Modify: `src/modules/knowledge-research/service.test.ts`
-- Modify: `src/app/(app)/knowledge-base/research-actions.ts`
-- Modify: `src/app/(app)/knowledge-base/research-actions.test.ts`
-- Test existing: `src/modules/knowledge-ingestion/url-safety.test.ts`
+**Create/modify:**
+- `src/modules/knowledge-research/service.ts`
+- `src/modules/knowledge-research/service.test.ts`
+- modify `src/app/(app)/knowledge-base/research-actions.ts`
+- modify `src/app/(app)/knowledge-base/research-actions.test.ts`
 
-**Interfaces:**
-- `previewCandidateSource({ organizationId, candidateId })` reloads the candidate server-side, then calls existing `fetchSafeKnowledgeUrl(candidate.canonicalUrl)`.
-- Returns bounded sanitized preview text to the authenticated manager; does not persist full article text into `research_candidates`.
-- Browser cannot provide source URL.
+`previewCandidateSource({ organizationId, candidateId })` must:
+1. load the candidate by `(organizationId, candidateId)` through manager RLS;
+2. use only the stored `candidate.canonicalUrl`;
+3. call existing `fetchSafeKnowledgeUrl(candidate.canonicalUrl)`;
+4. return `{ canonicalUrl, text, contentType }` only; never return raw bytes;
+5. persist no full article text in research tables.
 
-- [ ] **Step 1: Write RED service test proving candidate URL is authoritative**
+Input remains exactly `{ organizationId, candidateId }`; a caller-supplied `sourceUrl` must fail schema validation.
 
-```ts
-it("previews the stored candidate URL, never a browser-supplied URL", async () => {
-  const fetched: string[] = [];
-  const service = createResearchService({
-    candidate: { ...candidateFixture, canonicalUrl: "https://trusted.example/article" },
-    fetchSource: async (url) => {
-      fetched.push(url);
-      return { canonicalUrl: url, text: "sanitized article", bytes: new Uint8Array([1]), contentType: "text/plain" };
-    },
-  });
-
-  const preview = await service.previewCandidateSource({ organizationId: ORG_ID, candidateId: CANDIDATE_ID });
-  expect(fetched).toEqual(["https://trusted.example/article"]);
-  expect(preview.text).toBe("sanitized article");
-});
-```
-
-- [ ] **Step 2: Add action schema/result tests**
-
-`previewKnowledgeResearchSourceAction` input must be exactly `organizationId + candidateId`; test that a forged `sourceUrl` field is rejected.
-
-- [ ] **Step 3: Run RED tests**
-
-```bash
-npm test -- src/modules/knowledge-research/service.test.ts src/app/\(app\)/knowledge-base/research-actions.test.ts
-```
-
-- [ ] **Step 4: Implement preview through existing `fetchSafeKnowledgeUrl`**
-
-```ts
-export type ResearchSourcePreview = {
-  canonicalUrl: string;
-  text: string;
-  contentType: string;
-};
-```
-
-Return at most the existing extraction text bound; do not return raw bytes to the browser.
-
-- [ ] **Step 5: Run research + SSRF regression tests**
-
-```bash
-npm test -- src/modules/knowledge-research/service.test.ts src/app/\(app\)/knowledge-base/research-actions.test.ts src/modules/knowledge-ingestion/url-safety.test.ts
-npm run typecheck
-```
-
-Expected: PASS, including private/loopback/redirect/DNS-rebinding tests already owned by URL ingestion.
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add src/modules/knowledge-research/service.ts src/modules/knowledge-research/service.test.ts src/app/\(app\)/knowledge-base/research-actions.ts src/app/\(app\)/knowledge-base/research-actions.test.ts
-git commit -m "feat: add safe research source preview"
-```
+- [ ] Write RED test proving stored candidate URL is authoritative.
+- [ ] Write RED test proving a forged `sourceUrl` field is rejected.
+- [ ] Run focused tests and confirm RED.
+- [ ] Implement preview using `src/modules/knowledge-ingestion/url-safety.ts`; do not duplicate DNS/private-IP/redirect logic.
+- [ ] Run research tests plus `src/modules/knowledge-ingestion/url-safety.test.ts` and `npm run typecheck`.
+- [ ] Commit: `feat: add safe research source preview`.
 
 ---
 
-### Task 6: Atomic idempotent research-candidate → DRAFT Knowledge conversion
+## Task 6 — Atomic idempotent candidate → DRAFT Knowledge conversion
 
-**Files:**
-- Create: `supabase/migrations/20260913180030_research_candidate_conversion.sql`
-- Create: `src/modules/knowledge-research/conversion-sql.test.ts`
-- Modify: `src/modules/knowledge-ingestion/ingestion-service.ts`
-- Modify: `src/modules/knowledge-ingestion/ingestion-service.test.ts`
-- Modify: `src/modules/knowledge-research/repository.ts`
-- Modify: `src/modules/knowledge-research/repository.test.ts`
-- Modify: `src/modules/knowledge-research/service.ts`
-- Modify: `src/modules/knowledge-research/service.test.ts`
-- Modify: `src/app/(app)/knowledge-base/research-actions.ts`
-- Modify: `src/app/(app)/knowledge-base/research-actions.test.ts`
+**Create/modify:**
+- `supabase/migrations/20260913180030_research_candidate_conversion.sql`
+- `src/modules/knowledge-research/conversion-sql.test.ts`
+- modify `src/modules/knowledge-ingestion/ingestion-service.ts`
+- modify `src/modules/knowledge-ingestion/ingestion-service.test.ts`
+- modify `src/modules/knowledge-research/repository.ts`
+- modify `src/modules/knowledge-research/repository.test.ts`
+- modify `src/modules/knowledge-research/service.ts`
+- modify `src/modules/knowledge-research/service.test.ts`
+- modify `src/app/(app)/knowledge-base/research-actions.ts`
+- modify `src/app/(app)/knowledge-base/research-actions.test.ts`
 
-**Interfaces:**
-- Existing ordinary `KnowledgeIngestionService.ingestUrl()` remains behaviorally unchanged.
-- Add a server-only reusable URL-ingestion method that accepts a trusted finalizer callback, not browser data.
-- New RPC `finalize_research_candidate_ingestion` locks candidate + expected PROCESSING knowledge document, calls/duplicates the exact existing finalization invariants transactionally, creates DRAFT Knowledge, and sets candidate `CONVERTED + knowledge_record_id` in the same transaction.
-- If candidate already CONVERTED, RPC returns the existing linked Knowledge record: repeated/double-click requests are idempotent.
-
-- [ ] **Step 1: Write RED SQL tests for locking/idempotency/DRAFT-only**
-
-```ts
-expect(sql).toContain("create or replace function public.finalize_research_candidate_ingestion");
-expect(sql).toMatch(/for update[\s\S]*research_candidates/i);
-expect(sql).toMatch(/review_status\s*=\s*'CONVERTED'/i);
-expect(sql).toMatch(/status[\s\S]*'DRAFT'/i);
-expect(sql).not.toMatch(/status[\s\S]*'ACTIVE'/i);
-expect(sql).toContain("knowledge_record_id");
-```
-
-Also assert execute is revoked from `public`/`anon` and granted only to `authenticated` after internal role checks.
-
-- [ ] **Step 2: Write RED ingestion regression test for custom finalizer seam**
-
-```ts
-it("keeps ordinary URL ingestion on the existing finalizer", async () => {
-  const finalize = vi.fn().mockResolvedValue(finalizationFixture);
-  const service = createIngestionService({ finalize });
-  await service.ingestUrl({ organizationId: ORG_ID, sourceUrl: "https://example.com", actorUserId: USER_ID });
-  expect(finalize).toHaveBeenCalledOnce();
-});
-```
-
-Add a second test proving the trusted custom finalizer receives the same `FinalizeKnowledgeIngestionInput` produced by ordinary URL ingestion.
-
-- [ ] **Step 3: Run RED tests**
-
-```bash
-npm test -- src/modules/knowledge-research/conversion-sql.test.ts src/modules/knowledge-ingestion/ingestion-service.test.ts src/modules/knowledge-research/service.test.ts src/app/\(app\)/knowledge-base/research-actions.test.ts
-```
-
-- [ ] **Step 4: Implement the forward migration and repository RPC adapter**
-
-The RPC must:
-1. validate `has_org_role(p_organization_id, array['OWNER','ADMIN','EDITOR'])`;
-2. lock candidate by `(organization_id,id)`;
-3. immediately return linked Knowledge if already CONVERTED;
-4. require SUGGESTED otherwise;
-5. lock the expected PROCESSING `knowledge_documents` revision;
-6. create the same DRAFT Knowledge + exact document revision snapshot as current ingestion finalization;
-7. update candidate to CONVERTED and set `knowledge_record_id`;
-8. return document + Knowledge identity.
-
-No provider/search network call happens inside SQL.
-
-- [ ] **Step 5: Add the trusted finalizer seam to ingestion service**
-
-Target signature:
+Add a server-only reusable finalizer seam without changing ordinary URL ingestion behavior:
 
 ```ts
 export type KnowledgeUrlFinalizer = (
@@ -674,306 +305,176 @@ async ingestUrlWithFinalizer(
 ): Promise<{ documentId: string; record: KnowledgeRecord }>;
 ```
 
-`ingestUrl()` delegates to `ingestUrlWithFinalizer(input, value => this.repository.finalize(value))`. Only server code can supply the callback.
+`ingestUrl()` delegates to `ingestUrlWithFinalizer(input, value => this.repository.finalize(value))`.
 
-- [ ] **Step 6: Implement `convertCandidateToDraft`**
+New SQL RPC `finalize_research_candidate_ingestion` must:
+- require authenticated actor and OWNER/ADMIN/EDITOR role;
+- lock candidate by `(organization_id,id) FOR UPDATE`;
+- if already CONVERTED, return existing linked Knowledge row (idempotent repeat);
+- otherwise require SUGGESTED;
+- lock the exact PROCESSING Knowledge document/revision created from the candidate's stored URL;
+- require document source URL/source label identity to match the locked candidate;
+- apply the same title/content/fingerprint/metadata bounds as existing Knowledge finalization;
+- finalize document, create `knowledge_records.status='DRAFT'`, `is_core=false`, preserve document revision linkage;
+- set candidate `review_status='CONVERTED'` and `knowledge_record_id` in the same transaction;
+- never set ACTIVE/Core.
 
-Service flow:
-- reload stored candidate by org/id;
-- if already CONVERTED, return existing record through repository lookup;
-- call `ingestUrlWithFinalizer` using candidate canonical URL and title as source label;
-- custom finalizer calls `finalize_research_candidate_ingestion` with candidate ID plus the trusted extracted/fingerprint metadata;
-- verify returned Knowledge status is DRAFT.
+The RPC may accept extracted text/fingerprint from the server ingestion path just as the existing finalization RPC does, but it must never accept a replacement candidate URL/provider/status/Knowledge status.
 
-- [ ] **Step 7: Add action `createKnowledgeDraftFromResearchAction`**
+`createKnowledgeDraftFromResearchAction` accepts only `{ organizationId, candidateId }`, reloads candidate, and uses `ingestUrlWithFinalizer` on the candidate's stored URL.
 
-Return:
+- [ ] Write RED SQL-source tests for role checks, `FOR UPDATE`, idempotent already-converted return, candidate/document URL identity, DRAFT-only, non-Core and conversion linkage.
+- [ ] Write RED ingestion regression tests proving ordinary `ingestUrl()` still uses existing finalizer and produces the same DRAFT result.
+- [ ] Write RED conversion service/action tests for double-click idempotency, cross-org denial, dismissed-candidate denial, unsafe URL failure and no ACTIVE/Core path.
+- [ ] Run focused tests and confirm RED.
+- [ ] Implement migration, reusable finalizer seam, repository RPC adapter, conversion service and action.
+- [ ] Run conversion + existing `ingestion-service.test.ts`, `finalize-sql.test.ts`, `ingestion-actions.test.ts`, typecheck.
+- [ ] Commit: `feat: convert research candidates to draft knowledge`.
+
+---
+
+## Task 7 — Knowledge Base `Research` tab and review-first UX
+
+**Create/modify:**
+- `src/app/(app)/knowledge-base/research-panel.tsx`
+- `src/app/(app)/knowledge-base/research-panel.test.tsx`
+- modify `src/app/(app)/knowledge-base/knowledge-base-manager.tsx`
+- modify `src/app/(app)/knowledge-base/knowledge-base-manager.test.tsx`
+
+Keep `KnowledgeBaseManager` responsible for selected organization and Knowledge records. Keep research behavior in the focused `ResearchPanel`.
+
+`ResearchPanel` receives:
 
 ```ts
-export type ResearchConversionActionResult =
-  | { ok: true; candidate: ResearchCandidate; record: KnowledgeRecord }
-  | { ok: false; error: string };
+{
+  organization: { id: string; label: string; role: AppRole };
+  onDraftCreated(record: KnowledgeRecord): void;
+}
 ```
 
-Authorize `knowledge:manage` before conversion. Do not expose an `isCore` or `status` input.
+UI requirements:
+- top-level `Knowledge` / `Research` tabs only for OWNER/ADMIN/EDITOR;
+- REVIEWER/ANALYST remain on approved Knowledge view with no Research tab;
+- search input + loading state;
+- result cards: title, hostname, canonical URL, excerpt, retrieval timestamp;
+- `Read source`, `Create Knowledge Draft`, `Dismiss`;
+- safe plain-text preview; never `dangerouslySetInnerHTML`;
+- conversion card state: `Converted to DRAFT Knowledge`; duplicate create disabled/removed;
+- no Activate/Core control inside Research tab;
+- current manual create/edit/activate/archive/delete/Core/document/URL ingestion controls remain in Knowledge view.
 
-- [ ] **Step 8: Run focused + complete ingestion regression tests**
+Trust copy:
 
-```bash
-npm test -- src/modules/knowledge-research/conversion-sql.test.ts src/modules/knowledge-research/repository.test.ts src/modules/knowledge-research/service.test.ts src/app/\(app\)/knowledge-base/research-actions.test.ts src/modules/knowledge-ingestion/ingestion-service.test.ts src/modules/knowledge-ingestion/finalize-sql.test.ts src/app/\(app\)/knowledge-base/ingestion-actions.test.ts
-npm run typecheck
-```
+> Research results are external public sources. Review the source before creating Knowledge. Research results are not automatically trusted or used for AI grounding.
 
-Expected: PASS.
+Credential-drift copy:
 
-- [ ] **Step 9: Commit**
+> Public research is currently unavailable because the provider now requires credentials. No key will be requested or stored.
 
-```bash
-git add supabase/migrations/20260913180030_research_candidate_conversion.sql src/modules/knowledge-research/conversion-sql.test.ts src/modules/knowledge-ingestion/ingestion-service.ts src/modules/knowledge-ingestion/ingestion-service.test.ts src/modules/knowledge-research/repository.ts src/modules/knowledge-research/repository.test.ts src/modules/knowledge-research/service.ts src/modules/knowledge-research/service.test.ts src/app/\(app\)/knowledge-base/research-actions.ts src/app/\(app\)/knowledge-base/research-actions.test.ts
-git commit -m "feat: convert research candidates to draft knowledge"
-```
+- [ ] Write RED panel tests for search-disabled-until-valid, safe trust copy, result cards, preview, dismissal, conversion and credential-required state.
+- [ ] Write RED manager tests for role-based tabs and existing Knowledge-flow preservation.
+- [ ] Run panel/manager/Core/ingestion-panel tests and confirm RED.
+- [ ] Implement panel + thin manager tab integration.
+- [ ] Run UI tests, typecheck and lint; no new lint errors.
+- [ ] Commit: `feat: add review-first Knowledge Base research tab`.
 
 ---
 
-### Task 7: Knowledge Base Research tab and review-first UX
+## Task 8 — Product governance, deterministic E2E and CI gates
 
-**Files:**
-- Create: `src/app/(app)/knowledge-base/research-panel.tsx`
-- Create: `src/app/(app)/knowledge-base/research-panel.test.tsx`
-- Modify: `src/app/(app)/knowledge-base/knowledge-base-manager.tsx`
-- Modify: `src/app/(app)/knowledge-base/knowledge-base-manager.test.tsx`
+**Modify/create exact files:**
+- `docs/product/PAK_MASTER_PRD.md`
+- `docs/product/PAK_MASTER_TRD.md`
+- `docs/product/PAK_BACKEND_SCHEMA.md`
+- `docs/product/PAK_UI_UX_SPEC.md`
+- `docs/product/PAK_SYSTEM_WORKFLOWS.md`
+- `docs/product/PAK_INTEGRATION_SPEC.md`
+- `docs/product/PAK_DEVELOPMENT_ROADMAP.md`
+- `docs/product/PAK_TRACEABILITY_MATRIX.md`
+- `tests/e2e/knowledge-base.spec.ts`
+- readiness tests only if existing Knowledge Base maturity text changes.
 
-**Interfaces:**
-- Manager remains owner of selected organization and `recordsByOrganization`.
-- Research panel receives `{ organization, onDraftCreated }` and handles its own query/run/candidate state.
-- `onDraftCreated(record)` inserts/replaces the created DRAFT Knowledge into existing Knowledge state and may switch user back to Knowledge view.
-- Research tab is rendered only when `can(role, "knowledge:manage")`.
+Synchronize permanent `PRD-RSCH-001..012` and corresponding TRD/UX/DB/workflow requirements.
 
-- [ ] **Step 1: Write RED Research panel tests**
-
-Concrete expectations:
-
-```tsx
-render(<ResearchPanel organization={editorOrg} onDraftCreated={onDraftCreated} />);
-expect(screen.getByRole("heading", { name: "Research public sources" })).toBeTruthy();
-expect(screen.getByText(/external public sources/i)).toBeTruthy();
-expect(screen.getByRole("button", { name: "Search" })).toBeDisabled();
-```
-
-After typing a valid query and mocking search success, assert candidate card displays title, hostname, URL/excerpt/retrieval time and buttons `Read source`, `Create Knowledge Draft`, `Dismiss`.
-
-After conversion, assert:
-- `onDraftCreated` receives a DRAFT record;
-- card shows `Converted to DRAFT Knowledge`;
-- second create button is absent/disabled;
-- no `Activate` button exists in Research panel.
-
-- [ ] **Step 2: Write RED manager integration tests**
-
-Assert:
-- OWNER/ADMIN/EDITOR see `Knowledge` and `Research` tabs;
-- REVIEWER/ANALYST do not see Research tab;
-- current manual Knowledge create/edit/core/archive/delete controls remain present in Knowledge view.
-
-- [ ] **Step 3: Run RED UI tests**
-
-```bash
-npm test -- src/app/\(app\)/knowledge-base/research-panel.test.tsx src/app/\(app\)/knowledge-base/knowledge-base-manager.test.tsx src/app/\(app\)/knowledge-base/core-knowledge-manager.test.tsx src/app/\(app\)/knowledge-base/knowledge-ingestion-panel.test.tsx
-```
-
-- [ ] **Step 4: Implement focused panel and thin manager tab integration**
-
-Research panel state must include explicit loading/error/preview states. Use plain text rendering for excerpts/previews; never `dangerouslySetInnerHTML`.
-
-Show copy:
+Required governed flow:
 
 ```text
-Research results are external public sources. Review the source before creating Knowledge. Research results are not automatically trusted or used for AI grounding.
+Knowledge Base Research
+  -> authenticated zero-secret Exa Edge search
+  -> manager-only persisted candidate metadata
+  -> existing safe Node source preview
+  -> explicit Create Knowledge Draft
+  -> existing URL extraction + atomic research conversion
+  -> DRAFT Knowledge
+  -> explicit later activation
+  -> ACTIVE-only generation grounding
 ```
 
-If server returns `CREDENTIAL_REQUIRED`, show:
+For E2E, do not call live Exa in CI. Add a deterministic test seam to the Edge client that is enabled only by the existing test environment and cannot be selected by production browser input. Extend `tests/e2e/knowledge-base.spec.ts` to cover Research → preview → DRAFT conversion and assert no auto-activation/Core.
 
-```text
-Public research is currently unavailable because the provider now requires credentials. No key will be requested or stored.
-```
-
-- [ ] **Step 5: Run UI regression + accessibility-oriented selectors**
+- [ ] Write RED traceability/readiness assertions for the new requirement IDs.
+- [ ] Add RED Playwright scenario to `tests/e2e/knowledge-base.spec.ts` using deterministic research fixture behavior.
+- [ ] Update governing docs and deterministic test seam.
+- [ ] Run affected tests.
+- [ ] Run the repository's exact CI-equivalent commands from `.github/workflows/ci.yml`:
 
 ```bash
-npm test -- src/app/\(app\)/knowledge-base/research-panel.test.tsx src/app/\(app\)/knowledge-base/knowledge-base-manager.test.tsx src/app/\(app\)/knowledge-base/core-knowledge-manager.test.tsx src/app/\(app\)/knowledge-base/knowledge-ingestion-panel.test.tsx
-npm run typecheck
-npm run lint
-```
-
-Expected: PASS (existing unrelated lint warnings may remain documented; no new lint errors).
-
-- [ ] **Step 6: Commit**
-
-```bash
-git add src/app/\(app\)/knowledge-base/research-panel.tsx src/app/\(app\)/knowledge-base/research-panel.test.tsx src/app/\(app\)/knowledge-base/knowledge-base-manager.tsx src/app/\(app\)/knowledge-base/knowledge-base-manager.test.tsx
-git commit -m "feat: add review-first Knowledge Base research tab"
-```
-
----
-
-### Task 8: Product docs, traceability and deterministic E2E coverage
-
-**Files:**
-- Modify: `docs/product/PAK_MASTER_PRD.md`
-- Modify: `docs/product/PAK_MASTER_TRD.md`
-- Modify: `docs/product/PAK_BACKEND_SCHEMA.md`
-- Modify: `docs/product/PAK_UI_UX_SPEC.md`
-- Modify: `docs/product/PAK_SYSTEM_WORKFLOWS.md`
-- Modify: `docs/product/PAK_INTEGRATION_SPEC.md`
-- Modify: `docs/product/PAK_DEVELOPMENT_ROADMAP.md`
-- Modify: `docs/product/PAK_TRACEABILITY_MATRIX.md`
-- Create/modify Playwright spec for Knowledge Base research.
-- Modify readiness tests only if Knowledge Base status text changes.
-
-**Interfaces:**
-- Governing docs receive permanent `PRD-RSCH-001..012` mapping and corresponding TRD/UX/DB/workflow requirements.
-- E2E uses deterministic fake provider behavior; CI never depends on live Exa.
-
-- [ ] **Step 1: Add RED traceability/readiness tests if current repo has doc assertions**
-
-At minimum add a test that loads the traceability matrix and asserts `PRD-RSCH-001..012` appears with implementation/test mappings.
-
-- [ ] **Step 2: Add Playwright smoke using deterministic provider injection/fixture**
-
-Scenario:
-1. sign in as knowledge manager fixture;
-2. open Knowledge Base;
-3. click Research;
-4. search `railway safety modernization`;
-5. see deterministic candidate;
-6. preview source;
-7. create Knowledge draft;
-8. switch to Knowledge and assert record is DRAFT;
-9. assert it is not automatically ACTIVE/Core.
-
-Use the existing test-double pattern in the repository; never call live Exa in CI.
-
-- [ ] **Step 3: Synchronize governing docs**
-
-Document exact flow:
-
-```text
-Knowledge Base Research -> no-key Exa MCP search -> persisted candidate -> safe source preview -> explicit human conversion -> existing URL extraction/finalization -> DRAFT Knowledge -> explicit later activation -> ACTIVE-only generation grounding
-```
-
-Integration spec must explicitly state:
-- no research secret schema;
-- fixed public MCP endpoint;
-- fail-closed `CREDENTIAL_REQUIRED` behavior;
-- no authenticated social channels;
-- no direct candidate grounding.
-
-- [ ] **Step 4: Run docs/unit/E2E affected gates**
-
-```bash
-npm test -- src/modules/knowledge-research src/app/\(app\)/knowledge-base
-npm run typecheck
-npm run lint
-npm run build
-npm run test:e2e -- --grep "Knowledge.*Research|Research.*Knowledge"
-```
-
-Expected: PASS.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add docs/product tests src
-# Include only files actually changed by this task.
-git commit -m "docs: govern and verify zero-secret knowledge research"
-```
-
----
-
-### Task 9: Full exact-head verification, security review and live Supabase rollout
-
-**Files:**
-- No feature-code changes unless verification exposes a real defect.
-- Update handoff/readiness evidence only after fresh verification.
-
-**Interfaces:**
-- Produces release evidence for the exact implementation HEAD.
-- Applies only new unapplied migrations after inspecting live Supabase migration state.
-- Uses reversible synthetic fixtures only.
-
-- [ ] **Step 1: Run the complete local/CI-equivalent gate**
-
-```bash
+npm install
 npm run typecheck
 npm run lint
 npm run test:run
 npm run build
+npm install --prefix workers/video-assembly
+npm run typecheck --prefix workers/video-assembly
+npm test --prefix workers/video-assembly
+docker build -t pak-video-assembly-worker workers/video-assembly
+docker run --rm --entrypoint node pak-video-assembly-worker dist/smoke.js
+npx playwright install --with-deps chromium
 npm run test:e2e
 ```
 
-Also run any worker/container/publishing smoke commands currently required by repository CI; do not omit newly-added gates from the live workflow.
-
-- [ ] **Step 2: Security/architecture review before rollout**
-
-Verify by code search:
-
-```bash
-grep -R "EXA_API\|EXA_KEY\|TWITTER_AUTH\|REDDIT_\|LINKEDIN_\|opencli\|mcporter" -n src supabase package.json || true
-grep -R "dangerouslySetInnerHTML" -n src/app/\(app\)/knowledge-base src/modules/knowledge-research || true
-```
-
-Expected:
-- no research credential plumbing;
-- no OpenCLI/mcporter/social login dependency;
-- no raw external HTML rendering.
-
-Review migration grants/RLS for direct-browser mutation bypass and confirm `research_candidates` can never be direct generation grounding.
-
-- [ ] **Step 3: Inspect live Supabase state before mutation**
-
-Use the Supabase skill/tooling required by the repo. Confirm whether `20260913180000_knowledge_research.sql` and `20260913180030_research_candidate_conversion.sql` are absent before applying them. Never reapply an existing migration.
-
-- [ ] **Step 4: Apply migrations in order and run reversible live probes**
-
-Synthetic proof must cover:
-- OWNER/ADMIN/EDITOR authorized path;
-- REVIEWER/ANALYST denial;
-- cross-org candidate denial;
-- direct INSERT/UPDATE table denial;
-- idempotent conversion returning one DRAFT Knowledge record under repeated calls;
-- ACTIVE/Core never set by research conversion.
-
-Clean up synthetic rows after proof.
-
-- [ ] **Step 5: Live provider acceptance with zero secret**
-
-Run one controlled research query through the production no-key Exa MCP route. Verify:
-- no API/access/secret key was configured;
-- results are bounded and persisted;
-- one selected public URL can be previewed through the existing safe URL boundary;
-- no result is automatically converted or grounded.
-
-If Exa now requires a credential, verify `CREDENTIAL_REQUIRED` fail-closed behavior instead and leave research disabled; do not add a key.
-
-- [ ] **Step 6: Run Supabase security/performance advisors**
-
-Classify findings. Fix research-caused issues before release; document unrelated pre-existing findings without weakening security.
-
-- [ ] **Step 7: Exact-head GitHub CI and release gate**
-
-Push exact HEAD, inspect every required workflow job, and require GREEN before merge-ready status. Vercel preview failure caused purely by known external quota/protection must be distinguished from application failures, but no application test may be waived.
-
-- [ ] **Step 8: Final governed review**
-
-Use verification-before-completion and requesting-code-review. Supervisor confirms Architecture, Planning, Coding, Typecheck/Test, E2E and Integration/Release evidence is complete.
-
-- [ ] **Step 9: Commit only evidence/doc changes produced by verification**
-
-```bash
-git add docs/handoffs docs/product
-# Add only files that actually changed.
-git commit -m "test: verify zero-secret knowledge research rollout"
-```
-
-Do not create an empty commit if no documentation changed.
+- [ ] Commit: `docs: govern and verify zero-secret knowledge research`.
 
 ---
 
-## Acceptance Checklist
+## Task 9 — Live Supabase rollout, live zero-secret acceptance and release evidence
+
+**Before live changes:** invoke/read the Supabase skill; inspect the actual remote migration list and function state; never reapply an applied migration; use reversible synthetic fixtures only.
+
+- [ ] Verify exact implementation HEAD is green locally/CI before touching live Supabase.
+- [ ] Confirm migrations `20260913180000_knowledge_research.sql` and `20260913180030_research_candidate_conversion.sql` are absent remotely, then apply them in order.
+- [ ] Deploy `knowledge-research` Edge Function using the repository's existing Supabase project/runtime. Do not configure any Exa key or new secret.
+- [ ] Live RLS/RBAC probes with synthetic users/data:
+  - OWNER/ADMIN/EDITOR can read own-org research state;
+  - REVIEWER/ANALYST cannot read/use research;
+  - cross-org reads fail;
+  - direct authenticated INSERT/UPDATE/DELETE on research tables fail;
+  - Edge search accepts only intent and rejects extra provider/candidate payload fields;
+  - repeated conversion returns exactly one DRAFT Knowledge record;
+  - ACTIVE/Core are never set by conversion.
+- [ ] Run one controlled live Exa search with **no Exa credential configured**. Confirm bounded results persist and one selected result can be previewed through existing safe URL logic.
+- [ ] If Exa now requires credentials, verify `CREDENTIAL_REQUIRED` and leave research disabled; do not add a key.
+- [ ] Run Supabase security/performance advisors; fix research-caused findings before release and document unrelated pre-existing findings separately.
+- [ ] Push exact HEAD and inspect all GitHub Actions jobs. Distinguish external platform/quota noise from application failures, but waive no application gate.
+- [ ] Invoke `verification-before-completion` and `requesting-code-review`; Supervisor verifies Architecture, Planning, Coding, Typecheck/Test, E2E and Integration/Release evidence before declaring merge-ready.
+- [ ] Add/update a handoff only if needed to preserve unfinished rollout/review state; do not create an empty evidence commit.
+
+---
+
+## Acceptance checklist
 
 The slice is complete only when all are true:
 
 - Knowledge Base has a manager-only Research tab.
-- Search uses fixed `https://mcp.exa.ai/mcp` with no new credential.
-- Provider requiring credentials disables research rather than prompting for a key.
-- Research candidates persist under organization RLS but full article text does not.
-- Candidate URLs are validated/canonicalized before persistence/preview.
-- Source preview reuses existing DNS-pinned redirect-safe URL fetch logic.
-- Research candidate cannot directly enter Content Studio/generation context.
-- Conversion is explicit, DRAFT-only, non-Core and idempotent.
-- Ordinary Knowledge manual/document/URL flows still pass regression tests.
-- REVIEWER/ANALYST cannot use the research surface.
-- Cross-org access fails at both action and RLS/RPC boundaries.
-- No Agent-Reach full runtime, `mcporter`, OpenCLI, social-login tooling or provider secret was added.
-- Governing docs and traceability match actual implementation.
-- Full exact-head CI + Playwright + live RLS/security probes are green.
+- Search runs through fixed `https://mcp.exa.ai/mcp` with no Exa/API/access/secret key.
+- No Agent-Reach runtime, OpenCLI, `mcporter` or authenticated-social tooling is installed.
+- Exa credential requirement causes fail-closed `CREDENTIAL_REQUIRED`, never a key prompt.
+- Browser can submit only research intent; it cannot insert/update research tables or submit provider output.
+- Research candidates store bounded metadata only; full article text is not persisted in research tables.
+- Any source fetch reuses existing DNS-pinned redirect-safe URL logic.
+- Research candidates never directly enter generation grounding.
+- Conversion is explicit, idempotent, DRAFT-only and non-Core.
+- Existing manual/document/URL/Core Knowledge flows remain green.
+- REVIEWER/ANALYST and cross-org callers are denied at UI/action/RLS/runtime boundaries.
+- Governing docs/traceability match implementation.
+- Exact-head CI, Playwright, live RLS/RBAC/security probes and zero-secret provider acceptance are green (or provider is safely disabled if it now requires credentials).
