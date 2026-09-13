@@ -173,4 +173,31 @@ describe("Content Studio organization generation context", () => {
     expect(result).toEqual({ ok: false, error: "Content generation is temporarily unavailable." });
     expect(generate).not.toHaveBeenCalled();
   });
+
+  it("fails closed before provider generation when authoritative Profile and Brand make the complete grounding context exceed the 12,000-character request contract", async () => {
+    const generate = vi.fn();
+    const oversizedContext: OrganizationGenerationContext = {
+      ...context,
+      profile: {
+        ...context.profile!,
+        about: "A".repeat(12000),
+      },
+    };
+
+    const result = await executeGenerateContentAction({
+      organizationId,
+      topic: item.topic,
+      language: "EN",
+    }, {
+      getActor: async () => ({ id: actorId }),
+      getMembership: async () => ({ role: "EDITOR" }),
+      resolveContext: vi.fn().mockResolvedValue(oversizedContext),
+      generate,
+      persistProvenance: vi.fn(),
+      ensureSource: vi.fn(),
+    });
+
+    expect(result).toEqual({ ok: false, error: "Content generation is temporarily unavailable." });
+    expect(generate).not.toHaveBeenCalled();
+  });
 });
