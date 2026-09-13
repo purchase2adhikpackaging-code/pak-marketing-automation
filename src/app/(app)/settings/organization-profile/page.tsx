@@ -1,8 +1,14 @@
 export const dynamic = "force-dynamic";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getE2EFixtureRole } from "@/modules/auth/e2e-fixture-server";
 import type { AppRole } from "@/modules/auth/roles";
 import { organizationProfileRepository } from "@/modules/organization-profile/repository";
+import {
+  E2E_FIXTURE_ORGANIZATION_ID,
+  E2E_FIXTURE_ORGANIZATION_LABEL,
+  E2E_FIXTURE_PROFILE,
+} from "@/modules/testing/e2e-organization-fixtures";
 import { OrganizationProfileClient, type OrganizationProfileWorkspace } from "./profile-client";
 
 type MembershipRow = {
@@ -17,24 +23,34 @@ function organizationName(row: MembershipRow): string {
 }
 
 export default async function OrganizationProfilePage() {
-  const supabase = await createServerSupabaseClient();
-  const { data: authData } = await supabase.auth.getUser();
-  let organizations: OrganizationProfileWorkspace[] = [];
+  const fixtureRole = await getE2EFixtureRole();
+  let organizations: OrganizationProfileWorkspace[] = fixtureRole
+    ? [{
+        id: E2E_FIXTURE_ORGANIZATION_ID,
+        label: E2E_FIXTURE_ORGANIZATION_LABEL,
+        role: fixtureRole,
+        profile: E2E_FIXTURE_PROFILE,
+      }]
+    : [];
 
-  if (authData.user) {
-    const { data } = await supabase
-      .from("organization_memberships")
-      .select("organization_id, role, organizations(name)")
-      .eq("user_id", authData.user.id);
+  if (!fixtureRole) {
+    const supabase = await createServerSupabaseClient();
+    const { data: authData } = await supabase.auth.getUser();
+    if (authData.user) {
+      const { data } = await supabase
+        .from("organization_memberships")
+        .select("organization_id, role, organizations(name)")
+        .eq("user_id", authData.user.id);
 
-    organizations = await Promise.all(
-      ((data ?? []) as MembershipRow[]).map(async (membership) => ({
-        id: membership.organization_id,
-        label: organizationName(membership),
-        role: membership.role,
-        profile: await organizationProfileRepository.get(membership.organization_id),
-      })),
-    );
+      organizations = await Promise.all(
+        ((data ?? []) as MembershipRow[]).map(async (membership) => ({
+          id: membership.organization_id,
+          label: organizationName(membership),
+          role: membership.role,
+          profile: await organizationProfileRepository.get(membership.organization_id),
+        })),
+      );
+    }
   }
 
   return (
