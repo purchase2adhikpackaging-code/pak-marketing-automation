@@ -12,8 +12,11 @@ import {
 } from "@/modules/publishing-production/server-curriculum";
 import { createAuthenticatedPublishingRepository } from "@/modules/publishing-production/server-repository";
 
+const RECOVERY_NOT_CONFIGURED = "Publishing worker recovery dispatcher is not configured.";
+
 export interface ProductionActionDependencies {
   getActorMembership(organizationId: string): Promise<{ actorId: string; role: AppRole } | null>;
+  isRecoveryConfigured(): Promise<boolean>;
   plan(input: { organizationId: string; scope: ProductionScope }): Promise<{
     jobs: Array<{ job: BookJob; curriculumText: string }>;
     exclusions: ProductionPlanExclusion[];
@@ -64,6 +67,10 @@ export async function executeStartProductionRunAction(
   }
 
   try {
+    if (!(await dependencies.isRecoveryConfigured())) {
+      return { ok: false, error: RECOVERY_NOT_CONFIGURED };
+    }
+
     const plan = await dependencies.plan({ organizationId: input.organizationId, scope: parsedScope.data });
     if (plan.jobs.length === 0) {
       return { ok: false, error: "No governed books are eligible for this production scope.", exclusions: plan.exclusions };
@@ -101,6 +108,9 @@ export async function executeProductionRunControlAction(
     return { ok: false, error: "You do not have permission to control this production run." };
   }
   try {
+    if (input.state === "RUNNING" && !(await dependencies.isRecoveryConfigured())) {
+      return { ok: false, error: RECOVERY_NOT_CONFIGURED };
+    }
     await dependencies.controlRun(input.runId, input.state);
     if (input.state === "RUNNING") await dependencies.kick(input.runId);
     return { ok: true };
@@ -124,6 +134,12 @@ async function productionDependencies(): Promise<ProductionActionDependencies> {
         .maybeSingle();
       if (error || !data) return null;
       return { actorId: authData.user.id, role: data.role as AppRole };
+    },
+
+    async isRecoveryConfigured() {
+      const supabase = await createServerSupabaseClient();
+      const { data, error } = await supabase.rpc("publishing_worker_recovery_ready");
+      return !error && data === true;
     },
 
     async plan({ organizationId, scope }) {
@@ -162,9 +178,8 @@ async function productionDependencies(): Promise<ProductionActionDependencies> {
     enqueueJobs: (input) => repository.enqueueJobs(input),
 
     async kick() {
-      // Durable publishing runs are deliberately awakened by the Supabase pg_cron/pg_net
-      // recovery dispatcher. The user-facing Vercel action never resolves or stores the
-      // privileged worker capability.
+      // Durable publishing runs are deliberately awakened by the verified Supabase
+      // pg_cron/pg_net recovery dispatcher. Vercel never resolves worker credentials.
     },
 
     async controlRun(runId, state) {
