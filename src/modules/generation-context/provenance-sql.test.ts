@@ -1,14 +1,23 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
+const migrationsDirectory = join(process.cwd(), "supabase/migrations");
 const migrationPath = join(
-  process.cwd(),
-  "supabase/migrations/20260912180200_generation_identity_provenance.sql",
+  migrationsDirectory,
+  "20260912180200_generation_identity_provenance.sql",
 );
 
 function source(): string {
   return readFileSync(migrationPath, "utf8");
+}
+
+function aclHardeningSource(): string {
+  const filename = readdirSync(migrationsDirectory).find((candidate) =>
+    candidate.endsWith("_organization_identity_provenance_acl_hardening.sql"),
+  );
+  if (!filename) throw new Error("Organization identity/provenance ACL hardening migration is missing.");
+  return readFileSync(join(migrationsDirectory, filename), "utf8");
 }
 
 describe("generation identity provenance database contract", () => {
@@ -43,5 +52,32 @@ describe("generation identity provenance database contract", () => {
     expect(sql).not.toContain("create policy content_item_identity_provenance_update");
     expect(sql).not.toContain("create policy content_item_identity_provenance_delete");
     expect(sql).toContain("grant execute on function public.persist_content_generation_provenance");
+  });
+
+  it("removes inherited broad table ACLs and grants only the intended browser privileges", () => {
+    const sql = aclHardeningSource();
+
+    for (const table of [
+      "organization_profiles",
+      "organization_brand_kits",
+      "brand_kit_media_assets",
+      "content_item_identity_provenance",
+      "content_item_knowledge_sources",
+    ]) {
+      expect(sql).toContain(`revoke all privileges on table public.${table} from anon`);
+      expect(sql).toContain(`revoke all privileges on table public.${table} from authenticated`);
+    }
+
+    expect(sql).toContain("grant select, update on table public.organization_profiles to authenticated");
+    expect(sql).toContain("grant select, update on table public.organization_brand_kits to authenticated");
+    expect(sql).toContain(
+      "grant select, insert, update, delete on table public.brand_kit_media_assets to authenticated",
+    );
+    expect(sql).toContain(
+      "grant select on table public.content_item_identity_provenance to authenticated",
+    );
+    expect(sql).toContain(
+      "grant select on table public.content_item_knowledge_sources to authenticated",
+    );
   });
 });
