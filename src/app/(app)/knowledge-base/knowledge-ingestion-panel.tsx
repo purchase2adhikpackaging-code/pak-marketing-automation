@@ -138,9 +138,9 @@ export function KnowledgeIngestionPanel({
           <h4 className="text-sm font-semibold text-white">Document</h4>
           <p className="mt-1 text-xs leading-5 text-slate-500">PDF, DOCX, PPTX, or TXT. The server validates the finalized private asset before extraction.</p>
           <label className="mt-4 block space-y-2">
-            <span className="text-sm font-medium text-slate-200">Source label</span>
+            <span className="text-sm font-medium text-slate-200">Document source title</span>
             <input
-              aria-label="Document source label"
+              aria-label="Document source title"
               value={documentLabel}
               onChange={(event) => setDocumentLabel(event.target.value)}
               maxLength={240}
@@ -174,9 +174,9 @@ export function KnowledgeIngestionPanel({
             />
           </label>
           <label className="mt-4 block space-y-2">
-            <span className="text-sm font-medium text-slate-200">Source label</span>
+            <span className="text-sm font-medium text-slate-200">URL source title</span>
             <input
-              aria-label="URL source label"
+              aria-label="URL source title"
               value={urlLabel}
               onChange={(event) => setUrlLabel(event.target.value)}
               maxLength={240}

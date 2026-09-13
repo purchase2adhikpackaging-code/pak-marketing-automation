@@ -62,7 +62,7 @@ describe("KnowledgeIngestionPanel", () => {
     expect(screen.getByTestId("document-accept").textContent).toContain(".pptx");
     expect(screen.getByTestId("document-accept").textContent).toContain(".txt");
 
-    fireEvent.change(screen.getByLabelText("Document source label"), { target: { value: "PAK Safety Manual" } });
+    fireEvent.change(screen.getByLabelText("Document source title"), { target: { value: "PAK Safety Manual" } });
     fireEvent.click(screen.getByRole("button", { name: "Simulate document upload" }));
 
     await waitFor(() => expect(ingestKnowledgeFileAction).toHaveBeenCalledWith({
@@ -86,7 +86,7 @@ describe("KnowledgeIngestionPanel", () => {
 
     render(<KnowledgeIngestionPanel organizationId={organizationId} onIngested={onIngested} />);
     fireEvent.change(screen.getByLabelText("Knowledge URL"), { target: { value: "https://example.org/programmes" } });
-    fireEvent.change(screen.getByLabelText("URL source label"), { target: { value: "PAK Programmes" } });
+    fireEvent.change(screen.getByLabelText("URL source title"), { target: { value: "PAK Programmes" } });
     fireEvent.click(screen.getByRole("button", { name: "Ingest URL" }));
 
     await waitFor(() => expect(ingestKnowledgeUrlAction).toHaveBeenCalledWith({
