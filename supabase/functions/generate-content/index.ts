@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 type RequestBody = {
   organizationId?: string;
+  productionJobId?: string;
   model?: string;
   instructions?: string;
   input?: string;
@@ -15,7 +16,8 @@ const MAX_INSTRUCTIONS_CHARS = 12_000;
 const MAX_INPUT_CHARS = 60_000;
 const MAX_OUTPUT_TOKENS = 4_000;
 const RATE_LIMIT_WINDOW_SECONDS = 600;
-const RATE_LIMIT_REQUESTS = 20;
+const INTERACTIVE_RATE_LIMIT_REQUESTS = 20;
+const PUBLISHING_RATE_LIMIT_REQUESTS = 120;
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
@@ -44,16 +46,16 @@ Deno.serve(async (req: Request) => {
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!supabaseUrl || !serviceRoleKey) return json(500, { error: "SERVER_MISCONFIGURED" });
 
-  const authorization = req.headers.get("authorization") ?? "";
-  const token = authorization.toLowerCase().startsWith("bearer ") ? authorization.slice(7).trim() : "";
-  if (!token) return json(401, { error: "UNAUTHORIZED" });
-
   const admin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { data: userData, error: userError } = await admin.auth.getUser(token);
-  const user = userData.user;
-  if (userError || !user) return json(401, { error: "UNAUTHORIZED" });
+
+  const { data: publishingWorkerSecretData, error: publishingWorkerSecretError } = await admin.rpc(
+    "read_publishing_worker_dispatch_secret",
+  );
+  const publishingWorkerSecret = !publishingWorkerSecretError && typeof publishingWorkerSecretData === "string"
+    ? publishingWorkerSecretData.trim()
+    : "";
 
   let body: RequestBody;
   try {
@@ -75,11 +77,54 @@ Deno.serve(async (req: Request) => {
     return json(400, { error: "INVALID_REQUEST" });
   }
 
+  const internalHeader = req.headers.get("x-publishing-worker-secret") ?? "";
+  const internalRequest = Boolean(
+    publishingWorkerSecret && internalHeader && internalHeader === publishingWorkerSecret,
+  );
+
+  let actorUserId: string | null = null;
+
+  if (internalRequest) {
+    if (!body.productionJobId || !UUID_RE.test(body.productionJobId)) {
+      return json(400, { error: "INVALID_PRODUCTION_JOB" });
+    }
+
+    const { data: job, error: jobError } = await admin
+      .from("publishing_production_jobs")
+      .select("id,organization_id,production_run_id,status")
+      .eq("id", body.productionJobId)
+      .eq("organization_id", body.organizationId)
+      .maybeSingle();
+    if (jobError) return json(500, { error: "PRODUCTION_JOB_UNAVAILABLE" });
+    if (!job || job.status !== "RUNNING") return json(409, { error: "PRODUCTION_JOB_NOT_RUNNING" });
+
+    const { data: run, error: runError } = await admin
+      .from("publishing_production_runs")
+      .select("created_by,status,organization_id")
+      .eq("id", job.production_run_id)
+      .eq("organization_id", body.organizationId)
+      .maybeSingle();
+    if (runError) return json(500, { error: "PRODUCTION_RUN_UNAVAILABLE" });
+    if (!run || !["QUEUED", "RUNNING"].includes(String(run.status))) {
+      return json(409, { error: "PRODUCTION_RUN_INACTIVE" });
+    }
+    actorUserId = String(run.created_by);
+  } else {
+    const authorization = req.headers.get("authorization") ?? "";
+    const token = authorization.toLowerCase().startsWith("bearer ") ? authorization.slice(7).trim() : "";
+    if (!token) return json(401, { error: "UNAUTHORIZED" });
+
+    const { data: userData, error: userError } = await admin.auth.getUser(token);
+    const user = userData.user;
+    if (userError || !user) return json(401, { error: "UNAUTHORIZED" });
+    actorUserId = user.id;
+  }
+
   const { data: membership, error: membershipError } = await admin
     .from("organization_memberships")
     .select("role")
     .eq("organization_id", body.organizationId)
-    .eq("user_id", user.id)
+    .eq("user_id", actorUserId)
     .maybeSingle();
   if (membershipError) return json(500, { error: "AUTHORIZATION_UNAVAILABLE" });
   if (!membership || !["OWNER", "ADMIN", "EDITOR"].includes(String(membership.role))) return json(403, { error: "FORBIDDEN" });
@@ -101,11 +146,12 @@ Deno.serve(async (req: Request) => {
   const model = requestedModel ?? configuredModel ?? "gpt-5.6-luna";
   if (!ALLOWED_MODELS.has(model)) return json(400, { error: "MODEL_NOT_ALLOWED" });
 
+  const requestLimit = internalRequest ? PUBLISHING_RATE_LIMIT_REQUESTS : INTERACTIVE_RATE_LIMIT_REQUESTS;
   const { data: quotaAllowed, error: quotaError } = await admin.rpc("consume_generation_quota", {
     _organization_id: body.organizationId,
-    _actor_user_id: user.id,
+    _actor_user_id: actorUserId,
     _window_seconds: RATE_LIMIT_WINDOW_SECONDS,
-    _request_limit: RATE_LIMIT_REQUESTS,
+    _request_limit: requestLimit,
   });
   if (quotaError) return json(500, { error: "QUOTA_UNAVAILABLE" });
   if (quotaAllowed !== true) return json(429, { error: "GENERATION_RATE_LIMITED" });

@@ -25,6 +25,7 @@ export interface CompileBookInput {
   registry: LoadedKnowledgeRegistry;
   checkpointStore: FileCheckpointStore;
   artifactRoot: string;
+  maxNewChapters?: number;
 }
 
 export interface CompileBookResult {
@@ -36,6 +37,8 @@ export interface CompileBookResult {
   render?: RenderPublicationResult;
   resumedChapterIds: string[];
   generatedChapterIds: string[];
+  incomplete?: boolean;
+  nextChapterId?: string;
   blockedReason?: string;
 }
 
@@ -131,6 +134,10 @@ function buildManuscript(input: {
 
 export async function compileBook(input: CompileBookInput): Promise<CompileBookResult> {
   const { job, curriculumText, provider, registry, checkpointStore, artifactRoot } = input;
+  if (input.maxNewChapters !== undefined && (!Number.isInteger(input.maxNewChapters) || input.maxNewChapters < 1)) {
+    throw new Error("maxNewChapters must be a positive integer when provided.");
+  }
+
   const loaded = await checkpointStore.loadRun(job.bookId, job.edition, job.revision);
 
   let blueprint = loaded?.blueprint;
@@ -211,6 +218,7 @@ export async function compileBook(input: CompileBookInput): Promise<CompileBookR
         blueprint,
         resumedChapterIds,
         generatedChapterIds,
+        incomplete: false,
         blockedReason,
       };
     }
@@ -219,6 +227,20 @@ export async function compileBook(input: CompileBookInput): Promise<CompileBookR
     await checkpointStore.saveStage(job, "MANUSCRIPT_IN_PROGRESS");
     chaptersById.set(generated.chapterId, generated);
     generatedChapterIds.push(generated.chapterId);
+
+    if (input.maxNewChapters !== undefined && generatedChapterIds.length >= input.maxNewChapters) {
+      const next = blueprint.chapters.find((candidate) => !chaptersById.has(candidate.id));
+      if (next) {
+        return {
+          job: currentJob,
+          blueprint,
+          resumedChapterIds,
+          generatedChapterIds,
+          incomplete: true,
+          nextChapterId: next.id,
+        };
+      }
+    }
   }
 
   const orderedChapters = blueprint.chapters.map((chapter) => {
@@ -270,5 +292,6 @@ export async function compileBook(input: CompileBookInput): Promise<CompileBookR
     ...(deterministic.render ? { render: deterministic.render } : {}),
     resumedChapterIds,
     generatedChapterIds,
+    incomplete: false,
   };
 }
