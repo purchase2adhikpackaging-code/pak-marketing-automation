@@ -11,6 +11,8 @@ export type KnowledgeRecord = {
   sourceType: KnowledgeSourceType;
   sourceLabel?: string;
   sourceReference?: string;
+  /** Database-authoritative Core Knowledge flag. Production repository reads always populate it. */
+  isCore?: boolean;
   revision: number;
   createdBy?: string;
   updatedBy?: string;

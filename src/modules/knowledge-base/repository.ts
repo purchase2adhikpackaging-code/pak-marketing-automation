@@ -34,6 +34,7 @@ export type KnowledgePersistencePatch = {
   sourceType?: KnowledgeSourceType;
   sourceLabel?: string;
   sourceReference?: string;
+  isCore?: boolean;
   revision?: number;
   updatedBy?: string;
   updatedAt?: string;
@@ -62,6 +63,13 @@ export interface KnowledgeRepository {
     id: string,
     organizationId: string,
     expectedRevision: number,
+    actorUserId: string,
+  ): Promise<KnowledgeRecord>;
+  setCore(
+    id: string,
+    organizationId: string,
+    expectedRevision: number,
+    isCore: boolean,
     actorUserId: string,
   ): Promise<KnowledgeRecord>;
   delete(id: string, organizationId: string): Promise<void>;
@@ -103,6 +111,7 @@ export class KnowledgeBaseRepository implements KnowledgeRepository {
       sourceType: input.sourceType,
       ...(input.sourceLabel !== undefined ? { sourceLabel: input.sourceLabel } : {}),
       ...(input.sourceReference !== undefined ? { sourceReference: input.sourceReference } : {}),
+      isCore: false,
       revision: 1,
       createdBy: input.actorUserId,
       updatedBy: input.actorUserId,
@@ -150,6 +159,24 @@ export class KnowledgeBaseRepository implements KnowledgeRepository {
     return updated;
   }
 
+  async setCore(
+    id: string,
+    organizationId: string,
+    expectedRevision: number,
+    isCore: boolean,
+    actorUserId: string,
+  ): Promise<KnowledgeRecord> {
+    const updated = await this.persistence.compareAndSet(id, organizationId, expectedRevision, {
+      isCore,
+      revision: expectedRevision + 1,
+      updatedBy: actorUserId,
+      updatedAt: new Date().toISOString(),
+    });
+
+    if (!updated) throw conflict();
+    return updated;
+  }
+
   async delete(id: string, organizationId: string): Promise<void> {
     const deleted = await this.persistence.delete(id, organizationId);
     if (!deleted) {
@@ -167,6 +194,7 @@ type KnowledgeRecordRow = {
   source_type: KnowledgeSourceType;
   source_label: string | null;
   source_reference: string | null;
+  is_core: boolean;
   revision: number;
   created_by: string | null;
   updated_by: string | null;
@@ -183,6 +211,7 @@ const KNOWLEDGE_COLUMNS = [
   "source_type",
   "source_label",
   "source_reference",
+  "is_core",
   "revision",
   "created_by",
   "updated_by",
@@ -204,6 +233,7 @@ function mapRow(row: KnowledgeRecordRow): KnowledgeRecord {
     sourceType: row.source_type,
     ...(row.source_label ? { sourceLabel: row.source_label } : {}),
     ...(row.source_reference ? { sourceReference: row.source_reference } : {}),
+    isCore: row.is_core,
     revision: row.revision,
     ...(row.created_by ? { createdBy: row.created_by } : {}),
     ...(row.updated_by ? { updatedBy: row.updated_by } : {}),
@@ -220,6 +250,7 @@ function toDatabasePatch(patch: KnowledgePersistencePatch): Record<string, unkno
   if (patch.sourceType !== undefined) databasePatch.source_type = patch.sourceType;
   if (patch.sourceLabel !== undefined) databasePatch.source_label = patch.sourceLabel || null;
   if (patch.sourceReference !== undefined) databasePatch.source_reference = patch.sourceReference || null;
+  if (patch.isCore !== undefined) databasePatch.is_core = patch.isCore;
   if (patch.revision !== undefined) databasePatch.revision = patch.revision;
   if (patch.updatedBy !== undefined) databasePatch.updated_by = patch.updatedBy;
   if (patch.updatedAt !== undefined) databasePatch.updated_at = patch.updatedAt;
@@ -269,6 +300,7 @@ class SupabaseKnowledgePersistence implements KnowledgePersistence {
         source_type: row.sourceType,
         source_label: row.sourceLabel ?? null,
         source_reference: row.sourceReference ?? null,
+        is_core: row.isCore ?? false,
         revision: row.revision,
         created_by: row.createdBy ?? null,
         updated_by: row.updatedBy ?? null,

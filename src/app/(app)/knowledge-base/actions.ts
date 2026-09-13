@@ -40,6 +40,13 @@ const deleteKnowledgeSchema = z.object({
   organizationId: z.string().uuid(),
 });
 
+const setCoreKnowledgeSchema = z.object({
+  id: z.string().uuid(),
+  organizationId: z.string().uuid(),
+  expectedRevision: z.number().int().min(1),
+  isCore: z.boolean(),
+}).strict();
+
 export type KnowledgeActionResult =
   | { ok: true; record: KnowledgeRecord }
   | { ok: false; error: string };
@@ -62,6 +69,18 @@ export type KnowledgeActionDependencies = {
     actorUserId: string,
   ): Promise<KnowledgeRecord>;
   delete(id: string, organizationId: string): Promise<void>;
+};
+
+export type CoreKnowledgeActionDependencies = {
+  getActor(): Promise<Actor | null>;
+  getMembership(actorId: string, organizationId: string): Promise<Membership>;
+  setCore(
+    id: string,
+    organizationId: string,
+    expectedRevision: number,
+    isCore: boolean,
+    actorUserId: string,
+  ): Promise<KnowledgeRecord>;
 };
 
 export type KnowledgeIngestionActionDependencies = {
@@ -199,6 +218,39 @@ export async function executeArchiveKnowledgeAction(
   }
 }
 
+export async function executeSetCoreKnowledgeAction(
+  input: unknown,
+  dependencies: CoreKnowledgeActionDependencies,
+): Promise<KnowledgeActionResult> {
+  const parsed = setCoreKnowledgeSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "Please check the Core Knowledge change and try again." };
+  }
+
+  const actor = await dependencies.getActor();
+  if (!actor) {
+    return { ok: false, error: "You must be signed in to manage Knowledge Base records." };
+  }
+
+  const membership = await dependencies.getMembership(actor.id, parsed.data.organizationId);
+  if (!membership || (membership.role !== "OWNER" && membership.role !== "ADMIN")) {
+    return { ok: false, error: "Only organization Owners and Admins may change Core Knowledge." };
+  }
+
+  try {
+    const record = await dependencies.setCore(
+      parsed.data.id,
+      parsed.data.organizationId,
+      parsed.data.expectedRevision,
+      parsed.data.isCore,
+      actor.id,
+    );
+    return { ok: true, record };
+  } catch (error) {
+    return mutationError(error);
+  }
+}
+
 export async function executeDeleteKnowledgeAction(
   input: unknown,
   dependencies: KnowledgeActionDependencies,
@@ -311,6 +363,16 @@ function productionDependencies(): KnowledgeActionDependencies {
   };
 }
 
+function productionCoreDependencies(): CoreKnowledgeActionDependencies {
+  const repository = new SupabaseKnowledgeRepository();
+  return {
+    getActor,
+    getMembership,
+    setCore: (id, organizationId, expectedRevision, isCore, actorUserId) =>
+      repository.setCore(id, organizationId, expectedRevision, isCore, actorUserId),
+  };
+}
+
 function productionIngestionDependencies(): KnowledgeIngestionActionDependencies {
   const service = createProductionKnowledgeIngestionService();
   return {
@@ -331,6 +393,10 @@ export async function updateKnowledgeAction(input: unknown): Promise<KnowledgeAc
 
 export async function archiveKnowledgeAction(input: unknown): Promise<KnowledgeActionResult> {
   return executeArchiveKnowledgeAction(input, productionDependencies());
+}
+
+export async function setCoreKnowledgeAction(input: unknown): Promise<KnowledgeActionResult> {
+  return executeSetCoreKnowledgeAction(input, productionCoreDependencies());
 }
 
 export async function deleteKnowledgeAction(input: unknown): Promise<DeleteKnowledgeActionResult> {
