@@ -1,9 +1,16 @@
 export const dynamic = "force-dynamic";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getE2EFixtureRole } from "@/modules/auth/e2e-fixture-server";
 import type { AppRole } from "@/modules/auth/roles";
 import { brandKitRepository } from "@/modules/brand-kit/repository";
 import { SupabaseMediaRepository } from "@/modules/media/repository";
+import {
+  E2E_FIXTURE_BRAND_KIT,
+  E2E_FIXTURE_IMAGE_ASSETS,
+  E2E_FIXTURE_ORGANIZATION_ID,
+  E2E_FIXTURE_ORGANIZATION_LABEL,
+} from "@/modules/testing/e2e-organization-fixtures";
 import { BrandKitClient, type BrandKitWorkspace } from "./brand-kit-client";
 
 type MembershipRow = {
@@ -18,42 +25,53 @@ function organizationName(row: MembershipRow): string {
 }
 
 export default async function BrandKitPage() {
-  const supabase = await createServerSupabaseClient();
-  const { data: authData } = await supabase.auth.getUser();
-  let organizations: BrandKitWorkspace[] = [];
+  const fixtureRole = await getE2EFixtureRole();
+  let organizations: BrandKitWorkspace[] = fixtureRole
+    ? [{
+        id: E2E_FIXTURE_ORGANIZATION_ID,
+        label: E2E_FIXTURE_ORGANIZATION_LABEL,
+        role: fixtureRole,
+        brandKit: E2E_FIXTURE_BRAND_KIT,
+        imageAssets: E2E_FIXTURE_IMAGE_ASSETS.map((asset) => ({ ...asset })),
+      }]
+    : [];
 
-  if (authData.user) {
-    const { data } = await supabase
-      .from("organization_memberships")
-      .select("organization_id, role, organizations(name)")
-      .eq("user_id", authData.user.id);
+  if (!fixtureRole) {
+    const supabase = await createServerSupabaseClient();
+    const { data: authData } = await supabase.auth.getUser();
+    if (authData.user) {
+      const { data } = await supabase
+        .from("organization_memberships")
+        .select("organization_id, role, organizations(name)")
+        .eq("user_id", authData.user.id);
 
-    const mediaRepository = new SupabaseMediaRepository();
-    organizations = await Promise.all(
-      ((data ?? []) as MembershipRow[]).map(async (membership) => {
-        const [brandKit, imagePage] = await Promise.all([
-          brandKitRepository.get(membership.organization_id),
-          mediaRepository.list({
-            organizationId: membership.organization_id,
-            assetType: "IMAGE",
-            status: "ACTIVE",
-            limit: 50,
-          }),
-        ]);
+      const mediaRepository = new SupabaseMediaRepository();
+      organizations = await Promise.all(
+        ((data ?? []) as MembershipRow[]).map(async (membership) => {
+          const [brandKit, imagePage] = await Promise.all([
+            brandKitRepository.get(membership.organization_id),
+            mediaRepository.list({
+              organizationId: membership.organization_id,
+              assetType: "IMAGE",
+              status: "ACTIVE",
+              limit: 50,
+            }),
+          ]);
 
-        return {
-          id: membership.organization_id,
-          label: organizationName(membership),
-          role: membership.role,
-          brandKit,
-          imageAssets: imagePage.items.map((asset) => ({
-            id: asset.id,
-            displayName: asset.displayName,
-            mimeType: asset.mimeType,
-          })),
-        };
-      }),
-    );
+          return {
+            id: membership.organization_id,
+            label: organizationName(membership),
+            role: membership.role,
+            brandKit,
+            imageAssets: imagePage.items.map((asset) => ({
+              id: asset.id,
+              displayName: asset.displayName,
+              mimeType: asset.mimeType,
+            })),
+          };
+        }),
+      );
+    }
   }
 
   return (
