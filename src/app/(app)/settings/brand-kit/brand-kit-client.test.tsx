@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { OrganizationBrandKit } from "@/modules/brand-kit/types";
@@ -54,9 +54,10 @@ describe("BrandKitClient", () => {
     );
 
     expect((screen.getByLabelText("Primary color") as HTMLInputElement).value).toBe("#0F2B46");
-    expect((screen.getByLabelText("Primary logo") as HTMLSelectElement).value).toBe(imageAssets[0]!.id);
-    expect(screen.getByRole("option", { name: "PAK Primary Logo" })).not.toBeNull();
-    expect(screen.getByRole("option", { name: "PAK Campus Exterior" })).not.toBeNull();
+    const primaryLogo = screen.getByLabelText("Primary logo");
+    expect((primaryLogo as HTMLSelectElement).value).toBe(imageAssets[0]!.id);
+    expect(within(primaryLogo).getByRole("option", { name: "PAK Primary Logo" })).not.toBeNull();
+    expect(within(primaryLogo).getByRole("option", { name: "PAK Campus Exterior" })).not.toBeNull();
     expect(screen.getByRole("button", { name: "Save Brand Kit" })).not.toBeNull();
     expect(document.body.textContent).not.toContain("storage/");
   });
