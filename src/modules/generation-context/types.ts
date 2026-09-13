@@ -9,7 +9,6 @@ export const organizationGenerationContextRequestSchema = z.object({
   selectedKnowledgeRecordIds: z
     .array(z.string().uuid())
     .max(20)
-    .refine((ids) => new Set(ids).size === ids.length, "Knowledge record IDs must be unique")
     .optional(),
   additionalContext: z.string().trim().max(12000).optional(),
 }).strict();
@@ -26,6 +25,7 @@ export type OrganizationGenerationContext = {
   brandKit: OrganizationBrandKit | null;
   coreKnowledge: GenerationContextKnowledgeRecord[];
   selectedKnowledge: GenerationContextKnowledgeRecord[];
+  knowledgeContext?: string;
   additionalContext?: string;
   provenance: {
     profileRevision?: number;
