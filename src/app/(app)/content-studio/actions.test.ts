@@ -8,6 +8,7 @@ import { executeGenerateContentAction } from "./actions";
 
 const organizationId = "11111111-1111-4111-8111-111111111111";
 const knowledgeRecordId = "55555555-5555-4555-8555-555555555555";
+const actorId = "33333333-3333-4333-8333-333333333333";
 const request = {
   organizationId,
   topic: "Railway safety training",
@@ -73,7 +74,7 @@ const generatedItem: ContentItem = {
   generatedScript: "Generated script",
   provider: "fake",
   providerModel: "deterministic-v1",
-  createdBy: "33333333-3333-4333-8333-333333333333",
+  createdBy: actorId,
   createdAt: "2026-09-09T00:00:00.000Z",
   updatedAt: "2026-09-09T00:00:01.000Z",
 };
@@ -89,7 +90,7 @@ const sourceArtifact: ScriptArtifact = {
   revision: 1,
   provider: "fake",
   providerModel: "deterministic-v1",
-  createdBy: generatedItem.createdBy,
+  createdBy: actorId,
   createdAt: generatedItem.createdAt,
   updatedAt: generatedItem.updatedAt,
 };
@@ -106,7 +107,7 @@ type TestDependencies = {
 
 function baseDependencies(): TestDependencies {
   return {
-    getActor: async () => ({ id: generatedItem.createdBy! }),
+    getActor: async () => ({ id: actorId }),
     getMembership: async () => ({ role: "EDITOR" }),
     resolveContext: vi.fn().mockResolvedValue(resolvedContext),
     generate: vi.fn().mockResolvedValue(generatedItem),
