@@ -13,7 +13,7 @@ describe("knowledge ingestion finalization SQL", () => {
     expect(sql).toMatch(/security definer/i);
     expect(sql).toMatch(/set search_path = public/i);
     expect(sql).toMatch(/auth\.uid\(\)/i);
-    expect(sql).toMatch(/OWNER.*ADMIN.*EDITOR/is);
+    expect(sql).toMatch(/OWNER[\s\S]*ADMIN[\s\S]*EDITOR/i);
     expect(sql).toMatch(/for update/i);
     expect(sql).toMatch(/extraction_status\s*=\s*'PROCESSING'/i);
     expect(sql).toMatch(/revision\s*=\s*p_expected_revision/i);
