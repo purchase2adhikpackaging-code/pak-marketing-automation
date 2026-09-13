@@ -1,14 +1,14 @@
 # PAK Marketing Automation — Master Technical Requirements Document (TRD)
 
 **Document ID:** PAK-TRD-001  
-**Version:** 1.1  
-**Status:** Current baseline after Phase 7
+**Version:** 1.2  
+**Status:** Current baseline through Organization Profile / Brand Kit / Knowledge ingestion foundation
 
 ## 1. Architecture summary
 
 PAK is a Next.js App Router / TypeScript application with Supabase providing PostgreSQL, Auth, RLS, Storage, Vault, Edge Functions and scheduled database/HTTP execution. Browser and normal Next.js application code never own provider credentials or service-role capability.
 
-Security-critical tenancy, approval/source integrity and paid-provider spend rules are enforced at server/database boundaries, not by browser state alone. Long-running provider work is represented by durable jobs and domain-specific attempt records. Phase 6 introduced versioned Scene Planning; Phase 7 introduced production LTX shot generation, reconciliation and generated-media import.
+Security-critical tenancy, organization identity, Knowledge approval/source integrity and paid-provider spend rules are enforced at server/database boundaries, not by browser state alone. Authoritative Organization Profile, Brand Kit and Knowledge are resolved server-side through a shared generation-context boundary. Uploaded document binaries remain private Media Library assets; ingestion metadata and extracted text remain organization-scoped in PostgreSQL; successful extraction creates reviewable DRAFT Knowledge only. Long-running provider work is represented by durable jobs and domain-specific attempt records.
 
 Existing requirement IDs retain their original meaning; additions introduced after the original baseline use new IDs.
 
@@ -26,17 +26,21 @@ Existing requirement IDs retain their original meaning; additions introduced aft
 - **TRD-TECH-010** Supabase Vault for durable provider secret values.
 - **TRD-TECH-011** Supabase Edge Functions for privileged provider execution where secrets/service-role access are required.
 - **TRD-TECH-012** `pg_cron` + `pg_net` for unattended scheduled dispatch where appropriate.
+- **TRD-TECH-013** Node-compatible extraction libraries may parse bounded PDF/DOCX/PPTX/TXT payloads; OCR and spreadsheet ingestion are outside the current ingestion slice.
 
 ## 3. Application boundaries
 
 - **TRD-ARC-001** UI routes live under `src/app` and do not directly embed provider secrets.
 - **TRD-ARC-002** Domain modules live under `src/modules/<domain>` and expose typed interfaces.
 - **TRD-ARC-003** Supabase client construction is split into browser/session/server/admin or equivalent privileged boundaries.
-- **TRD-ARC-004** `server-only` guards modules that can access service-role or provider secrets.
+- **TRD-ARC-004** `server-only` guards modules that can access service-role, authoritative organization generation context or provider secrets.
 - **TRD-ARC-005** External provider SDKs/payloads are wrapped behind internal provider-neutral interfaces.
 - **TRD-ARC-006** Long-running work is represented by durable database jobs rather than one HTTP request lifetime.
 - **TRD-ARC-007** Browser-triggered paid-provider work sends identifiers only; authoritative prompt/model/configuration is reconstructed from approved persisted state.
 - **TRD-ARC-008** Edge Functions that disable gateway JWT verification must implement explicit equivalent/stronger authentication in function code and are limited to internal worker/webhook use cases that cannot carry a user JWT.
+- **TRD-ARC-009** Browser generation requests carry organization ID, selected Knowledge IDs and bounded task context only; authoritative Profile/Brand/Knowledge content is reloaded server-side.
+- **TRD-ARC-010** Brand Kit persists safe Media Library UUID references only; signed URLs and storage object paths remain request-scoped transport details.
+- **TRD-ARC-011** Knowledge file ingestion accepts an existing private Media Library DOCUMENT asset ID; URL ingestion passes through a server-only SSRF safety boundary before fetch/extraction.
 
 ## 4. Authentication and authorization
 
@@ -44,9 +48,12 @@ Existing requirement IDs retain their original meaning; additions introduced aft
 - **TRD-AUTH-002** Organization memberships map users to `OWNER | ADMIN | EDITOR | REVIEWER | ANALYST`.
 - **TRD-AUTH-003** Browser/server requests using user sessions are constrained by RLS.
 - **TRD-AUTH-004** Application permission checks improve UX but do not replace database authorization.
-- **TRD-AUTH-005** SECURITY DEFINER functions are explicitly revoked from `public`/`anon` unless required by authenticated RLS and are granted only to the narrow role that needs execution.
+- **TRD-AUTH-005** SECURITY DEFINER functions are explicitly revoked from `public`/`anon` unless required by an authenticated workflow and are granted only to the narrow role that needs execution; callable functions perform their own actor/tenant/role/integrity checks.
 - **TRD-AUTH-006** Worker/admin capabilities cannot be invoked by normal browser roles.
 - **TRD-AUTH-007** Privileged internal Edge-to-Edge execution uses an environment/Vault-held credential and constant-time comparison when a user JWT is unavailable.
+- **TRD-AUTH-008** OWNER/ADMIN may mutate Organization Profile, Brand Kit and Core Knowledge state; EDITOR may manage normal Knowledge and ingestion but cannot create or toggle Core state; REVIEWER/ANALYST are read-only for these surfaces.
+- **TRD-AUTH-009** Database table privileges are least-privilege in addition to RLS. Feature tables must revoke inherited broad `anon`/`authenticated` grants before granting only required operations; provenance tables expose authenticated SELECT only.
+- **TRD-AUTH-010** Core Knowledge authorization is enforced for both INSERT and UPDATE so direct Data API writes cannot bypass UI role restrictions.
 
 ## 5. Multi-tenancy
 
@@ -55,6 +62,8 @@ Existing requirement IDs retain their original meaning; additions introduced aft
 - **TRD-TEN-003** Cross-organization reads and mutations are denied by RLS and validated in live probes for security-sensitive features.
 - **TRD-TEN-004** Organization ownership columns on immutable-history/Knowledge entities cannot move between organizations after creation.
 - **TRD-TEN-005** Generated-media storage paths are organization-prefixed and reconciled to same-org database rows.
+- **TRD-TEN-006** Brand asset assignment validates referenced `media_assets.organization_id`, ACTIVE state and image type/MIME before persistence.
+- **TRD-TEN-007** Knowledge FILE source lineage validates same-org ACTIVE DOCUMENT `media_assets`; cross-org IDs are rejected without requiring tenant-existence disclosure.
 
 ## 6. Integration Vault architecture
 
@@ -81,19 +90,29 @@ plus immutable `integration_audit_events` and the authenticated `integration-vau
 - **TRD-AI-002** OpenAI adapter is server-only.
 - **TRD-AI-003** CI uses deterministic fake provider and consumes zero live AI credits.
 - **TRD-AI-004** Runtime model selection is configuration-driven and not coupled to content domain persistence.
-- **TRD-AI-005** Grounding context is server-composed from approved sources and bounded before provider call.
+- **TRD-AI-005** Grounding context is server-composed from authoritative Profile, Brand Kit, approved Knowledge and bounded task context before provider call.
 - **TRD-AI-006** Provider errors are normalized to safe domain errors.
 - **TRD-AI-007** Provider/model metadata is persisted for generated artifacts where required for audit/debugging.
+- **TRD-AI-008** Shared generation context order is deterministic: Profile → Brand Kit → ACTIVE Core Knowledge → selected ACTIVE Knowledge → task context.
+- **TRD-AI-009** Duplicate selected Knowledge IDs collapse preserving first occurrence; a Core source explicitly selected is represented once.
+- **TRD-AI-010** Exact Profile revision, Brand Kit revision and Knowledge snapshots used for successful generation are persisted atomically before the source artifact is exposed as successful.
 
-## 8. Knowledge grounding
+## 8. Knowledge grounding and ingestion
 
-- **TRD-KB-001** Client submits UUID list only.
-- **TRD-KB-002** Server loads same-org records using authenticated session.
-- **TRD-KB-003** Only ACTIVE records proceed.
-- **TRD-KB-004** Generation context uses deterministic ordering matching submitted IDs.
+- **TRD-KB-001** Client submits Knowledge UUID list only.
+- **TRD-KB-002** Server loads same-org records using authenticated session/RLS-backed repository access.
+- **TRD-KB-003** Only ACTIVE records proceed into grounding.
+- **TRD-KB-004** Explicit selected Knowledge preserves request order after duplicate collapse.
 - **TRD-KB-005** Immutable snapshots capture exact record revision/title/content/source metadata at generation time.
-- **TRD-KB-006** Snapshot writes are backend/admin-only after authenticated server-side resolution.
-- **TRD-KB-007** Snapshot rows expose authenticated SELECT to same-org members but no authenticated INSERT/UPDATE/DELETE.
+- **TRD-KB-006** Provenance snapshots are written only through the guarded atomic generation-provenance RPC after authenticated server-side resolution.
+- **TRD-KB-007** Snapshot rows expose authenticated SELECT to same-org members but no direct authenticated INSERT/UPDATE/DELETE privileges.
+- **TRD-KB-008** ACTIVE `is_core=true` Knowledge is server-selected automatically and deterministically for every relevant generation.
+- **TRD-KB-009** Cross-org, missing or non-ACTIVE explicit Knowledge IDs cannot become grounding and fail safely before provider invocation.
+- **TRD-KB-010** `knowledge_documents` models FILE/URL source lineage with `PENDING | PROCESSING | EXTRACTED | FAILED` extraction state and immutable source identity.
+- **TRD-KB-011** Successful PDF/DOCX/PPTX/TXT/URL extraction finalizes document lineage and resulting Knowledge creation in one guarded transaction, and resulting Knowledge status is always DRAFT.
+- **TRD-KB-012** `knowledge_records.knowledge_document_id` and document revision linkage preserve ingestion provenance; ingestion never silently activates Knowledge.
+- **TRD-KB-013** URL safety allows only HTTP/HTTPS public destinations and rejects loopback, private, link-local, cloud-metadata, unsafe DNS/address outcomes and unsafe redirects.
+- **TRD-KB-014** Extracted content and source payloads have explicit size bounds and sanitized error mapping; raw provider/network/SQL errors do not reach browser UI.
 
 ## 9. Content artifacts
 
@@ -103,6 +122,8 @@ plus immutable `integration_audit_events` and the authenticated `integration-vau
 - **TRD-CONT-004** Translation `source_revision` records canonical revision used.
 - **TRD-CONT-005** Source regeneration and stale translation transitions are compare-and-set/idempotent where concurrent completions are possible.
 - **TRD-CONT-006** Scene Planning handoff identifies a persisted artifact; authoritative script/revision is reloaded server-side.
+- **TRD-CONT-007** `content_item_identity_provenance` stores exact organization Profile/Brand Kit revision for a generated content item; existing `content_item_knowledge_sources` stores exact Knowledge snapshots.
+- **TRD-CONT-008** Identity and Knowledge provenance are persisted atomically; revision mismatch or changed Knowledge snapshot fails closed rather than recording mixed provenance.
 
 ## 10. Scene Planning architecture
 
@@ -122,6 +143,8 @@ with `scene_plan_qc_findings` as deterministic QC/review state.
 - **TRD-SCENE-006** Granular scene/shot replan postconditions prevent mutation outside requested scope and protect human-modified shots unless explicit replacement is authorized.
 - **TRD-SCENE-007** Deterministic QC validates source freshness, contiguous ordering, narration coverage, duration relationships, references and generation requirements before approval.
 - **TRD-SCENE-008** Scene Planning itself does not call video providers; it produces a provider-neutral approved-shot handoff.
+- **TRD-SCENE-009** Workflow and granular replan actions resolve current Brand Kit server-side. Brand palette/typography/logo treatment act as institutional defaults when the Visual Bible does not explicitly override creative presentation.
+- **TRD-SCENE-010** Official primary logo asset identity is carried separately as institutional authority and cannot be replaced/redrawn/substituted by Visual Bible project styling.
 
 ## 11. Durable jobs
 
@@ -135,7 +158,7 @@ with `scene_plan_qc_findings` as deterministic QC/review state.
 
 ## 12. Media and video
 
-The original TRD-VID IDs keep their original semantic meaning; the post-Phase 7 execution rules are appended as new IDs.
+The original TRD-VID IDs keep their original semantic meaning; later execution rules are appended as new IDs.
 
 - **TRD-VID-001** `media_assets` is provider-agnostic and organization-scoped.
 - **TRD-VID-002** `video_scenes` is the original foundation linking early content planning to generated media; it is retained for compatibility, while current Scene Planning uses the normalized `video_projects` / Visual Bible / plan-version / scene / shot hierarchy.
@@ -155,10 +178,12 @@ The original TRD-VID IDs keep their original semantic meaning; the post-Phase 7 
 ## 13. Media architecture additions
 
 - **TRD-MEDIA-001** `media_assets` stores provider-agnostic metadata and a private storage path.
-- **TRD-MEDIA-002** Generated Phase 7 video uses the private `generated-media` bucket and deterministic organization-prefixed object paths.
+- **TRD-MEDIA-002** Generated video uses private organization-scoped storage and deterministic object paths.
 - **TRD-MEDIA-003** Generated media lineage is linked through `generating_job_id` and generation attempt/job metadata; legacy `media_assets.scene_id` is not forced into a Scene Planning FK.
 - **TRD-MEDIA-004** Media import finalization is idempotent by `(organization_id, storage_path)` and may complete only an `IMPORT_PENDING` attempt.
-- **TRD-MEDIA-005** Full operator Media Library upload/catalogue/preview/delete workflows remain Phase 8 work.
+- **TRD-MEDIA-005** Media Library provides organization-scoped catalogue/detail/preview/upload/archive/delete boundaries and a private `media-library` bucket.
+- **TRD-MEDIA-006** Brand Kit assets reuse same-org ACTIVE IMAGE `media_assets`; Knowledge FILE sources reuse same-org ACTIVE DOCUMENT `media_assets`.
+- **TRD-MEDIA-007** Signed read/write URLs are short-lived transport. Brand Kit and Knowledge business records persist asset UUIDs/canonical safe URL lineage, not signed URLs or raw browser-supplied object paths.
 
 ## 14. Publishing integrations
 
@@ -168,7 +193,7 @@ The original TRD-VID IDs keep their original semantic meaning; the post-Phase 7 
 - **TRD-PUB-004** Publish attempts persist idempotency/reference/provider response metadata without raw credentials.
 - **TRD-PUB-005** Channel adapters normalize provider-specific errors/statuses.
 
-**Current maturity:** retained baseline requirements; implementation starts Phase 10.
+**Current maturity:** retained baseline requirements; implementation is governed by its own release slice.
 
 ## 15. API/server action rules
 
@@ -178,6 +203,8 @@ The original TRD-VID IDs keep their original semantic meaning; the post-Phase 7 
 - **TRD-API-004** Return serializable safe error objects; no raw exception propagation to client.
 - **TRD-API-005** Mutations requiring privileged DB bypass first complete authorization using the user-scoped boundary, then use narrowly scoped privileged persistence.
 - **TRD-API-006** Internal dispatcher operations accept no browser-controlled provider payload and revalidate job/attempt/tenant lineage before provider spend.
+- **TRD-API-007** Organization-generation callers use the shared server-only resolver rather than independently rebuilding Profile/Brand/Core/selected Knowledge composition.
+- **TRD-API-008** File/URL ingestion action success is not equivalent to approval; the server returns a DRAFT Knowledge record and the UI must preserve explicit activation as a separate action.
 
 ## 16. Database migration discipline
 
@@ -186,7 +213,9 @@ The original TRD-VID IDs keep their original semantic meaning; the post-Phase 7 
 - **TRD-DB-003** DDL changes use Supabase migration tooling, not ad hoc production SQL, except transactional/read-only verification probes.
 - **TRD-DB-004** Every new tenant table enables RLS before release.
 - **TRD-DB-005** Security-sensitive triggers/functions explicitly set safe `search_path` and privilege grants.
-- **TRD-DB-006** Production migration deployment is verified against live migration history before release claims.
+- **TRD-DB-006** Production migration deployment is verified against live migration history before release claims; already-applied migrations are never blindly reapplied.
+- **TRD-DB-007** New exposed tables explicitly revoke inherited broad Data API ACLs and grant only the operations required by the RLS-backed browser workflow.
+- **TRD-DB-008** Live-discovered defects are fixed with new forward migrations and regression tests. Applied migrations are not rewritten to hide rollout history.
 
 ## 17. Error handling and observability
 
@@ -195,24 +224,27 @@ The original TRD-VID IDs keep their original semantic meaning; the post-Phase 7 
 - **TRD-OBS-003** Secrets and sensitive credentials are redacted by construction, not after logging.
 - **TRD-OBS-004** Runtime dashboards distinguish application, provider, database and job failures.
 - **TRD-OBS-005** Provider-specific raw error bodies are not passed directly to browser UI.
+- **TRD-OBS-006** Cross-tenant object rejection may intentionally return a non-disclosing “not found/unavailable” class instead of revealing existence in another organization.
 
 ## 18. Deployment environments
 
 - **TRD-DEP-001** `main` deploys to staging first until production promotion is explicitly approved by environment governance.
 - **TRD-DEP-002** Preview/staging use dedicated PAK Supabase project(s) only.
 - **TRD-DEP-003** Aurexis/Lovable systems are prohibited deployment dependencies for PAK.
-- **TRD-DEP-004** Required bootstrap environment variables include Supabase URL/anon key and server-only service-role key; organization provider keys live in Integration Vault.
+- **TRD-DEP-004** Required bootstrap environment variables include Supabase URL/anon key and server-only service-role key where legacy/server infrastructure requires it; organization provider keys live in Integration Vault. Browser feature flows in this identity/ingestion slice use authenticated RLS/RPC boundaries and do not introduce new client secrets.
 - **TRD-DEP-005** Deployment must pass production build before promotion.
 - **TRD-DEP-006** External hosting quota/rate-limit failures are recorded as infrastructure blockers and must not be misreported as application build/test failures.
 
 ## 19. Testing gates
 
 - **TRD-TEST-001** Every feature/bugfix starts with a failing test when behavior is testable.
-- **TRD-TEST-002** CI requires typecheck, lint, unit/integration, production build and applicable Playwright E2E.
+- **TRD-TEST-002** CI requires typecheck, lint, unit/integration, production build, worker/container gates where applicable and Playwright E2E.
 - **TRD-TEST-003** RLS/security-sensitive changes require structural SQL assertions plus live Supabase probes before merge.
 - **TRD-TEST-004** External AI/media provider CI paths use deterministic fakes; live provider smoke tests are manual/controlled and never required for every CI run.
 - **TRD-TEST-005** Merge claims require evidence from the exact PR head.
 - **TRD-TEST-006** A paid-provider feature may be infrastructure-release-ready without a paid smoke only when credentials/credits are unavailable and deferred operational acceptance is explicitly documented rather than falsely claimed.
+- **TRD-TEST-007** Profile/Brand/Knowledge browser E2E uses a strict development-only double gate; normal E2E auth bypass alone cannot activate synthetic identity fixtures, and production mode cannot activate them.
+- **TRD-TEST-008** Live authorization verification uses reversible/rollback-only synthetic fixtures and confirms zero residual fixture rows after proof.
 
 ## 20. Performance requirements
 
@@ -221,9 +253,12 @@ The original TRD-VID IDs keep their original semantic meaning; the post-Phase 7 
 - **TRD-PERF-003** Expensive generation/render/publishing does not hold browser request connections for provider-scale durations when a durable job can represent progress.
 - **TRD-PERF-004** Large context/media payloads have explicit size limits before provider invocation.
 - **TRD-PERF-005** Unattended dispatch uses bounded batches and leases to prevent concurrent duplicate processing.
+- **TRD-PERF-006** RLS policies that compare audit actor IDs should use initplan-safe `(select auth.uid())` form when semantically equivalent, avoiding per-row reevaluation at scale.
 
 ## 21. Security acceptance
 
-A feature touching credentials, authorization, organization ownership, immutable history, paid provider spend or external publishing cannot be release-ready until its database policy/privilege model and server/Edge boundary have both been reviewed and exercised with negative tests.
+A feature touching credentials, authorization, organization ownership, immutable history, authoritative organization identity, Knowledge ingestion, paid provider spend or external publishing cannot be release-ready until its database RLS/policy/table-ACL/function-privilege model and server/Edge boundary have both been reviewed and exercised with negative tests.
+
+Organization identity/Knowledge acceptance additionally requires proof that EDITOR cannot mutate Profile/Brand/Core state, REVIEWER remains read-only, cross-org Brand/document IDs fail, ingestion stays DRAFT, signed URLs/raw object paths do not persist as Brand identity, and provenance writes are atomic and immutable.
 
 Provider-spend workflows additionally require proof that a normal authenticated browser cannot directly create provider attempts, bypass approved source/QC state, retrieve secrets or invoke internal worker capability.
