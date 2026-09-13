@@ -7,6 +7,8 @@ export interface PublishingWorkerBrokerClientOptions {
 
 type JsonRecord = Record<string, unknown>;
 
+const MAX_FAILURE_ERROR_CHARS = 4_000;
+
 function required(name: "NEXT_PUBLIC_SUPABASE_URL" | "NEXT_PUBLIC_SUPABASE_ANON_KEY"): string {
   const value = process.env[name]?.trim();
   if (!value) throw new Error(`Publishing worker environment variable ${name} is required.`);
@@ -53,8 +55,13 @@ export function createPublishingWorkerBrokerClient(options: PublishingWorkerBrok
 
   return {
     async authorize(): Promise<boolean> {
-      const payload = await request<{ ok?: unknown }>({ action: "authorize" });
-      return payload.ok === true;
+      try {
+        const payload = await request<{ ok?: unknown }>({ action: "authorize" });
+        return payload.ok === true;
+      } catch (error) {
+        if (error instanceof PublishingWorkerBrokerError && error.status === 401) return false;
+        throw error;
+      }
     },
 
     async claimJobs(input: { workerId: string; limit: number; leaseSeconds: number }): Promise<JsonRecord[]> {
@@ -83,7 +90,11 @@ export function createPublishingWorkerBrokerClient(options: PublishingWorkerBrok
     },
 
     async failJob(input: { jobId: string; workerId: string; error: string }): Promise<JsonRecord> {
-      const payload = await request<{ job?: unknown }>({ action: "failJob", ...input });
+      const payload = await request<{ job?: unknown }>({
+        action: "failJob",
+        ...input,
+        error: input.error.slice(0, MAX_FAILURE_ERROR_CHARS),
+      });
       return objectValue(payload.job, "job");
     },
 
