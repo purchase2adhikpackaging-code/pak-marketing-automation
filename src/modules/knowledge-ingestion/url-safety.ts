@@ -57,9 +57,52 @@ function normalizedIpv6(address: string): string {
   return address.toLowerCase().replace(/^\[|\]$/g, "");
 }
 
+function mappedIpv4FromIpv6(address: string): string | null {
+  const value = normalizedIpv6(address);
+  if (isIP(value) !== 6) return null;
+
+  const dotted = value.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+  if (dotted && isIP(dotted[1]!) === 4) return dotted[1]!;
+
+  const compressionIndex = value.indexOf("::");
+  let groups: string[];
+  if (compressionIndex >= 0) {
+    if (value.indexOf("::", compressionIndex + 2) >= 0) return null;
+    const left = value.slice(0, compressionIndex);
+    const right = value.slice(compressionIndex + 2);
+    const leftGroups = left ? left.split(":") : [];
+    const rightGroups = right ? right.split(":") : [];
+    const missingGroups = 8 - leftGroups.length - rightGroups.length;
+    if (missingGroups < 1) return null;
+    groups = [...leftGroups, ...Array<string>(missingGroups).fill("0"), ...rightGroups];
+  } else {
+    groups = value.split(":");
+  }
+
+  if (groups.length !== 8 || groups.some((group) => !/^[0-9a-f]{1,4}$/.test(group))) {
+    return null;
+  }
+
+  const words = groups.map((group) => Number.parseInt(group, 16));
+  if (
+    words.slice(0, 5).some((word) => word !== 0) ||
+    words[5] !== 0xffff ||
+    words[6] === undefined ||
+    words[7] === undefined
+  ) {
+    return null;
+  }
+
+  const high = words[6];
+  const low = words[7];
+  return `${high >> 8}.${high & 0xff}.${low >> 8}.${low & 0xff}`;
+}
+
 function isUnsafeIpv6(address: string): boolean {
   if (isIP(address) !== 6) return false;
   const value = normalizedIpv6(address);
+  const mappedIpv4 = mappedIpv4FromIpv6(value);
+  if (mappedIpv4) return isUnsafeIpv4(mappedIpv4);
 
   if (value === "::" || value === "::1") return true;
   if (value.startsWith("fc") || value.startsWith("fd")) return true;
@@ -67,8 +110,7 @@ function isUnsafeIpv6(address: string): boolean {
   if (value.startsWith("ff")) return true;
   if (value.startsWith("2001:db8:")) return true;
 
-  const mapped = value.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
-  return mapped ? isUnsafeIpv4(mapped[1]!) : false;
+  return false;
 }
 
 function isUnsafeAddress(address: string): boolean {
