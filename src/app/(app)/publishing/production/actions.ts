@@ -1,7 +1,5 @@
 "use server";
 
-import { after } from "next/server";
-import { headers } from "next/headers";
 import type { AppRole } from "@/modules/auth/roles";
 import type { BookJob } from "@/modules/publishing-factory/domain";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -13,10 +11,12 @@ import {
   loadProgrammeCurriculumFromDisk,
 } from "@/modules/publishing-production/server-curriculum";
 import { createAuthenticatedPublishingRepository } from "@/modules/publishing-production/server-repository";
-import { resolvePublishingWorkerSecret } from "@/modules/publishing-production/worker-auth";
+
+const RECOVERY_NOT_CONFIGURED = "Publishing worker recovery dispatcher is not configured.";
 
 export interface ProductionActionDependencies {
   getActorMembership(organizationId: string): Promise<{ actorId: string; role: AppRole } | null>;
+  isRecoveryConfigured(): Promise<boolean>;
   plan(input: { organizationId: string; scope: ProductionScope }): Promise<{
     jobs: Array<{ job: BookJob; curriculumText: string }>;
     exclusions: ProductionPlanExclusion[];
@@ -67,6 +67,10 @@ export async function executeStartProductionRunAction(
   }
 
   try {
+    if (!(await dependencies.isRecoveryConfigured())) {
+      return { ok: false, error: RECOVERY_NOT_CONFIGURED };
+    }
+
     const plan = await dependencies.plan({ organizationId: input.organizationId, scope: parsedScope.data });
     if (plan.jobs.length === 0) {
       return { ok: false, error: "No governed books are eligible for this production scope.", exclusions: plan.exclusions };
@@ -104,6 +108,9 @@ export async function executeProductionRunControlAction(
     return { ok: false, error: "You do not have permission to control this production run." };
   }
   try {
+    if (input.state === "RUNNING" && !(await dependencies.isRecoveryConfigured())) {
+      return { ok: false, error: RECOVERY_NOT_CONFIGURED };
+    }
     await dependencies.controlRun(input.runId, input.state);
     if (input.state === "RUNNING") await dependencies.kick(input.runId);
     return { ok: true };
@@ -127,6 +134,12 @@ async function productionDependencies(): Promise<ProductionActionDependencies> {
         .maybeSingle();
       if (error || !data) return null;
       return { actorId: authData.user.id, role: data.role as AppRole };
+    },
+
+    async isRecoveryConfigured() {
+      const supabase = await createServerSupabaseClient();
+      const { data, error } = await supabase.rpc("publishing_worker_recovery_ready");
+      return !error && data === true;
     },
 
     async plan({ organizationId, scope }) {
@@ -165,32 +178,8 @@ async function productionDependencies(): Promise<ProductionActionDependencies> {
     enqueueJobs: (input) => repository.enqueueJobs(input),
 
     async kick() {
-      let secret = process.env.CRON_SECRET?.trim() || process.env.PUBLISHING_WORKER_SECRET?.trim();
-      if (!secret) {
-        try {
-          secret = await resolvePublishingWorkerSecret();
-        } catch {
-          return;
-        }
-      }
-
-      const requestHeaders = await headers();
-      const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
-      if (!host) return;
-      const protocol = requestHeaders.get("x-forwarded-proto") ?? "https";
-      const url = `${protocol}://${host}/api/internal/publishing-worker`;
-      after(async () => {
-        try {
-          await fetch(url, {
-            method: "POST",
-            headers: { authorization: `Bearer ${secret}`, "content-type": "application/json" },
-            body: "{}",
-            cache: "no-store",
-          });
-        } catch {
-          // Supabase pg_cron remains the durable fallback; a failed kick must not undo a persisted run.
-        }
-      });
+      // Durable publishing runs are deliberately awakened by the verified Supabase
+      // pg_cron/pg_net recovery dispatcher. Vercel never resolves worker credentials.
     },
 
     async controlRun(runId, state) {

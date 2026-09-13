@@ -6,6 +6,10 @@ const migrationPath = join(
   process.cwd(),
   "supabase/migrations/202609120004_publishing_worker_dispatch.sql",
 );
+const readinessMigrationPath = join(
+  process.cwd(),
+  "supabase/migrations/202609120008_publishing_worker_recovery_readiness.sql",
+);
 const authHelperPath = join(
   process.cwd(),
   "src/modules/publishing-production/worker-auth.ts",
@@ -56,21 +60,44 @@ describe("publishing worker dispatch secret and recovery contract", () => {
     expect(sql).toMatch(/'\* \* \* \* \*'/);
   });
 
-  it("resolves the dispatch secret server-side instead of requiring a Vercel worker-secret env var", () => {
-    const helper = source(authHelperPath);
+  it("exposes only a boolean recovery-readiness check to authenticated callers", () => {
+    const sql = source(readinessMigrationPath);
+
+    expect(sql).toMatch(/create or replace function\s+public\.publishing_worker_recovery_ready\(\)/i);
+    expect(sql).toContain("pak-publishing-worker-recovery");
+    expect(sql).toMatch(/from\s+cron\.job/i);
+    expect(sql).toMatch(/revoke all on function\s+public\.publishing_worker_recovery_ready\(\)\s+from public/i);
+    expect(sql).toMatch(/revoke all on function\s+public\.publishing_worker_recovery_ready\(\)\s+from anon/i);
+    expect(sql).toMatch(/grant execute on function\s+public\.publishing_worker_recovery_ready\(\)\s+to authenticated/i);
+  });
+
+  it("authorizes the Vercel worker route through the broker without resolving Vault credentials in Vercel", () => {
     const route = source(routePath);
     const actions = source(actionsPath);
     const runtime = source(runtimePath);
 
-    expect(helper).toContain("read_publishing_worker_dispatch_secret");
-    expect(helper).toContain("SUPABASE_SERVICE_ROLE_KEY");
-    expect(route).toContain("resolvePublishingWorkerSecret");
-    expect(actions).toContain("resolvePublishingWorkerSecret");
-    expect(runtime).toContain("resolvePublishingWorkerSecret");
-    expect(runtime).not.toContain('required("PUBLISHING_WORKER_SECRET")');
+    expect(route).toContain("createPublishingWorkerBrokerClient");
+    expect(route).not.toContain("resolvePublishingWorkerSecret");
+    expect(route).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
+
+    expect(actions).not.toContain("resolvePublishingWorkerSecret");
+    expect(actions).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
+    expect(actions).not.toContain("PUBLISHING_WORKER_SECRET");
+    expect(actions).not.toContain("CRON_SECRET");
+
+    expect(runtime).not.toContain("resolvePublishingWorkerSecret");
+    expect(runtime).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
+    expect(runtime).not.toContain("PUBLISHING_WORKER_SECRET");
   });
 
-  it("lets the Edge generation function resolve the same Vault credential through a service-role RPC", () => {
+  it("removes the legacy Vercel worker-auth helper entirely", () => {
+    expect(existsSync(authHelperPath)).toBe(false);
+    expect(source(routePath)).not.toContain("worker-auth");
+    expect(source(actionsPath)).not.toContain("worker-auth");
+    expect(source(runtimePath)).not.toContain("worker-auth");
+  });
+
+  it("lets trusted Edge functions resolve the Vault credential while Vercel only presents the opaque capability", () => {
     const edge = source(edgePath);
 
     expect(edge).toMatch(/admin\.rpc\(\s*["']read_publishing_worker_dispatch_secret["']/);

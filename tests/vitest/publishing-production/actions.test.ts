@@ -31,6 +31,7 @@ function dependencies(role: AppRole | null): ProductionActionDependencies & { ev
   return {
     events,
     getActorMembership: async () => role ? { actorId, role } : null,
+    isRecoveryConfigured: async () => true,
     plan: async () => ({ jobs: [{ job, curriculumText: "governed D01 curriculum" }], exclusions: [] }),
     createRun: async () => {
       events.push("create");
@@ -61,6 +62,28 @@ describe("publishing production actions", () => {
     }, deps);
     expect(result).toMatchObject({ ok: true, plannedCount: 1 });
     expect(deps.events).toEqual(["create", "enqueue", "kick"]);
+  });
+
+  it("refuses new and resumed work while the durable recovery dispatcher is absent", async () => {
+    const startDeps = dependencies("ADMIN");
+    startDeps.isRecoveryConfigured = async () => false;
+    const start = await executeStartProductionRunAction({
+      organizationId,
+      scope: { type: "SUBJECT", programmeCode: "PAK-D01", subjectCode: "D01-102" },
+      concurrency: 1,
+    }, startDeps);
+    expect(start).toMatchObject({ ok: false, error: expect.stringMatching(/dispatcher|recovery/i) });
+    expect(startDeps.events).toEqual([]);
+
+    const resumeDeps = dependencies("ADMIN");
+    resumeDeps.isRecoveryConfigured = async () => false;
+    const resume = await executeProductionRunControlAction({
+      organizationId,
+      runId: "11111111-1111-4111-8111-111111111111",
+      state: "RUNNING",
+    }, resumeDeps);
+    expect(resume).toMatchObject({ ok: false, error: expect.stringMatching(/dispatcher|recovery/i) });
+    expect(resumeDeps.events).toEqual([]);
   });
 
   it("denies editor portfolio production but allows lower scopes", async () => {

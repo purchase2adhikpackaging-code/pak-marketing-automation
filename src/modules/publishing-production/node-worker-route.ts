@@ -15,20 +15,30 @@ function hasForbiddenKey(value: unknown): boolean {
   );
 }
 
+function bearerCredential(request: Request): string | null {
+  const authorization = request.headers.get("authorization") ?? "";
+  if (!authorization.toLowerCase().startsWith("bearer ")) return null;
+  const credential = authorization.slice(7).trim();
+  return credential || null;
+}
+
 export async function handlePublishingWorkerRequest(
   request: Request,
   dependencies: {
-    secret: string | undefined;
-    run(input: { workerId: string; concurrency?: number }): Promise<NodePublishingWorkerResult>;
-    scheduleNext?(input: { concurrency: number }): void;
+    authorize(credential: string): Promise<boolean>;
+    run(input: { workerId: string; concurrency?: number; credential: string }): Promise<NodePublishingWorkerResult>;
+    scheduleNext?(input: { concurrency: number; credential: string }): void;
   },
 ): Promise<Response> {
   if (!new Set(["GET", "POST"]).has(request.method)) return json(405, { error: "METHOD_NOT_ALLOWED" });
-  if (!dependencies.secret) return json(503, { error: "WORKER_NOT_CONFIGURED" });
 
-  const authorization = request.headers.get("authorization") ?? "";
-  if (authorization !== `Bearer ${dependencies.secret}`) {
-    return json(401, { error: "UNAUTHORIZED" });
+  const credential = bearerCredential(request);
+  if (!credential) return json(401, { error: "UNAUTHORIZED" });
+
+  try {
+    if (!await dependencies.authorize(credential)) return json(401, { error: "UNAUTHORIZED" });
+  } catch {
+    return json(503, { error: "WORKER_AUTH_UNAVAILABLE" });
   }
 
   let body: Record<string, unknown> = {};
@@ -49,8 +59,8 @@ export async function handlePublishingWorkerRequest(
 
   const workerId = `vercel-${crypto.randomUUID()}`;
   try {
-    const result = await dependencies.run({ workerId, concurrency });
-    if (result.claimed > 0) dependencies.scheduleNext?.({ concurrency });
+    const result = await dependencies.run({ workerId, concurrency, credential });
+    if (result.claimed > 0) dependencies.scheduleNext?.({ concurrency, credential });
     return json(200, { ok: true, ...result });
   } catch (error) {
     return json(500, {
