@@ -40,7 +40,7 @@ describe("publishing worker broker client", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
-  it("fails closed without leaking the worker credential in the thrown error", async () => {
+  it("maps an invalid worker credential to unauthorized without leaking the capability", async () => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "anon-key";
     const fetchImpl = vi.fn(async () => new Response(
@@ -53,14 +53,46 @@ describe("publishing worker broker client", () => {
       fetchImpl,
     });
 
-    let message = "";
-    try {
-      await broker.authorize();
-    } catch (error) {
-      message = error instanceof Error ? error.message : String(error);
-    }
-    expect(message).toContain("401");
-    expect(message).not.toContain("opaque-worker-capability");
+    await expect(broker.authorize()).resolves.toBe(false);
+  });
+
+  it("still treats non-auth broker failures as infrastructure errors", async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "anon-key";
+    const fetchImpl = vi.fn(async () => new Response(
+      JSON.stringify({ error: "BROKER_UNAVAILABLE" }),
+      { status: 503, headers: { "content-type": "application/json" } },
+    ));
+
+    const broker = createPublishingWorkerBrokerClient({
+      credential: "opaque-worker-capability",
+      fetchImpl,
+    });
+
+    await expect(broker.authorize()).rejects.toMatchObject({ status: 503 });
+  });
+
+  it("truncates failure messages to the broker-supported 4000 characters", async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "anon-key";
+    const fetchImpl = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body)) as { action?: string; error?: string };
+      expect(body.action).toBe("failJob");
+      expect(body.error).toHaveLength(4_000);
+      expect(body.error).toBe("x".repeat(4_000));
+      return new Response(JSON.stringify({ job: { id: "job-1" } }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    });
+
+    const broker = createPublishingWorkerBrokerClient({
+      credential: "opaque-worker-capability",
+      fetchImpl,
+    });
+
+    await broker.failJob({ jobId: "job-1", workerId: "worker-1", error: "x".repeat(5_000) });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
   it("requires the public Supabase URL and anon key but never a service-role environment variable", () => {
