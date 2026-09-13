@@ -13,6 +13,7 @@ import {
   setCoreKnowledgeAction,
   updateKnowledgeAction,
 } from "./actions";
+import { KnowledgeIngestionPanel } from "./knowledge-ingestion-panel";
 
 export type KnowledgeOrganizationWorkspace = {
   id: string;
@@ -86,6 +87,16 @@ export function KnowledgeBaseManager({ organizations }: { organizations: Knowled
       [next.organizationId]: (current[next.organizationId] ?? []).map((record) =>
         record.id === next.id ? next : record,
       ),
+    }));
+  }
+
+  function addIngestedRecord(record: KnowledgeRecord) {
+    setRecordsByOrganization((current) => ({
+      ...current,
+      [record.organizationId]: [
+        record,
+        ...(current[record.organizationId] ?? []).filter((candidate) => candidate.id !== record.id),
+      ],
     }));
   }
 
@@ -274,6 +285,14 @@ export function KnowledgeBaseManager({ organizations }: { organizations: Knowled
       ) : null}
       {error ? <div role="alert" className="rounded-xl border border-red-900/60 bg-red-950/30 p-4 text-sm text-red-200">{error}</div> : null}
       {success ? <div role="status" className="rounded-xl border border-emerald-900/60 bg-emerald-950/30 p-4 text-sm text-emerald-200">{success}</div> : null}
+
+      {canManage ? (
+        <KnowledgeIngestionPanel
+          key={organization.id}
+          organizationId={organization.id}
+          onIngested={addIngestedRecord}
+        />
+      ) : null}
 
       {canManage ? (
         <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-6">
