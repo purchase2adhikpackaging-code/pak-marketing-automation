@@ -283,6 +283,18 @@ const DOCUMENT_COLUMNS = [
   "updated_at",
 ].join(",");
 
+function asMediaDocumentRow(value: unknown): MediaDocumentRow {
+  return value as MediaDocumentRow;
+}
+
+function asKnowledgeDocumentRow(value: unknown): KnowledgeDocumentRow {
+  return value as KnowledgeDocumentRow;
+}
+
+function asKnowledgeRecordRow(value: unknown): KnowledgeRecordRow {
+  return value as KnowledgeRecordRow;
+}
+
 function mapDocument(row: KnowledgeDocumentRow): KnowledgeDocument {
   return {
     id: row.id,
@@ -349,7 +361,7 @@ class SupabaseKnowledgeIngestionPersistence implements KnowledgeIngestionPersist
 
     if (error) throw new AppError("INTERNAL_ERROR", "Unable to load the knowledge source media asset.");
     if (!data) return null;
-    const row = data as MediaDocumentRow;
+    const row = asMediaDocumentRow(data);
     return {
       id: row.id,
       organizationId: row.organization_id,
@@ -399,7 +411,7 @@ class SupabaseKnowledgeIngestionPersistence implements KnowledgeIngestionPersist
       .single();
 
     if (error || !data) throw new AppError("INTERNAL_ERROR", "Unable to create the knowledge document.");
-    return mapDocument(data as KnowledgeDocumentRow);
+    return mapDocument(asKnowledgeDocumentRow(data));
   }
 
   async compareAndSetDocument(
@@ -419,7 +431,7 @@ class SupabaseKnowledgeIngestionPersistence implements KnowledgeIngestionPersist
       .maybeSingle();
 
     if (error) throw new AppError("INTERNAL_ERROR", "Unable to update the knowledge document.");
-    return data ? mapDocument(data as KnowledgeDocumentRow) : null;
+    return data ? mapDocument(asKnowledgeDocumentRow(data)) : null;
   }
 
   async finalizeExtraction(
@@ -448,8 +460,8 @@ class SupabaseKnowledgeIngestionPersistence implements KnowledgeIngestionPersist
     }
 
     return {
-      document: mapDocument(payload.document as KnowledgeDocumentRow),
-      record: mapRecord(payload.record as KnowledgeRecordRow),
+      document: mapDocument(asKnowledgeDocumentRow(payload.document)),
+      record: mapRecord(asKnowledgeRecordRow(payload.record)),
     };
   }
 }
