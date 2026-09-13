@@ -29,7 +29,9 @@ describe("knowledge ingestion finalization SQL", () => {
 
   it("adds immutable source-revision identity to the resulting Knowledge record", () => {
     expect(sql).toMatch(/add column if not exists knowledge_document_revision integer/i);
-    expect(sql).toMatch(/knowledge_document_revision\s*=\s*p_expected_revision\s*\+\s*1/i);
+    expect(sql).toMatch(
+      /insert into public\.knowledge_records\s*\([\s\S]*knowledge_document_revision[\s\S]*\)\s*values\s*\([\s\S]*p_expected_revision\s*\+\s*1[\s\S]*\)/i,
+    );
     expect(sql).toMatch(/knowledge document revision identity is immutable/i);
   });
 });
