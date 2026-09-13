@@ -2,13 +2,15 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import type { OrganizationBrandKit } from "@/modules/brand-kit/types";
+
 vi.mock("./actions", () => ({
   saveBrandKitAction: vi.fn(),
 }));
 
 import { BrandKitClient } from "./brand-kit-client";
 
-const brandKit = {
+const brandKit: OrganizationBrandKit = {
   organizationId: "11111111-1111-4111-8111-111111111111",
   primaryColor: "#0F2B46",
   secondaryColor: "#FFFFFF",
@@ -22,7 +24,7 @@ const brandKit = {
   revision: 2,
   createdAt: "2026-09-12T00:00:00.000Z",
   updatedAt: "2026-09-12T00:00:00.000Z",
-} as const;
+};
 
 const imageAssets = [
   {
@@ -35,7 +37,7 @@ const imageAssets = [
     displayName: "PAK Campus Exterior",
     mimeType: "image/jpeg",
   },
-] as const;
+];
 
 describe("BrandKitClient", () => {
   it("lets OWNER manage brand rules and select official Media Library image assets", () => {
@@ -52,7 +54,7 @@ describe("BrandKitClient", () => {
     );
 
     expect((screen.getByLabelText("Primary color") as HTMLInputElement).value).toBe("#0F2B46");
-    expect((screen.getByLabelText("Primary logo") as HTMLSelectElement).value).toBe(imageAssets[0].id);
+    expect((screen.getByLabelText("Primary logo") as HTMLSelectElement).value).toBe(imageAssets[0]!.id);
     expect(screen.getByRole("option", { name: "PAK Primary Logo" })).not.toBeNull();
     expect(screen.getByRole("option", { name: "PAK Campus Exterior" })).not.toBeNull();
     expect(screen.getByRole("button", { name: "Save Brand Kit" })).not.toBeNull();
