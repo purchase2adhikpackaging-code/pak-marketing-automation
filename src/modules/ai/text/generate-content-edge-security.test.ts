@@ -50,7 +50,14 @@ describe("generate-content Edge cost guardrails", () => {
     expect(source).toContain("readPublishingWorkerSecret");
     expect(source).toMatch(/for \(let attempt = 1; attempt <= WORKER_SECRET_READ_ATTEMPTS; attempt \+= 1\)/);
     expect(source).toContain('error: "WORKER_AUTH_UNAVAILABLE"');
-    expect(source).not.toMatch(/internalRequest\s*=\s*true/);
+    expect(source).toContain('if (internalHeader !== publishingWorkerSecret) return json(401, { error: "UNAUTHORIZED" });');
+    expect(source).toContain("internalRequest = true");
+  });
+
+  it("authenticates interactive callers inside the handler", () => {
+    expect(source).toContain('req.headers.get("authorization")');
+    expect(source).toContain("admin.auth.getUser(token)");
+    expect(source).toContain('error: "UNAUTHORIZED"');
   });
 
   it("does not expose the provider API key in responses", () => {
