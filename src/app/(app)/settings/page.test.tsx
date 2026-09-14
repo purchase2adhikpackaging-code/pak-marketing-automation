@@ -58,6 +58,7 @@ function connection(organizationId: string, provider: "OPENAI" | "LTX" | "META",
 
 describe("SettingsPage", () => {
   beforeEach(() => {
+    vi.stubGlobal("React", React);
     mocks.createServerSupabaseClient.mockReset();
     mocks.profileGet.mockReset();
     mocks.brandGet.mockReset();
