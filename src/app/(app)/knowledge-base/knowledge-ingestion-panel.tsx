@@ -124,9 +124,9 @@ export function KnowledgeIngestionPanel({
 
   return (
     <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-6">
-      <h3 className="text-lg font-semibold text-white">Ingest approved sources</h3>
+      <h3 className="text-lg font-semibold text-white">Ingest document or URL</h3>
       <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
-        Upload a supported document through the private Media Library or ingest a public URL. Extracted content always enters Knowledge Base as a draft for human review.
+        Upload a supported document through the private Media Library or ingest a public URL. Extracted content always enters Knowledge Base as a DRAFT and requires human review before activation.
       </p>
 
       {pending ? <p role="status" className="mt-4 text-sm text-slate-300">Preparing Knowledge Base draft…</p> : null}
