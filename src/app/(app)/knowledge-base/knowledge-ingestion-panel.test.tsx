@@ -47,6 +47,15 @@ describe("KnowledgeIngestionPanel", () => {
     vi.mocked(ingestKnowledgeUrlAction).mockReset();
   });
 
+  it("presents document and URL ingestion as a DRAFT-only review entry point", () => {
+    render(<KnowledgeIngestionPanel organizationId={organizationId} onIngested={vi.fn()} />);
+
+    expect(screen.getByRole("heading", { name: "Ingest document or URL" })).toBeTruthy();
+    expect(screen.getByText(/always enters Knowledge Base as a DRAFT/i)).toBeTruthy();
+    expect(screen.getByText(/human review/i)).toBeTruthy();
+    expect(screen.queryByText(/automatically approved/i)).toBeNull();
+  });
+
   it("reuses Media Library upload for only supported knowledge-document formats and creates a DRAFT for review", async () => {
     vi.mocked(ingestKnowledgeFileAction).mockResolvedValue({
       ok: true,
@@ -72,10 +81,11 @@ describe("KnowledgeIngestionPanel", () => {
       sourceLabel: "PAK Safety Manual",
     }));
     expect(onIngested).toHaveBeenCalledWith(draftRecord);
-    expect(await screen.findByText("Draft created for review. Activate it only after verifying the extracted content.")).toBeTruthy();
+    expect(await screen.findByText(/Draft created for review/i)).toBeTruthy();
+    expect(screen.getByText(/Activate it only after verifying the extracted content/i)).toBeTruthy();
   });
 
-  it("ingests a URL into DRAFT without exposing an activation shortcut", async () => {
+  it("ingests a URL into DRAFT without exposing an activation shortcut or approval claim", async () => {
     const urlRecord = { ...draftRecord, sourceType: "URL" as const, sourceReference: "https://example.org/programmes" };
     vi.mocked(ingestKnowledgeUrlAction).mockResolvedValue({
       ok: true,
@@ -95,6 +105,8 @@ describe("KnowledgeIngestionPanel", () => {
       sourceLabel: "PAK Programmes",
     }));
     expect(onIngested).toHaveBeenCalledWith(urlRecord);
+    expect(await screen.findByText(/Draft created for review/i)).toBeTruthy();
     expect(screen.queryByRole("button", { name: /Activate/ })).toBeNull();
+    expect(screen.queryByText(/approved automatically/i)).toBeNull();
   });
 });
