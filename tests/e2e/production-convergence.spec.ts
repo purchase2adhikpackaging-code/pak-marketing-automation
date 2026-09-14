@@ -11,23 +11,30 @@ test("production navigation prioritizes operational work before roadmap modules"
   await expect(primaryNavigation.getByRole("link", { name: "Approval Center", exact: true })).toBeVisible();
 });
 
-test("dashboard exposes the current production command center and provider readiness", async ({ page }) => {
+test("dashboard remains truthful when the CI fixture has no synthetic organization data", async ({ page }) => {
   await page.goto("/dashboard");
 
   const main = page.locator("main");
-  await expect(main.getByRole("heading", { name: "Continue production" })).toBeVisible();
-  await expect(main.getByRole("heading", { name: "Integrations" })).toBeVisible();
-  await expect(main.getByText("OpenAI", { exact: true })).toBeVisible();
-  await expect(main.getByText("LTX", { exact: true })).toBeVisible();
+  await expect(main.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+  await expect(
+    main.getByText("No organization workspace is available for this account.", { exact: true }),
+  ).toBeVisible();
+  await expect(main.getByRole("region", { name: "Implemented workflow health" })).toHaveCount(0);
 });
 
-test("implemented operational surfaces expose authoritative context and knowledge ingestion", async ({ page }) => {
+test("implemented operational surfaces preserve truthful recovery states without synthetic organization data", async ({
+  page,
+}) => {
   await page.goto("/content-studio");
-  await expect(page.getByRole("heading", { name: "Authoritative context" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Content Studio" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open Knowledge Base", exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open Settings", exact: true })).toBeVisible();
+  await expect(page.getByLabel("Topic")).toHaveCount(0);
 
   await page.goto("/knowledge-base");
-  await expect(page.getByRole("heading", { name: "Add manually" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Ingest document or URL" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Knowledge Base" })).toBeVisible();
+  await expect(page.getByText("No Knowledge Base organization is available for this account.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Create draft" })).toHaveCount(0);
 });
 
 test("roadmap surfaces remain truthful readiness pages without fake domain controls", async ({ page }) => {
