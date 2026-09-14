@@ -60,6 +60,16 @@ describe("generate-content Edge cost guardrails", () => {
     expect(source).toContain('error: "UNAUTHORIZED"');
   });
 
+  it("records secret-free internal generation diagnostics", () => {
+    expect(source).toContain("auditInternalGeneration");
+    expect(source).toContain('from("integration_audit_events")');
+    expect(source).toContain('event_type: "PUBLISHING_GENERATION_DIAGNOSTIC"');
+    expect(source).toContain("instructionChars");
+    expect(source).toContain("inputChars");
+    expect(source).not.toMatch(/metadata:\s*\{[^}]*apiKey/s);
+    expect(source).not.toMatch(/metadata:\s*\{[^}]*publishingWorkerSecret/s);
+  });
+
   it("does not expose the provider API key in responses", () => {
     const successResponse = source.match(/return json\(200, \{[\s\S]*?\n  \}\);/)?.[0] ?? "";
     expect(successResponse).not.toContain("apiKey");
