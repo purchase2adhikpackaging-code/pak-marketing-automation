@@ -28,6 +28,10 @@ describe("publishing worker runtime broker boundary", () => {
     expect(runtime).toContain("broker.failJob");
   });
 
+  it("forwards the durable checkpoint root when yielding through the broker", () => {
+    expect(runtime).toMatch(/broker\.yieldJob\(\{[\s\S]*checkpointRoot:\s*stringArg\(args,\s*"p_checkpoint_root"\)[\s\S]*\}\)/);
+  });
+
   it("passes the invocation credential directly to secured OpenAI generation", () => {
     expect(runtime).toMatch(/internalOpenAITransport\(job,\s*credential\)/);
     expect(runtime).toContain('"x-publishing-worker-secret": credential');
