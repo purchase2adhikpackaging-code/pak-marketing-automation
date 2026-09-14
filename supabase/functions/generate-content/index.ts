@@ -41,6 +41,48 @@ async function readPublishingWorkerSecret(admin: SupabaseClient): Promise<string
   return null;
 }
 
+function publishingJsonContract(instructions: string): string {
+  if (instructions.includes("Artifact: blueprint.")) {
+    return [
+      "BLUEPRINT JSON CONTRACT",
+      "Return one JSON object with exactly these top-level keys:",
+      "bookId, programmeCode, subjectCode, subjectTitle, level, purpose, prerequisites, knowledgePackIds, chapters.",
+      "Do not rename, omit, nest, or wrap these keys. Do not return a blueprint, book, metadata, result, or data wrapper.",
+      "Use the exact bookId, programmeCode, subjectCode, subjectTitle and level stated in the instructions above.",
+      "purpose must be a non-empty string.",
+      "prerequisites must be a string[] and may be empty.",
+      "knowledgePackIds must be a non-empty string[] using only Selected knowledge pack IDs listed above.",
+      "chapters must be a non-empty array with contiguous positive integer numbers beginning at 1.",
+      "Every chapter object must contain exactly these required keys:",
+      "id, number, title, purpose, learningOutcomes, requiredKnowledgePackIds, requiredVisualIds, workedExampleRequirements, practicalRequirements, assessmentRequirements, safetyCritical, referenceSourceIds.",
+      "Chapter types: id:string; number:positive integer; title:string; purpose:string; learningOutcomes:non-empty string[]; requiredKnowledgePackIds:string[]; requiredVisualIds:string[]; workedExampleRequirements:string[]; practicalRequirements:string[]; assessmentRequirements:non-empty string[]; safetyCritical:boolean; referenceSourceIds:string[].",
+      "Each requiredKnowledgePackIds item must also exist in top-level knowledgePackIds.",
+      "Each referenceSourceIds item must be one of the Allowed source IDs listed above. A safetyCritical chapter must have at least one referenceSourceIds item.",
+      "Return strict JSON only, with no markdown or prose outside the object.",
+    ].join("\n");
+  }
+
+  if (instructions.includes("Artifact: chapter.")) {
+    return [
+      "CHAPTER MANUSCRIPT JSON CONTRACT",
+      "Return one JSON object with exactly these top-level keys:",
+      "chapterId, number, title, purpose, learningOutcomes, keyTerms, sections, workedExamples, practicalActivities, safetyNotes, knowledgeChecks, summary, reviewQuestions, sourceIds.",
+      "Do not rename, omit, nest, or wrap these keys. Do not return a chapter, manuscript, result, data, or metadata wrapper.",
+      "chapterId:string; number:positive integer; title:string; purpose:string; learningOutcomes:non-empty string[].",
+      "keyTerms must be a non-empty array of {term:string, explanation:string}.",
+      "sections must be a non-empty array of {heading:string, paragraphs:non-empty string[]}.",
+      "workedExamples must be an array of {title:string, problem:string, solutionSteps:non-empty string[], conclusion:string}.",
+      "practicalActivities must be an array of {title:string, objective:string, safety:string[], tasks:non-empty string[], records:non-empty string[]}.",
+      "safetyNotes:string[]; knowledgeChecks:non-empty string[]; summary:non-empty string[]; reviewQuestions:non-empty string[]; sourceIds:non-empty string[].",
+      "Use only Allowed source IDs listed above in sourceIds.",
+      "Match the chapter blueprint identity, number, title and required learning outcomes exactly.",
+      "Return strict JSON only, with no markdown or prose outside the object.",
+    ].join("\n");
+  }
+
+  return "";
+}
+
 async function auditInternalGeneration(
   admin: SupabaseClient,
   organizationId: string,
@@ -261,6 +303,10 @@ Deno.serve(async (req: Request) => {
   if (internalRequest) await auditInternalGeneration(admin, body.organizationId, body.productionJobId, "OPENAI_VAULT_OK");
 
   const maxOutputTokens = internalRequest ? PUBLISHING_MAX_OUTPUT_TOKENS : INTERACTIVE_MAX_OUTPUT_TOKENS;
+  const contract = internalRequest ? publishingJsonContract(body.instructions) : "";
+  const providerInstructions = internalRequest
+    ? [body.instructions, contract].filter(Boolean).join("\n\n")
+    : body.instructions;
   let providerResponse: Response;
   try {
     providerResponse = await fetch("https://api.openai.com/v1/responses", {
@@ -271,7 +317,7 @@ Deno.serve(async (req: Request) => {
       },
       body: JSON.stringify({
         model,
-        instructions: body.instructions,
+        instructions: providerInstructions,
         input: body.input,
         max_output_tokens: maxOutputTokens,
       }),
