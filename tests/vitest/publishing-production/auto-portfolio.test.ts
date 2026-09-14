@@ -3,6 +3,7 @@ import type { BookJob } from "@/modules/publishing-factory/domain";
 import {
   autoPortfolioIdempotencyKey,
   ensureAutomaticPortfolioProduction,
+  runAutomaticWorkerCycle,
 } from "@/modules/publishing-production/auto-portfolio";
 
 function job(subjectCode: string): BookJob {
@@ -72,5 +73,30 @@ describe("autonomous portfolio production", () => {
     expect(first.jobs).toHaveLength(2);
     expect(second.idempotencyKey).toBe(first.idempotencyKey);
     expect(second.jobs).toHaveLength(1);
+  });
+
+  it("never re-plans the 642-book portfolio while normal queue work is claimable", async () => {
+    const runWorker = vi.fn(async () => ({ claimed: 4, yielded: 4, completed: 0, failed: 0 }));
+    const ensurePortfolio = vi.fn();
+    const result = await runAutomaticWorkerCycle({ runWorker, ensurePortfolio });
+    expect(result.claimed).toBe(4);
+    expect(runWorker).toHaveBeenCalledTimes(1);
+    expect(ensurePortfolio).not.toHaveBeenCalled();
+  });
+
+  it("bootstraps only on an idle queue and immediately gives four workers another claim opportunity", async () => {
+    const runWorker = vi
+      .fn()
+      .mockResolvedValueOnce({ claimed: 0, yielded: 0, completed: 0, failed: 0 })
+      .mockResolvedValueOnce({ claimed: 4, yielded: 4, completed: 0, failed: 0 });
+    const ensurePortfolio = vi.fn(async () => ({
+      targets: 1,
+      plannedBooks: 642,
+      runIds: ["171d9d52-b497-456f-8dbb-bc947a20865e"],
+    }));
+    const result = await runAutomaticWorkerCycle({ runWorker, ensurePortfolio });
+    expect(ensurePortfolio).toHaveBeenCalledTimes(1);
+    expect(runWorker).toHaveBeenCalledTimes(2);
+    expect(result.claimed).toBe(4);
   });
 });
