@@ -45,6 +45,14 @@ describe("generate-content Edge cost guardrails", () => {
     expect(providerCall).toBeGreaterThan(secretRead);
   });
 
+  it("retries transient worker-dispatch Vault reads while remaining fail-closed", () => {
+    expect(source).toContain("WORKER_SECRET_READ_ATTEMPTS");
+    expect(source).toContain("readPublishingWorkerSecret");
+    expect(source).toMatch(/for \(let attempt = 1; attempt <= WORKER_SECRET_READ_ATTEMPTS; attempt \+= 1\)/);
+    expect(source).toContain('error: "WORKER_AUTH_UNAVAILABLE"');
+    expect(source).not.toMatch(/internalRequest\s*=\s*true/);
+  });
+
   it("does not expose the provider API key in responses", () => {
     const successResponse = source.match(/return json\(200, \{[\s\S]*?\n  \}\);/)?.[0] ?? "";
     expect(successResponse).not.toContain("apiKey");
