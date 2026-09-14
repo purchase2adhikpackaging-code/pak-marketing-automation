@@ -8,15 +8,15 @@ describe("APP_NAVIGATION_GROUPS", () => {
       "Administration",
       "Roadmap",
     ]);
-    expect(APP_NAVIGATION_GROUPS[0].items.map((item) => item.href)).toEqual([
+    expect(APP_NAVIGATION_GROUPS.find((group) => group.label === "Operational")?.items.map((item) => item.href)).toEqual([
       "/dashboard",
       "/content-studio",
       "/scene-planning",
       "/media-library",
       "/knowledge-base",
     ]);
-    expect(APP_NAVIGATION_GROUPS[1].items.map((item) => item.href)).toEqual(["/settings"]);
-    expect(APP_NAVIGATION_GROUPS[2].items.map((item) => item.href)).toEqual([
+    expect(APP_NAVIGATION_GROUPS.find((group) => group.label === "Administration")?.items.map((item) => item.href)).toEqual(["/settings"]);
+    expect(APP_NAVIGATION_GROUPS.find((group) => group.label === "Roadmap")?.items.map((item) => item.href)).toEqual([
       "/approval-center",
       "/publishing",
       "/content-calendar",
