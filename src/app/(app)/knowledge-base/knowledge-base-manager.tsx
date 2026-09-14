@@ -5,7 +5,7 @@ import React, { useMemo, useState, useTransition } from "react";
 
 import { can } from "@/modules/auth/authorization";
 import type { AppRole } from "@/modules/auth/roles";
-import type { KnowledgeRecord, KnowledgeSourceType } from "@/modules/knowledge-base/types";
+import type { KnowledgeRecord } from "@/modules/knowledge-base/types";
 import {
   archiveKnowledgeAction,
   createKnowledgeAction,
@@ -25,7 +25,6 @@ export type KnowledgeOrganizationWorkspace = {
 type DraftForm = {
   title: string;
   content: string;
-  sourceType: KnowledgeSourceType;
   sourceLabel: string;
   sourceReference: string;
 };
@@ -33,7 +32,6 @@ type DraftForm = {
 const EMPTY_FORM: DraftForm = {
   title: "",
   content: "",
-  sourceType: "MANUAL",
   sourceLabel: "",
   sourceReference: "",
 };
@@ -107,7 +105,7 @@ export function KnowledgeBaseManager({ organizations }: { organizations: Knowled
         organizationId: organization.id,
         title: createForm.title,
         content: createForm.content,
-        sourceType: createForm.sourceType,
+        sourceType: "MANUAL",
         ...(createForm.sourceLabel.trim() ? { sourceLabel: createForm.sourceLabel.trim() } : {}),
         ...(createForm.sourceReference.trim() ? { sourceReference: createForm.sourceReference.trim() } : {}),
       });
@@ -120,7 +118,7 @@ export function KnowledgeBaseManager({ organizations }: { organizations: Knowled
         [organization.id]: [result.record, ...(current[organization.id] ?? [])],
       }));
       setCreateForm(EMPTY_FORM);
-      setSuccess("Knowledge record created as a draft.");
+      setSuccess("Draft created for review.");
     });
   }
 
@@ -131,7 +129,6 @@ export function KnowledgeBaseManager({ organizations }: { organizations: Knowled
     setEditForm({
       title: record.title,
       content: record.content,
-      sourceType: record.sourceType,
       sourceLabel: record.sourceLabel ?? "",
       sourceReference: record.sourceReference ?? "",
     });
@@ -147,7 +144,7 @@ export function KnowledgeBaseManager({ organizations }: { organizations: Knowled
         title: editForm.title,
         content: editForm.content,
         status: record.status,
-        sourceType: editForm.sourceType,
+        sourceType: record.sourceType,
         ...(editForm.sourceLabel.trim() ? { sourceLabel: editForm.sourceLabel.trim() } : {}),
         ...(editForm.sourceReference.trim() ? { sourceReference: editForm.sourceReference.trim() } : {}),
       });
@@ -287,6 +284,22 @@ export function KnowledgeBaseManager({ organizations }: { organizations: Knowled
       {success ? <div role="status" className="rounded-xl border border-emerald-900/60 bg-emerald-950/30 p-4 text-sm text-emerald-200">{success}</div> : null}
 
       {canManage ? (
+        <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-6">
+          <h3 className="text-lg font-semibold text-white">Add manually</h3>
+          <p className="mt-2 text-sm leading-6 text-slate-400">
+            Enter operator-authored knowledge directly. Manual entries are recorded as MANUAL sources and start in DRAFT.
+          </p>
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <label className="space-y-2 md:col-span-2"><span className="text-sm font-medium text-slate-200">Title</span><input aria-label="Title" value={createForm.title} onChange={(event) => setCreateForm((current) => ({ ...current, title: event.target.value }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" disabled={isPending} /></label>
+            <label className="space-y-2 md:col-span-2"><span className="text-sm font-medium text-slate-200">Content</span><textarea aria-label="Content" value={createForm.content} onChange={(event) => setCreateForm((current) => ({ ...current, content: event.target.value }))} rows={7} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" disabled={isPending} /></label>
+            <label className="space-y-2"><span className="text-sm font-medium text-slate-200">Source label</span><input aria-label="Source label" value={createForm.sourceLabel} onChange={(event) => setCreateForm((current) => ({ ...current, sourceLabel: event.target.value }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" disabled={isPending} /></label>
+            <label className="space-y-2"><span className="text-sm font-medium text-slate-200">Source reference</span><input aria-label="Source reference" value={createForm.sourceReference} onChange={(event) => setCreateForm((current) => ({ ...current, sourceReference: event.target.value }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" disabled={isPending} /></label>
+          </div>
+          <button type="button" onClick={createRecord} disabled={isPending || createForm.title.trim().length < 3 || createForm.content.trim().length === 0} className="mt-5 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-950 disabled:opacity-50">Create draft</button>
+        </section>
+      ) : null}
+
+      {canManage ? (
         <KnowledgeIngestionPanel
           key={organization.id}
           organizationId={organization.id}
@@ -295,16 +308,12 @@ export function KnowledgeBaseManager({ organizations }: { organizations: Knowled
       ) : null}
 
       {canManage ? (
-        <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-6">
-          <h3 className="text-lg font-semibold text-white">Add knowledge record</h3>
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
-            <label className="space-y-2 md:col-span-2"><span className="text-sm font-medium text-slate-200">Title</span><input aria-label="Title" value={createForm.title} onChange={(event) => setCreateForm((current) => ({ ...current, title: event.target.value }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" disabled={isPending} /></label>
-            <label className="space-y-2 md:col-span-2"><span className="text-sm font-medium text-slate-200">Content</span><textarea aria-label="Content" value={createForm.content} onChange={(event) => setCreateForm((current) => ({ ...current, content: event.target.value }))} rows={7} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" disabled={isPending} /></label>
-            <label className="space-y-2"><span className="text-sm font-medium text-slate-200">Source type</span><select aria-label="Source type" value={createForm.sourceType} onChange={(event) => setCreateForm((current) => ({ ...current, sourceType: event.target.value as KnowledgeSourceType }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" disabled={isPending}><option value="MANUAL">Manual</option><option value="DOCUMENT">Document</option><option value="URL">URL</option></select></label>
-            <label className="space-y-2"><span className="text-sm font-medium text-slate-200">Source label</span><input aria-label="Source label" value={createForm.sourceLabel} onChange={(event) => setCreateForm((current) => ({ ...current, sourceLabel: event.target.value }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" disabled={isPending} /></label>
-            <label className="space-y-2 md:col-span-2"><span className="text-sm font-medium text-slate-200">Source reference</span><input aria-label="Source reference" value={createForm.sourceReference} onChange={(event) => setCreateForm((current) => ({ ...current, sourceReference: event.target.value }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" disabled={isPending} /></label>
+        <section className="rounded-2xl border border-slate-800 bg-slate-950/40 p-5">
+          <h3 className="text-sm font-semibold text-white">Approval lifecycle</h3>
+          <div className="mt-3 grid gap-3 text-sm leading-6 text-slate-400 md:grid-cols-2">
+            <p><span className="font-semibold text-amber-200">DRAFT</span> records require human review before they can be used for generation.</p>
+            <p><span className="font-semibold text-emerald-200">ACTIVE</span> records are approved for generation.</p>
           </div>
-          <button type="button" onClick={createRecord} disabled={isPending || createForm.title.trim().length < 3 || createForm.content.trim().length === 0} className="mt-5 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-950 disabled:opacity-50">Create draft</button>
         </section>
       ) : null}
 
@@ -326,7 +335,12 @@ export function KnowledgeBaseManager({ organizations }: { organizations: Knowled
                   <h4 className="text-base font-semibold text-white">{record.title}</h4>
                   <div className="mt-2 flex flex-wrap gap-2 text-xs text-slate-400">
                     <span>{record.status}</span>
-                    {record.isCore ? <span className="font-semibold text-amber-200">Core Knowledge</span> : null}
+                    {record.isCore ? (
+                      <>
+                        <span className="font-semibold text-amber-200">Core Knowledge</span>
+                        <span className="text-amber-200/80">Automatically grounded in generation.</span>
+                      </>
+                    ) : null}
                     <span>Revision {record.revision}</span>
                     <span>Updated {formatUpdated(record.updatedAt)}</span>
                   </div>
@@ -357,7 +371,7 @@ export function KnowledgeBaseManager({ organizations }: { organizations: Knowled
 
               {confirmingDelete ? <div className="mt-4 rounded-xl border border-red-900/60 bg-red-950/20 p-4"><p className="text-sm text-red-100">Delete this Knowledge Base record permanently?</p><div className="mt-3 flex flex-wrap gap-2"><button type="button" aria-label={`Confirm delete ${record.title}`} onClick={() => removeRecord(record)} disabled={isPending} className="rounded-lg bg-red-100 px-3 py-2 text-xs font-semibold text-red-950">Confirm delete</button><button type="button" onClick={() => setConfirmDeleteId(null)} disabled={isPending} className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200">Cancel</button></div></div> : null}
 
-              {editing ? <div className="mt-5 space-y-4 border-t border-slate-800 pt-5"><label className="block space-y-2"><span className="text-sm text-slate-300">Edit title</span><input aria-label="Edit title" value={editForm.title} onChange={(event) => setEditForm((current) => ({ ...current, title: event.target.value }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" /></label><label className="block space-y-2"><span className="text-sm text-slate-300">Edit content</span><textarea aria-label="Edit content" value={editForm.content} onChange={(event) => setEditForm((current) => ({ ...current, content: event.target.value }))} rows={6} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" /></label><div className="grid gap-4 md:grid-cols-2"><label className="space-y-2"><span className="text-sm text-slate-300">Edit source type</span><select aria-label="Edit source type" value={editForm.sourceType} onChange={(event) => setEditForm((current) => ({ ...current, sourceType: event.target.value as KnowledgeSourceType }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white"><option value="MANUAL">Manual</option><option value="DOCUMENT">Document</option><option value="URL">URL</option></select></label><label className="space-y-2"><span className="text-sm text-slate-300">Edit source label</span><input aria-label="Edit source label" value={editForm.sourceLabel} onChange={(event) => setEditForm((current) => ({ ...current, sourceLabel: event.target.value }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" /></label><label className="space-y-2 md:col-span-2"><span className="text-sm text-slate-300">Edit source reference</span><input aria-label="Edit source reference" value={editForm.sourceReference} onChange={(event) => setEditForm((current) => ({ ...current, sourceReference: event.target.value }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" /></label></div><div className="flex flex-wrap gap-2"><button type="button" aria-label={`Save ${record.title}`} onClick={() => saveEdit(record)} disabled={isPending || editForm.title.trim().length < 3 || editForm.content.trim().length === 0} className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-950">Save</button><button type="button" onClick={() => setEditingId(null)} className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200">Cancel</button></div></div> : <p className="mt-5 whitespace-pre-wrap text-sm leading-7 text-slate-300">{record.content}</p>}
+              {editing ? <div className="mt-5 space-y-4 border-t border-slate-800 pt-5"><label className="block space-y-2"><span className="text-sm text-slate-300">Edit title</span><input aria-label="Edit title" value={editForm.title} onChange={(event) => setEditForm((current) => ({ ...current, title: event.target.value }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" /></label><label className="block space-y-2"><span className="text-sm text-slate-300">Edit content</span><textarea aria-label="Edit content" value={editForm.content} onChange={(event) => setEditForm((current) => ({ ...current, content: event.target.value }))} rows={6} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" /></label><div className="grid gap-4 md:grid-cols-2"><div className="rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2.5 text-sm text-slate-300">Source type: {record.sourceType}</div><label className="space-y-2"><span className="text-sm text-slate-300">Edit source label</span><input aria-label="Edit source label" value={editForm.sourceLabel} onChange={(event) => setEditForm((current) => ({ ...current, sourceLabel: event.target.value }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" /></label><label className="space-y-2 md:col-span-2"><span className="text-sm text-slate-300">Edit source reference</span><input aria-label="Edit source reference" value={editForm.sourceReference} onChange={(event) => setEditForm((current) => ({ ...current, sourceReference: event.target.value }))} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white" /></label></div><div className="flex flex-wrap gap-2"><button type="button" aria-label={`Save ${record.title}`} onClick={() => saveEdit(record)} disabled={isPending || editForm.title.trim().length < 3 || editForm.content.trim().length === 0} className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-slate-950">Save</button><button type="button" onClick={() => setEditingId(null)} className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-200">Cancel</button></div></div> : <p className="mt-5 whitespace-pre-wrap text-sm leading-7 text-slate-300">{record.content}</p>}
             </article>
           );
         })}
