@@ -104,6 +104,23 @@ describe("ScenePlanningWorkspace", () => {
     expect(screen.getByRole("button", { name: "Save Scene 1 changes" })).toBeTruthy();
   });
 
+  it("frames the existing workflow as Source & plan, Quality & approval, and Generate stages", () => {
+    render(<ScenePlanningWorkspace {...props()} />);
+    const stageHeadings = screen
+      .getAllByRole("heading")
+      .map((heading) => heading.textContent)
+      .filter((heading) => /^\d\./.test(heading ?? ""));
+
+    expect(stageHeadings).toEqual([
+      "1. Source & plan",
+      "2. Quality & approval",
+      "3. Generate",
+    ]);
+    expect(screen.getByText(
+      "Brand Kit provides official institutional identity; Visual Bible controls project-specific creative direction.",
+    )).toBeTruthy();
+  });
+
   it("saves the brief and Visual Bible through server actions", async () => {
     vi.mocked(saveScenePlanningBriefAction).mockResolvedValue({ ok: true });
     vi.mocked(saveVisualBibleAction).mockResolvedValue({ ok: true });
