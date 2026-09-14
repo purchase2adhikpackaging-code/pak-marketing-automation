@@ -27,7 +27,8 @@ function isServerlessRuntime(): boolean {
   return Boolean(
     process.env.VERCEL ||
     process.env.VERCEL_REGION ||
-    process.env.AWS_LAMBDA_FUNCTION_NAME,
+    process.env.AWS_LAMBDA_FUNCTION_NAME ||
+    process.env.NODE_ENV === "production",
   );
 }
 
