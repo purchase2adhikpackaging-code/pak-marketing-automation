@@ -30,11 +30,17 @@ test("implemented operational surfaces expose authoritative context and knowledg
   await expect(page.getByRole("heading", { name: "Ingest document or URL" })).toBeVisible();
 });
 
-test("roadmap surfaces remain truthful readiness pages", async ({ page }) => {
+test("roadmap surfaces remain truthful readiness pages without fake domain controls", async ({ page }) => {
   await page.goto("/analytics");
 
-  const main = page.locator("main");
+  let main = page.locator("main");
   await expect(main.getByLabel("Readiness: Planned")).toBeVisible();
+  await expect(main.getByRole("heading", { name: "Current availability" })).toBeVisible();
+  await expect(main.getByRole("button")).toHaveCount(0);
+
+  await page.goto("/manual-generation");
+  main = page.locator("main");
+  await expect(main.getByLabel("Readiness: Foundation only")).toBeVisible();
   await expect(main.getByRole("heading", { name: "Current availability" })).toBeVisible();
   await expect(main.getByRole("button")).toHaveCount(0);
 });
