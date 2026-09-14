@@ -1,6 +1,6 @@
 import { after } from "next/server";
 import { handlePublishingWorkerRequest } from "@/modules/publishing-production/node-worker-route";
-import { runConfiguredPublishingWorker } from "@/modules/publishing-production/node-worker-runtime";
+import { runConfiguredAutomaticPublishingWorker } from "@/modules/publishing-production/auto-worker-runtime";
 import { createPublishingWorkerBrokerClient } from "@/modules/publishing-production/worker-broker-client";
 
 export const runtime = "nodejs";
@@ -11,7 +11,7 @@ async function handle(request: Request): Promise<Response> {
     async authorize(credential) {
       return createPublishingWorkerBrokerClient({ credential }).authorize();
     },
-    run: ({ workerId, concurrency, credential }) => runConfiguredPublishingWorker({
+    run: ({ workerId, concurrency, credential }) => runConfiguredAutomaticPublishingWorker({
       workerId,
       credential,
       ...(concurrency !== undefined ? { concurrency } : {}),
