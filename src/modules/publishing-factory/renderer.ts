@@ -23,8 +23,16 @@ function assertInsideRoot(root: string, path: string): void {
   }
 }
 
+function isServerlessRuntime(): boolean {
+  return Boolean(
+    process.env.VERCEL ||
+    process.env.VERCEL_REGION ||
+    process.env.AWS_LAMBDA_FUNCTION_NAME,
+  );
+}
+
 async function launchBrowser() {
-  if (process.env.VERCEL) {
+  if (isServerlessRuntime()) {
     return chromium.launch({
       args: serverlessChromium.args,
       executablePath: await serverlessChromium.executablePath(),
