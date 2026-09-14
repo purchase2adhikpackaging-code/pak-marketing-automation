@@ -24,6 +24,12 @@ function job(subjectCode: string): BookJob {
   };
 }
 
+type BootstrapInput = {
+  organizationId: string;
+  idempotencyKey: string;
+  jobs: Record<string, unknown>[];
+};
+
 describe("autonomous portfolio production", () => {
   it("does nothing when the broker exposes no pilot-approved automation target", async () => {
     const planJobs = vi.fn();
@@ -50,7 +56,9 @@ describe("autonomous portfolio production", () => {
       job: book,
       curriculumText: `CURRICULUM ${book.subjectCode}`,
     }));
-    const bootstrapPortfolio = vi.fn(async () => ({ runId: "171d9d52-b497-456f-8dbb-bc947a20865e" }));
+    const bootstrapPortfolio = vi.fn(async (_input: BootstrapInput) => ({
+      runId: "171d9d52-b497-456f-8dbb-bc947a20865e",
+    }));
 
     const result = await ensureAutomaticPortfolioProduction({
       listAutomationTargets: async () => [{
