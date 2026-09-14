@@ -32,7 +32,7 @@ function isServerlessRuntime(): boolean {
   );
 }
 
-async function launchBrowser() {
+export async function launchPublicationBrowser() {
   if (isServerlessRuntime()) {
     return chromium.launch({
       args: serverlessChromium.args,
@@ -44,7 +44,7 @@ async function launchBrowser() {
 }
 
 export async function verifyPublicationBrowserRuntime(): Promise<void> {
-  const browser = await launchBrowser();
+  const browser = await launchPublicationBrowser();
   await browser.close();
 }
 
@@ -65,7 +65,7 @@ export async function renderPublication(
 
   await writeFile(htmlPath, input.html, "utf8");
 
-  const browser = await launchBrowser();
+  const browser = await launchPublicationBrowser();
   try {
     const page = await browser.newPage({ viewport: { width: 794, height: 1123 } });
     await page.setContent(input.html, { waitUntil: "load" });
