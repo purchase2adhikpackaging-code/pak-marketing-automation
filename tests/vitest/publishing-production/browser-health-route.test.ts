@@ -26,6 +26,6 @@ describe("publishing browser health route", () => {
   });
 
   it("reuses the renderer browser launcher and closes the browser immediately", () => {
-    expect(rendererSource).toMatch(/verifyPublicationBrowserRuntime[\s\S]*launchBrowser\(\)[\s\S]*browser\.close\(\)/);
+    expect(rendererSource).toMatch(/verifyPublicationBrowserRuntime[\s\S]*launchPublicationBrowser\(\)[\s\S]*browser\.close\(\)/);
   });
 });
