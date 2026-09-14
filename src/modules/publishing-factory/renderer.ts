@@ -43,6 +43,11 @@ async function launchBrowser() {
   return chromium.launch({ headless: true });
 }
 
+export async function verifyPublicationBrowserRuntime(): Promise<void> {
+  const browser = await launchBrowser();
+  await browser.close();
+}
+
 export async function renderPublication(
   input: RenderPublicationInput,
 ): Promise<RenderPublicationResult> {
