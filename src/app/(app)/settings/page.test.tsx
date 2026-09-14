@@ -138,8 +138,8 @@ describe("SettingsPage", () => {
     expect(within(pakTraining).getAllByText("Not configured")).toHaveLength(3);
     expect(within(pakTraining).getByText("Configured · Revision 2")).toBeTruthy();
 
-    expect(screen.getByRole("link", { name: /Organization Profile/i })).toHaveAttribute("href", "/settings/organization-profile");
-    expect(screen.getByRole("link", { name: /Brand Kit/i })).toHaveAttribute("href", "/settings/brand-kit");
+    expect(screen.getByRole("link", { name: /Organization Profile/i }).getAttribute("href")).toBe("/settings/organization-profile");
+    expect(screen.getByRole("link", { name: /Brand Kit/i }).getAttribute("href")).toBe("/settings/brand-kit");
     expect(screen.getByTestId("integrations-manager").textContent).toContain("2 organizations");
     expect(document.body.textContent).not.toContain("must-not-render-created-by");
     expect(document.body.textContent).not.toContain("must-not-render-updated-by");
