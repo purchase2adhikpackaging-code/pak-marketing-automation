@@ -1,8 +1,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 
 type RequestBody = {
   organizationId?: string;
+  productionJobId?: string;
   model?: string;
   instructions?: string;
   input?: string;
@@ -13,12 +14,97 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-
 const ALLOWED_MODELS = new Set(["gpt-5.6-luna", "gpt-5.6-terra"]);
 const MAX_INSTRUCTIONS_CHARS = 12_000;
 const MAX_INPUT_CHARS = 60_000;
-const MAX_OUTPUT_TOKENS = 4_000;
+const INTERACTIVE_MAX_OUTPUT_TOKENS = 4_000;
+const PUBLISHING_MAX_OUTPUT_TOKENS = 12_000;
 const RATE_LIMIT_WINDOW_SECONDS = 600;
-const RATE_LIMIT_REQUESTS = 20;
+const INTERACTIVE_RATE_LIMIT_REQUESTS = 20;
+const PUBLISHING_RATE_LIMIT_REQUESTS = 120;
+const WORKER_SECRET_READ_ATTEMPTS = 3;
+const WORKER_SECRET_RETRY_DELAY_MS = 75;
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
+}
+
+function sleep(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+async function readPublishingWorkerSecret(admin: SupabaseClient): Promise<string | null> {
+  for (let attempt = 1; attempt <= WORKER_SECRET_READ_ATTEMPTS; attempt += 1) {
+    const { data, error } = await admin.rpc("read_publishing_worker_dispatch_secret");
+    if (!error && typeof data === "string" && data.trim()) return data.trim();
+    if (attempt < WORKER_SECRET_READ_ATTEMPTS) {
+      await sleep(WORKER_SECRET_RETRY_DELAY_MS * attempt);
+    }
+  }
+  return null;
+}
+
+function publishingJsonContract(instructions: string): string {
+  if (instructions.includes("Artifact: blueprint.")) {
+    return [
+      "BLUEPRINT JSON CONTRACT",
+      "Return one JSON object with exactly these top-level keys:",
+      "bookId, programmeCode, subjectCode, subjectTitle, level, purpose, prerequisites, knowledgePackIds, chapters.",
+      "Do not rename, omit, nest, or wrap these keys. Do not return a blueprint, book, metadata, result, or data wrapper.",
+      "Use the exact bookId, programmeCode, subjectCode, subjectTitle and level stated in the instructions above.",
+      "purpose must be a non-empty string.",
+      "prerequisites must be a string[] and may be empty.",
+      "knowledgePackIds must be a non-empty string[] using only Selected knowledge pack IDs listed above.",
+      "chapters must be a non-empty array with contiguous positive integer numbers beginning at 1.",
+      "Every chapter object must contain exactly these required keys:",
+      "id, number, title, purpose, learningOutcomes, requiredKnowledgePackIds, requiredVisualIds, workedExampleRequirements, practicalRequirements, assessmentRequirements, safetyCritical, referenceSourceIds.",
+      "Chapter types: id:string; number:positive integer; title:string; purpose:string; learningOutcomes:non-empty string[]; requiredKnowledgePackIds:string[]; requiredVisualIds:string[]; workedExampleRequirements:string[]; practicalRequirements:string[]; assessmentRequirements:non-empty string[]; safetyCritical:boolean; referenceSourceIds:string[].",
+      "Each requiredKnowledgePackIds item must also exist in top-level knowledgePackIds.",
+      "Each referenceSourceIds item must be one of the Allowed source IDs listed above. A safetyCritical chapter must have at least one referenceSourceIds item.",
+      "Return strict JSON only, with no markdown or prose outside the object.",
+    ].join("\n");
+  }
+
+  if (instructions.includes("Artifact: chapter.")) {
+    return [
+      "CHAPTER MANUSCRIPT JSON CONTRACT",
+      "Return one JSON object with exactly these top-level keys:",
+      "chapterId, number, title, purpose, learningOutcomes, keyTerms, sections, workedExamples, practicalActivities, safetyNotes, knowledgeChecks, summary, reviewQuestions, sourceIds.",
+      "Do not rename, omit, nest, or wrap these keys. Do not return a chapter, manuscript, result, data, or metadata wrapper.",
+      "chapterId:string; number:positive integer; title:string; purpose:string; learningOutcomes:non-empty string[].",
+      "keyTerms must be a non-empty array of {term:string, explanation:string}.",
+      "sections must be a non-empty array of {heading:string, paragraphs:non-empty string[]}.",
+      "workedExamples must be an array of {title:string, problem:string, solutionSteps:non-empty string[], conclusion:string}.",
+      "practicalActivities must be an array of {title:string, objective:string, safety:string[], tasks:non-empty string[], records:non-empty string[]}.",
+      "safetyNotes:string[]; knowledgeChecks:non-empty string[]; summary:non-empty string[]; reviewQuestions:non-empty string[]; sourceIds:non-empty string[].",
+      "Use only Allowed source IDs listed above in sourceIds.",
+      "Match the chapter blueprint identity, number, title and required learning outcomes exactly.",
+      "Return strict JSON only, with no markdown or prose outside the object.",
+    ].join("\n");
+  }
+
+  return "";
+}
+
+async function auditInternalGeneration(
+  admin: SupabaseClient,
+  organizationId: string,
+  productionJobId: string | undefined,
+  stage: string,
+  metadata: Record<string, unknown> = {},
+): Promise<void> {
+  try {
+    await admin.from("integration_audit_events").insert({
+      organization_id: organizationId,
+      connection_id: null,
+      actor_user_id: null,
+      event_type: "PUBLISHING_GENERATION_DIAGNOSTIC",
+      metadata: {
+        stage,
+        productionJobId: productionJobId ?? null,
+        ...metadata,
+      },
+    });
+  } catch {
+    // Diagnostics must never change generation behavior.
+  }
 }
 
 function extractOutputText(payload: Record<string, unknown>): string | null {
@@ -44,16 +130,9 @@ Deno.serve(async (req: Request) => {
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!supabaseUrl || !serviceRoleKey) return json(500, { error: "SERVER_MISCONFIGURED" });
 
-  const authorization = req.headers.get("authorization") ?? "";
-  const token = authorization.toLowerCase().startsWith("bearer ") ? authorization.slice(7).trim() : "";
-  if (!token) return json(401, { error: "UNAUTHORIZED" });
-
   const admin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { data: userData, error: userError } = await admin.auth.getUser(token);
-  const user = userData.user;
-  if (userError || !user) return json(401, { error: "UNAUTHORIZED" });
 
   let body: RequestBody;
   try {
@@ -67,22 +146,106 @@ Deno.serve(async (req: Request) => {
     !UUID_RE.test(body.organizationId) ||
     typeof body.instructions !== "string" ||
     !body.instructions.trim() ||
-    body.instructions.length > MAX_INSTRUCTIONS_CHARS ||
     typeof body.input !== "string" ||
-    !body.input.trim() ||
-    body.input.length > MAX_INPUT_CHARS
+    !body.input.trim()
   ) {
     return json(400, { error: "INVALID_REQUEST" });
+  }
+
+  const internalHeader = req.headers.get("x-publishing-worker-secret") ?? "";
+  let internalRequest = false;
+  let actorUserId: string | null = null;
+
+  if (internalHeader) {
+    const publishingWorkerSecret = await readPublishingWorkerSecret(admin);
+    if (!publishingWorkerSecret) return json(503, { error: "WORKER_AUTH_UNAVAILABLE" });
+    if (internalHeader !== publishingWorkerSecret) return json(401, { error: "UNAUTHORIZED" });
+    internalRequest = true;
+    await auditInternalGeneration(admin, body.organizationId, body.productionJobId, "AUTH_OK", {
+      instructionChars: body.instructions.length,
+      inputChars: body.input.length,
+    });
+  } else {
+    const authorization = req.headers.get("authorization") ?? "";
+    const token = authorization.toLowerCase().startsWith("bearer ") ? authorization.slice(7).trim() : "";
+    if (!token) return json(401, { error: "UNAUTHORIZED" });
+
+    const { data: userData, error: userError } = await admin.auth.getUser(token);
+    const user = userData.user;
+    if (userError || !user) return json(401, { error: "UNAUTHORIZED" });
+    actorUserId = user.id;
+  }
+
+  if (
+    body.instructions.length > MAX_INSTRUCTIONS_CHARS ||
+    body.input.length > MAX_INPUT_CHARS
+  ) {
+    if (internalRequest) {
+      await auditInternalGeneration(admin, body.organizationId, body.productionJobId, "REQUEST_TOO_LARGE", {
+        instructionChars: body.instructions.length,
+        inputChars: body.input.length,
+      });
+    }
+    return json(400, { error: "INVALID_REQUEST" });
+  }
+
+  if (internalRequest) {
+    if (!body.productionJobId || !UUID_RE.test(body.productionJobId)) {
+      await auditInternalGeneration(admin, body.organizationId, body.productionJobId, "INVALID_PRODUCTION_JOB");
+      return json(400, { error: "INVALID_PRODUCTION_JOB" });
+    }
+
+    const { data: job, error: jobError } = await admin
+      .from("publishing_production_jobs")
+      .select("id,organization_id,production_run_id,status")
+      .eq("id", body.productionJobId)
+      .eq("organization_id", body.organizationId)
+      .maybeSingle();
+    if (jobError) {
+      await auditInternalGeneration(admin, body.organizationId, body.productionJobId, "PRODUCTION_JOB_UNAVAILABLE");
+      return json(500, { error: "PRODUCTION_JOB_UNAVAILABLE" });
+    }
+    if (!job || job.status !== "RUNNING") {
+      await auditInternalGeneration(admin, body.organizationId, body.productionJobId, "PRODUCTION_JOB_NOT_RUNNING", {
+        jobStatus: job?.status ?? null,
+      });
+      return json(409, { error: "PRODUCTION_JOB_NOT_RUNNING" });
+    }
+
+    const { data: run, error: runError } = await admin
+      .from("publishing_production_runs")
+      .select("created_by,status,organization_id")
+      .eq("id", job.production_run_id)
+      .eq("organization_id", body.organizationId)
+      .maybeSingle();
+    if (runError) {
+      await auditInternalGeneration(admin, body.organizationId, body.productionJobId, "PRODUCTION_RUN_UNAVAILABLE");
+      return json(500, { error: "PRODUCTION_RUN_UNAVAILABLE" });
+    }
+    if (!run || !["QUEUED", "RUNNING"].includes(String(run.status))) {
+      await auditInternalGeneration(admin, body.organizationId, body.productionJobId, "PRODUCTION_RUN_INACTIVE", {
+        runStatus: run?.status ?? null,
+      });
+      return json(409, { error: "PRODUCTION_RUN_INACTIVE" });
+    }
+    actorUserId = String(run.created_by);
+    await auditInternalGeneration(admin, body.organizationId, body.productionJobId, "JOB_OK");
   }
 
   const { data: membership, error: membershipError } = await admin
     .from("organization_memberships")
     .select("role")
     .eq("organization_id", body.organizationId)
-    .eq("user_id", user.id)
+    .eq("user_id", actorUserId)
     .maybeSingle();
-  if (membershipError) return json(500, { error: "AUTHORIZATION_UNAVAILABLE" });
-  if (!membership || !["OWNER", "ADMIN", "EDITOR"].includes(String(membership.role))) return json(403, { error: "FORBIDDEN" });
+  if (membershipError) {
+    if (internalRequest) await auditInternalGeneration(admin, body.organizationId, body.productionJobId, "AUTHORIZATION_UNAVAILABLE");
+    return json(500, { error: "AUTHORIZATION_UNAVAILABLE" });
+  }
+  if (!membership || !["OWNER", "ADMIN", "EDITOR"].includes(String(membership.role))) {
+    if (internalRequest) await auditInternalGeneration(admin, body.organizationId, body.productionJobId, "FORBIDDEN");
+    return json(403, { error: "FORBIDDEN" });
+  }
 
   const { data: connection, error: connectionError } = await admin
     .from("integration_connections")
@@ -90,8 +253,14 @@ Deno.serve(async (req: Request) => {
     .eq("organization_id", body.organizationId)
     .eq("provider", "OPENAI")
     .maybeSingle();
-  if (connectionError) return json(500, { error: "INTEGRATION_UNAVAILABLE" });
-  if (!connection || connection.status === "NOT_CONFIGURED") return json(409, { error: "OPENAI_NOT_CONFIGURED" });
+  if (connectionError) {
+    if (internalRequest) await auditInternalGeneration(admin, body.organizationId, body.productionJobId, "INTEGRATION_UNAVAILABLE");
+    return json(500, { error: "INTEGRATION_UNAVAILABLE" });
+  }
+  if (!connection || connection.status === "NOT_CONFIGURED") {
+    if (internalRequest) await auditInternalGeneration(admin, body.organizationId, body.productionJobId, "OPENAI_NOT_CONFIGURED");
+    return json(409, { error: "OPENAI_NOT_CONFIGURED" });
+  }
   if (connection.status === "DISABLED") return json(409, { error: "OPENAI_DISABLED" });
   if (connection.status === "INVALID") return json(409, { error: "OPENAI_INVALID" });
 
@@ -99,24 +268,45 @@ Deno.serve(async (req: Request) => {
   const configuredModel = typeof config.defaultModel === "string" && config.defaultModel.trim() ? config.defaultModel.trim() : null;
   const requestedModel = typeof body.model === "string" && body.model.trim() ? body.model.trim() : null;
   const model = requestedModel ?? configuredModel ?? "gpt-5.6-luna";
-  if (!ALLOWED_MODELS.has(model)) return json(400, { error: "MODEL_NOT_ALLOWED" });
+  if (!ALLOWED_MODELS.has(model)) {
+    if (internalRequest) await auditInternalGeneration(admin, body.organizationId, body.productionJobId, "MODEL_NOT_ALLOWED", { model });
+    return json(400, { error: "MODEL_NOT_ALLOWED" });
+  }
 
+  if (internalRequest) await auditInternalGeneration(admin, body.organizationId, body.productionJobId, "PRE_QUOTA", { model });
+  const requestLimit = internalRequest ? PUBLISHING_RATE_LIMIT_REQUESTS : INTERACTIVE_RATE_LIMIT_REQUESTS;
   const { data: quotaAllowed, error: quotaError } = await admin.rpc("consume_generation_quota", {
     _organization_id: body.organizationId,
-    _actor_user_id: user.id,
+    _actor_user_id: actorUserId,
     _window_seconds: RATE_LIMIT_WINDOW_SECONDS,
-    _request_limit: RATE_LIMIT_REQUESTS,
+    _request_limit: requestLimit,
   });
-  if (quotaError) return json(500, { error: "QUOTA_UNAVAILABLE" });
-  if (quotaAllowed !== true) return json(429, { error: "GENERATION_RATE_LIMITED" });
+  if (quotaError) {
+    if (internalRequest) await auditInternalGeneration(admin, body.organizationId, body.productionJobId, "QUOTA_UNAVAILABLE");
+    return json(500, { error: "QUOTA_UNAVAILABLE" });
+  }
+  if (quotaAllowed !== true) {
+    if (internalRequest) await auditInternalGeneration(admin, body.organizationId, body.productionJobId, "GENERATION_RATE_LIMITED");
+    return json(429, { error: "GENERATION_RATE_LIMITED" });
+  }
+  if (internalRequest) await auditInternalGeneration(admin, body.organizationId, body.productionJobId, "QUOTA_OK");
 
   const { data: apiKey, error: secretError } = await admin.rpc("read_integration_vault_secret", {
     _organization_id: body.organizationId,
     _provider: "OPENAI",
     _secret_name: "API_KEY",
   });
-  if (secretError || typeof apiKey !== "string" || !apiKey) return json(409, { error: "OPENAI_NOT_CONFIGURED" });
+  if (secretError || typeof apiKey !== "string" || !apiKey) {
+    if (internalRequest) await auditInternalGeneration(admin, body.organizationId, body.productionJobId, "OPENAI_VAULT_UNAVAILABLE");
+    return json(409, { error: "OPENAI_NOT_CONFIGURED" });
+  }
+  if (internalRequest) await auditInternalGeneration(admin, body.organizationId, body.productionJobId, "OPENAI_VAULT_OK");
 
+  const maxOutputTokens = internalRequest ? PUBLISHING_MAX_OUTPUT_TOKENS : INTERACTIVE_MAX_OUTPUT_TOKENS;
+  const contract = internalRequest ? publishingJsonContract(body.instructions) : "";
+  const providerInstructions = internalRequest
+    ? [body.instructions, contract].filter(Boolean).join("\n\n")
+    : body.instructions;
   let providerResponse: Response;
   try {
     providerResponse = await fetch("https://api.openai.com/v1/responses", {
@@ -127,16 +317,22 @@ Deno.serve(async (req: Request) => {
       },
       body: JSON.stringify({
         model,
-        instructions: body.instructions,
+        instructions: providerInstructions,
         input: body.input,
-        max_output_tokens: MAX_OUTPUT_TOKENS,
+        max_output_tokens: maxOutputTokens,
       }),
     });
   } catch {
+    if (internalRequest) await auditInternalGeneration(admin, body.organizationId, body.productionJobId, "PROVIDER_UNAVAILABLE");
     return json(502, { error: "PROVIDER_UNAVAILABLE" });
   }
 
   if (!providerResponse.ok) {
+    if (internalRequest) {
+      await auditInternalGeneration(admin, body.organizationId, body.productionJobId, "PROVIDER_HTTP_ERROR", {
+        providerStatus: providerResponse.status,
+      });
+    }
     if (providerResponse.status === 401 || providerResponse.status === 403) return json(502, { error: "AUTH_INVALID" });
     if (providerResponse.status === 429) return json(502, { error: "RATE_LIMITED" });
     return json(502, { error: "PROVIDER_ERROR" });
@@ -146,12 +342,21 @@ Deno.serve(async (req: Request) => {
   try {
     payload = await providerResponse.json();
   } catch {
+    if (internalRequest) await auditInternalGeneration(admin, body.organizationId, body.productionJobId, "PROVIDER_RESPONSE_INVALID");
     return json(502, { error: "PROVIDER_RESPONSE_INVALID" });
   }
 
   const outputText = extractOutputText(payload);
-  if (!outputText) return json(502, { error: "EMPTY_PROVIDER_OUTPUT" });
+  if (!outputText) {
+    if (internalRequest) await auditInternalGeneration(admin, body.organizationId, body.productionJobId, "EMPTY_PROVIDER_OUTPUT");
+    return json(502, { error: "EMPTY_PROVIDER_OUTPUT" });
+  }
 
+  if (internalRequest) {
+    await auditInternalGeneration(admin, body.organizationId, body.productionJobId, "PROVIDER_OK", {
+      model: typeof payload.model === "string" ? payload.model : model,
+    });
+  }
   return json(200, {
     output_text: outputText,
     model: typeof payload.model === "string" ? payload.model : model,

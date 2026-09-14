@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { chromium } from "@playwright/test";
+import serverlessChromium from "@sparticuz/chromium";
+import { chromium } from "playwright-core";
 
 export interface RenderPublicationInput {
   bookId: string;
@@ -22,6 +23,31 @@ function assertInsideRoot(root: string, path: string): void {
   }
 }
 
+function isServerlessRuntime(): boolean {
+  return Boolean(
+    process.env.VERCEL ||
+    process.env.VERCEL_REGION ||
+    process.env.AWS_LAMBDA_FUNCTION_NAME ||
+    process.env.NODE_ENV === "production",
+  );
+}
+
+export async function launchPublicationBrowser() {
+  if (isServerlessRuntime()) {
+    return chromium.launch({
+      args: serverlessChromium.args,
+      executablePath: await serverlessChromium.executablePath(),
+      headless: true,
+    });
+  }
+  return chromium.launch({ headless: true });
+}
+
+export async function verifyPublicationBrowserRuntime(): Promise<void> {
+  const browser = await launchPublicationBrowser();
+  await browser.close();
+}
+
 export async function renderPublication(
   input: RenderPublicationInput,
 ): Promise<RenderPublicationResult> {
@@ -39,7 +65,7 @@ export async function renderPublication(
 
   await writeFile(htmlPath, input.html, "utf8");
 
-  const browser = await chromium.launch({ headless: true });
+  const browser = await launchPublicationBrowser();
   try {
     const page = await browser.newPage({ viewport: { width: 794, height: 1123 } });
     await page.setContent(input.html, { waitUntil: "load" });

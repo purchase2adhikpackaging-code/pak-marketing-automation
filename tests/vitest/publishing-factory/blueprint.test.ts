@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   BookBlueprintSchema,
@@ -114,5 +116,35 @@ describe("book blueprint contract", () => {
     expect(validateBookBlueprintForJob(job, parsed).join("\n")).toMatch(
       /not selected/i,
     );
+  });
+
+  it("requires the provider prompt to spell out the exact blueprint JSON schema", () => {
+    const writer = readFileSync(
+      join(process.cwd(), "src/modules/publishing-factory/manuscript-writer.ts"),
+      "utf8",
+    );
+    expect(writer).toContain("BLUEPRINT JSON CONTRACT");
+    for (const field of [
+      "bookId",
+      "programmeCode",
+      "subjectCode",
+      "subjectTitle",
+      "level",
+      "purpose",
+      "prerequisites",
+      "knowledgePackIds",
+      "chapters",
+      "learningOutcomes",
+      "requiredKnowledgePackIds",
+      "requiredVisualIds",
+      "workedExampleRequirements",
+      "practicalRequirements",
+      "assessmentRequirements",
+      "safetyCritical",
+      "referenceSourceIds",
+    ]) {
+      expect(writer).toContain(field);
+    }
+    expect(writer).toContain("Do not rename, omit, nest, or wrap these keys");
   });
 });

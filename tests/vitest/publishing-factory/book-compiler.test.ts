@@ -100,6 +100,7 @@ async function roots(prefix: string) {
 async function compile(provider: TextGenerationProvider, overrides: Partial<{
   checkpointStore: FileCheckpointStore;
   artifactRoot: string;
+  maxNewChapters: number;
 }> = {}): Promise<CompileBookResult> {
   const defaults = await roots("pak-book-compiler-");
   return compileBook({
@@ -110,6 +111,7 @@ async function compile(provider: TextGenerationProvider, overrides: Partial<{
     registry: await loadKnowledgeRegistry(process.cwd()),
     checkpointStore: overrides.checkpointStore ?? defaults.checkpointStore,
     artifactRoot: overrides.artifactRoot ?? defaults.artifactRoot,
+    ...(overrides.maxNewChapters ? { maxNewChapters: overrides.maxNewChapters } : {}),
   });
 }
 
@@ -150,6 +152,26 @@ describe("end-to-end governed book compiler", () => {
     expect(
       provider.requests.filter((request) => request.idempotencyKey.endsWith(":D01-102-CH02")),
     ).toHaveLength(1);
+  });
+
+  it("bounds new chapter work and resumes the next invocation", async () => {
+    const shared = await roots("pak-book-bounded-");
+    const firstProvider = new FixtureBookProvider();
+    const first = await compile(firstProvider, { ...shared, maxNewChapters: 1 });
+
+    expect(first.incomplete).toBe(true);
+    expect(first.generatedChapterIds).toEqual(["D01-102-CH01"]);
+    expect(first.nextChapterId).toBe("D01-102-CH02");
+    expect(first.report).toBeUndefined();
+    expect(first.render).toBeUndefined();
+
+    const secondProvider = new FixtureBookProvider();
+    const second = await compile(secondProvider, { ...shared, maxNewChapters: 1 });
+    expect(second.incomplete).toBe(false);
+    expect(second.resumedChapterIds).toEqual(["D01-102-CH01"]);
+    expect(second.generatedChapterIds).toEqual(["D01-102-CH02"]);
+    expect(second.job.status).toBe("QA_PASSED");
+    expect(secondProvider.requests.some((request) => request.idempotencyKey.endsWith(":D01-102-CH01"))).toBe(false);
   });
 
   it("blocks a book after three invalid chapter generations and preserves completed checkpoints", async () => {
