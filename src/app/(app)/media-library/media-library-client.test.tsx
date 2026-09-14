@@ -38,13 +38,24 @@ const asset = {
   metadata: { kind: "FINAL_VIDEO", planVersionId: "44444444-4444-4444-8444-444444444444" },
 };
 
-function workspace(role: MediaOrganizationWorkspace["role"]): MediaOrganizationWorkspace[] {
+const unclassifiedGeneratedAsset = {
+  ...asset,
+  id: "55555555-5555-4555-8555-555555555555",
+  displayName: "Generated media without purpose metadata",
+  generatingJobId: "66666666-6666-4666-8666-666666666666",
+  metadata: {},
+};
+
+function workspace(
+  role: MediaOrganizationWorkspace["role"],
+  items: MediaOrganizationWorkspace["initialPage"]["items"] = [asset],
+): MediaOrganizationWorkspace[] {
   return [{
     id: asset.organizationId,
     label: "Polish Railway Academy",
     role,
     initialPage: {
-      items: [asset],
+      items,
       nextCursor: { createdAt: asset.createdAt, id: asset.id },
     },
   }];
@@ -58,13 +69,28 @@ describe("MediaLibraryClient", () => {
     vi.mocked(deleteMediaAction).mockReset();
   });
 
-  it("renders catalogue lineage without exposing a signed preview before explicit request", () => {
+  it("frames Media Library as an operational asset catalogue with authoritative type, origin, status and proven purpose", () => {
     render(<MediaLibraryClient organizations={workspace("EDITOR")} />);
 
+    expect(screen.getByRole("heading", { name: "Operational asset catalogue" })).not.toBeNull();
+    expect(screen.queryByText(/Foundation only/i)).toBeNull();
     expect(screen.getByText("PAK Final Visual Master")).not.toBeNull();
+    expect(screen.getByText("VIDEO")).not.toBeNull();
+    expect(screen.getByText("GENERATED")).not.toBeNull();
+    expect(screen.getByText("ACTIVE")).not.toBeNull();
     expect(screen.getByText("Final video")).not.toBeNull();
     expect(screen.queryByText("https://signed.example/media")).toBeNull();
     expect(screen.getByRole("button", { name: "Preview PAK Final Visual Master" })).not.toBeNull();
+  });
+
+  it("does not infer a semantic media purpose when purpose metadata is absent", () => {
+    render(<MediaLibraryClient organizations={workspace("EDITOR", [unclassifiedGeneratedAsset])} />);
+
+    expect(screen.getByText("Generated media without purpose metadata")).not.toBeNull();
+    expect(screen.getByText("GENERATED")).not.toBeNull();
+    expect(screen.getByText("ACTIVE")).not.toBeNull();
+    expect(screen.queryByText("Generated shot")).toBeNull();
+    expect(screen.queryByText("Final video")).toBeNull();
   });
 
   it("requests and renders signed preview only after the operator clicks Preview", async () => {
