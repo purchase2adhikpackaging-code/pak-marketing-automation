@@ -18,7 +18,7 @@ export default async function DashboardPage() {
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">PAK Workspace</p>
       <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">Dashboard</h2>
       <p className="mt-4 max-w-3xl text-base leading-7 text-slate-400">
-        Operational status for the workflows that are implemented today: content generation, approved knowledge, and OpenAI integration readiness.
+        Monitor institutional readiness and continue the active content-to-video workflow from one operational view.
       </p>
       <DashboardSummary workspace={workspace} {...(error ? { error } : {})} />
     </section>
