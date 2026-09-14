@@ -23,8 +23,20 @@ const now = "2026-09-09T00:00:00.000Z";
 const knowledgeOne: SelectableKnowledgeRecord = { id: recordOne, title: "Approved workshop safety", sourceType: "DOCUMENT", sourceLabel: "Safety manual", revision: 4 };
 const knowledgeTwo: SelectableKnowledgeRecord = { id: recordTwo, title: "Approved signalling basics", sourceType: "MANUAL", revision: 2 };
 const organizations = [
-  { id: organizationOne, label: "PAK Poland", role: "EDITOR" as const, knowledgeRecords: [knowledgeOne] },
-  { id: organizationTwo, label: "PAK Egypt", role: "OWNER" as const, knowledgeRecords: [knowledgeTwo] },
+  {
+    id: organizationOne,
+    label: "PAK Poland",
+    role: "EDITOR" as const,
+    knowledgeRecords: [knowledgeOne],
+    authoritativeContext: { profileRevision: 7, brandKitRevision: 4, activeCoreKnowledgeCount: 3 },
+  },
+  {
+    id: organizationTwo,
+    label: "PAK Egypt",
+    role: "OWNER" as const,
+    knowledgeRecords: [knowledgeTwo],
+    authoritativeContext: { profileRevision: null, brandKitRevision: 2, activeCoreKnowledgeCount: 1 },
+  },
 ];
 
 const item: ContentItem = {
@@ -73,6 +85,27 @@ describe("ContentStudioForm Knowledge grounding", () => {
     expect(screen.getByText("Approved signalling basics")).toBeTruthy();
   });
 
+  it("shows authoritative Profile, Brand Kit and Core Knowledge as automatic generation context", () => {
+    render(<ContentStudioForm organizations={organizations} />);
+
+    expect(screen.getByRole("heading", { name: "Authoritative context" })).toBeTruthy();
+    expect(screen.getByText("Profile revision 7")).toBeTruthy();
+    expect(screen.getByText("Brand Kit revision 4")).toBeTruthy();
+    expect(screen.getByText("3 ACTIVE Core Knowledge records")).toBeTruthy();
+    expect(screen.getByText(/PAK automatically applies the current Organization Profile, Brand Kit and ACTIVE Core Knowledge to generation/i)).toBeTruthy();
+    expect(screen.getByText(/sources selected below are additional approved Knowledge and do not disable Core grounding/i)).toBeTruthy();
+    expect(screen.getByText("0 of 20 selected")).toBeTruthy();
+  });
+
+  it("updates authoritative context when the organization changes and shows missing setup truthfully", () => {
+    render(<ContentStudioForm organizations={organizations} />);
+    fireEvent.change(screen.getByRole("combobox", { name: "Organization" }), { target: { value: organizationTwo } });
+
+    expect(screen.getByText("Profile not configured")).toBeTruthy();
+    expect(screen.getByText("Brand Kit revision 2")).toBeTruthy();
+    expect(screen.getByText("1 ACTIVE Core Knowledge record")).toBeTruthy();
+  });
+
   it("submits only selected Knowledge IDs plus optional additional context", async () => {
     render(<ContentStudioForm organizations={organizations} />);
     fireEvent.change(screen.getByRole("textbox", { name: "Topic" }), { target: { value: "Workshop safety training" } });
@@ -89,6 +122,8 @@ describe("ContentStudioForm Knowledge grounding", () => {
     const payload = vi.mocked(generateContentAction).mock.calls[0]![0];
     expect(JSON.stringify(payload)).not.toContain("Approved workshop safety");
     expect(JSON.stringify(payload)).not.toContain("Safety manual");
+    expect(JSON.stringify(payload)).not.toContain("profileRevision");
+    expect(JSON.stringify(payload)).not.toContain("brandKitRevision");
   });
 
   it("keeps Additional context optional when approved records are selected", async () => {
