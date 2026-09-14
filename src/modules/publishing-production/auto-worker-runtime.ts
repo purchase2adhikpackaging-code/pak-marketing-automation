@@ -43,7 +43,7 @@ export async function runConfiguredAutomaticPublishingWorker(input: {
             scope: { type: "PORTFOLIO" },
             registry,
             curriculumLoader,
-            releasedIdentities: new Set(),
+            releasedIdentities: new Set<string>(),
           });
           return Promise.all(plan.jobs.map(async (job) => {
             const programme = registry.find((candidate) => candidate.code === job.programmeCode);
