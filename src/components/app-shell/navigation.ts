@@ -8,7 +8,7 @@ export type AppNavigationGroup = {
   items: readonly AppNavigationItem[];
 };
 
-export const APP_NAVIGATION_GROUPS = [
+export const APP_NAVIGATION_GROUPS: readonly AppNavigationGroup[] = [
   {
     label: "Operational",
     items: [
@@ -37,7 +37,7 @@ export const APP_NAVIGATION_GROUPS = [
       { label: "Manual Generation", href: "/manual-generation" },
     ],
   },
-] as const satisfies readonly AppNavigationGroup[];
+];
 
 export const APP_NAVIGATION: readonly AppNavigationItem[] = APP_NAVIGATION_GROUPS.flatMap(
   (group) => group.items,
