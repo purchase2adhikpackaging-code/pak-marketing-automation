@@ -47,6 +47,58 @@ function compactGrounding(context: ManuscriptKnowledgeContext): string {
   });
 }
 
+function blueprintJsonContract(job: BookJob): string {
+  return [
+    "BLUEPRINT JSON CONTRACT",
+    "Return one JSON object with exactly these top-level keys:",
+    "bookId, programmeCode, subjectCode, subjectTitle, level, purpose, prerequisites, knowledgePackIds, chapters.",
+    "Do not rename, omit, nest, or wrap these keys. Do not return a `blueprint`, `book`, `metadata`, or `result` wrapper.",
+    `bookId must be exactly ${JSON.stringify(job.bookId)}.`,
+    `programmeCode must be exactly ${JSON.stringify(job.programmeCode)}.`,
+    `subjectCode must be exactly ${JSON.stringify(job.subjectCode)}.`,
+    `subjectTitle must be exactly ${JSON.stringify(job.subjectTitle)}.`,
+    `level must be exactly ${JSON.stringify(job.level)}.`,
+    "purpose must be a non-empty string.",
+    "prerequisites must be an array of strings and may be empty.",
+    "knowledgePackIds must be a non-empty array containing only selected knowledge pack IDs from the grounding context.",
+    "chapters must be a non-empty array. Chapter numbers must be contiguous integers starting at 1.",
+    "Every chapter object must contain exactly these required keys:",
+    "id, number, title, purpose, learningOutcomes, requiredKnowledgePackIds, requiredVisualIds, workedExampleRequirements, practicalRequirements, assessmentRequirements, safetyCritical, referenceSourceIds.",
+    "Chapter field types:",
+    "id:string; number:positive integer; title:string; purpose:string; learningOutcomes:non-empty string[]; requiredKnowledgePackIds:string[]; requiredVisualIds:string[]; workedExampleRequirements:string[]; practicalRequirements:string[]; assessmentRequirements:non-empty string[]; safetyCritical:boolean; referenceSourceIds:string[].",
+    "Each requiredKnowledgePackIds value must also appear in top-level knowledgePackIds.",
+    "Each referenceSourceIds value must be an allowed source ID from the grounding context.",
+    "If safetyCritical is true, referenceSourceIds must contain at least one allowed source ID.",
+    "Example shape only (replace content while preserving keys and types):",
+    JSON.stringify({
+      bookId: job.bookId,
+      programmeCode: job.programmeCode,
+      subjectCode: job.subjectCode,
+      subjectTitle: job.subjectTitle,
+      level: job.level,
+      purpose: "Student-facing purpose of this textbook.",
+      prerequisites: [],
+      knowledgePackIds: ["selected-pack-id"],
+      chapters: [
+        {
+          id: `${job.subjectCode}-CH01`,
+          number: 1,
+          title: "Chapter title",
+          purpose: "Chapter purpose",
+          learningOutcomes: ["A measurable learning outcome."],
+          requiredKnowledgePackIds: ["selected-pack-id"],
+          requiredVisualIds: [],
+          workedExampleRequirements: [],
+          practicalRequirements: [],
+          assessmentRequirements: ["A valid assessment requirement."],
+          safetyCritical: false,
+          referenceSourceIds: [],
+        },
+      ],
+    }),
+  ].join("\n");
+}
+
 function writerInstructions(
   job: BookJob,
   context: ManuscriptKnowledgeContext,
@@ -64,6 +116,7 @@ function writerInstructions(
     `Selected knowledge pack IDs only: ${context.selectedPacks.map((pack) => pack.packId).join(", ")}.`,
     `Prohibited unsupported claims: ${context.prohibitedUnsupportedClaims.join(" | ")}.`,
     "Never invent operational authority, maintenance acceptance limits, tolerances, settings, legal status or safety-critical numeric values that are not present in the supplied grounding context.",
+    ...(artifact === "blueprint" ? [blueprintJsonContract(job)] : []),
     "Return exactly one valid JSON object. Do not use markdown fences. Do not add prose before or after the JSON.",
   ].join("\n");
 }
