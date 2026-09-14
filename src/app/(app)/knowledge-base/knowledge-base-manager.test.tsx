@@ -8,6 +8,7 @@ import {
   archiveKnowledgeAction,
   createKnowledgeAction,
   deleteKnowledgeAction,
+  setCoreKnowledgeAction,
   updateKnowledgeAction,
 } from "./actions";
 import { KnowledgeBaseManager } from "./knowledge-base-manager";
@@ -16,7 +17,10 @@ vi.mock("./actions", () => ({
   archiveKnowledgeAction: vi.fn(),
   createKnowledgeAction: vi.fn(),
   deleteKnowledgeAction: vi.fn(),
+  setCoreKnowledgeAction: vi.fn(),
   updateKnowledgeAction: vi.fn(),
+  ingestKnowledgeFileAction: vi.fn(),
+  ingestKnowledgeUrlAction: vi.fn(),
 }));
 
 const organizationId = "11111111-1111-4111-8111-111111111111";
@@ -60,42 +64,87 @@ describe("KnowledgeBaseManager", () => {
     vi.mocked(updateKnowledgeAction).mockReset();
     vi.mocked(archiveKnowledgeAction).mockReset();
     vi.mocked(deleteKnowledgeAction).mockReset();
+    vi.mocked(setCoreKnowledgeAction).mockReset();
   });
 
-  it("renders record status, revision, source metadata, and updated time", () => {
+  it("renders authoritative record status, revision, source metadata, and updated time", () => {
     renderManager();
 
     expect(screen.getByText("Workshop safety standard")).toBeTruthy();
     expect(screen.getByText("ACTIVE")).toBeTruthy();
     expect(screen.getByText("Revision 4")).toBeTruthy();
+    expect(screen.getByText("DOCUMENT")).toBeTruthy();
     expect(screen.getByText("PAK Safety Manual")).toBeTruthy();
     expect(screen.getByText("Section 4.2")).toBeTruthy();
     expect(screen.getByText(/Updated/)).toBeTruthy();
   });
 
-  it("shows a plain create form for users with knowledge:manage", () => {
+  it("separates manual entry from ingestion and explains DRAFT to ACTIVE approval lifecycle", () => {
     renderManager("EDITOR");
 
-    expect(screen.getByRole("heading", { name: "Add knowledge record" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Add manually" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Ingest document or URL" })).toBeTruthy();
     expect(screen.getByLabelText("Title")).toBeTruthy();
     expect(screen.getByLabelText("Content").tagName).toBe("TEXTAREA");
-    expect(screen.getByLabelText("Source type")).toBeTruthy();
+    expect(screen.queryByLabelText("Source type")).toBeNull();
     expect(screen.getByLabelText("Source label")).toBeTruthy();
     expect(screen.getByLabelText("Source reference")).toBeTruthy();
+    expect(screen.getByText(/DRAFT records require human review/i)).toBeTruthy();
+    expect(screen.getByText(/ACTIVE records are approved for generation/i)).toBeTruthy();
   });
 
-  it("allows editors to manage records but hides delete controls", () => {
+  it("always creates manual form records with sourceType MANUAL", async () => {
+    const manualDraft = record({
+      title: "Manual programme note",
+      content: "Operator-entered programme context.",
+      status: "DRAFT",
+      sourceType: "MANUAL",
+      sourceLabel: "Admissions desk",
+      sourceReference: "Internal briefing",
+      revision: 1,
+    });
+    vi.mocked(createKnowledgeAction).mockResolvedValue({ ok: true, record: manualDraft });
+    renderManager("EDITOR", []);
+
+    fireEvent.change(screen.getByLabelText("Title"), { target: { value: manualDraft.title } });
+    fireEvent.change(screen.getByLabelText("Content"), { target: { value: manualDraft.content } });
+    fireEvent.change(screen.getByLabelText("Source label"), { target: { value: manualDraft.sourceLabel } });
+    fireEvent.change(screen.getByLabelText("Source reference"), { target: { value: manualDraft.sourceReference } });
+    fireEvent.click(screen.getByRole("button", { name: "Create draft" }));
+
+    await waitFor(() => expect(createKnowledgeAction).toHaveBeenCalledWith({
+      organizationId,
+      title: manualDraft.title,
+      content: manualDraft.content,
+      sourceType: "MANUAL",
+      sourceLabel: manualDraft.sourceLabel,
+      sourceReference: manualDraft.sourceReference,
+    }));
+    expect(await screen.findByText(/Draft created for review/i)).toBeTruthy();
+  });
+
+  it("allows editors to manage records but hides delete and Core mutation controls", () => {
     renderManager("EDITOR");
 
     expect(screen.getByRole("button", { name: "Edit Workshop safety standard" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Archive Workshop safety standard" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Delete Workshop safety standard" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Mark Workshop safety standard as Core" })).toBeNull();
   });
 
-  it.each(["OWNER", "ADMIN"] as const)("shows delete control to %s", (role) => {
+  it.each(["OWNER", "ADMIN"] as const)("shows delete and Core mutation controls to %s", (role) => {
     renderManager(role);
 
     expect(screen.getByRole("button", { name: "Delete Workshop safety standard" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Mark Workshop safety standard as Core" })).toBeTruthy();
+  });
+
+  it("explains that Core Knowledge is automatically grounded in generation", () => {
+    renderManager("OWNER", [record({ isCore: true })]);
+
+    expect(screen.getByText("Core Knowledge")).toBeTruthy();
+    expect(screen.getByText("Automatically grounded in generation.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Remove Workshop safety standard from Core" })).toBeTruthy();
   });
 
   it.each(["REVIEWER", "ANALYST"] as const)("renders %s as ACTIVE-only read-only view", (role) => {
@@ -116,7 +165,8 @@ describe("KnowledgeBaseManager", () => {
     expect(screen.getByText("Workshop safety standard")).toBeTruthy();
     expect(screen.queryByText("Draft internal note")).toBeNull();
     expect(screen.queryByText("Archived source")).toBeNull();
-    expect(screen.queryByRole("heading", { name: "Add knowledge record" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Add manually" })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Ingest document or URL" })).toBeNull();
     expect(screen.queryByRole("button", { name: /Edit/ })).toBeNull();
     expect(screen.getByText("Read-only approved knowledge")).toBeTruthy();
   });
@@ -138,38 +188,37 @@ describe("KnowledgeBaseManager", () => {
           organizationId,
           expectedRevision: 4,
           status: "ACTIVE",
+          sourceType: "DOCUMENT",
         }),
       );
     });
   });
 
-  it("edits source type, label, and reference with the current revision", async () => {
+  it("preserves an ingested record's authoritative source type while editing metadata", async () => {
     vi.mocked(updateKnowledgeAction).mockResolvedValue({
       ok: true,
       record: record({
-        sourceType: "URL",
-        sourceLabel: "PAK Portal",
-        sourceReference: "https://pak.example/source",
+        sourceLabel: "Updated Safety Manual",
+        sourceReference: "Section 5.1",
         revision: 5,
       }),
     });
     renderManager("EDITOR");
 
     fireEvent.click(screen.getByRole("button", { name: "Edit Workshop safety standard" }));
-    fireEvent.change(screen.getByLabelText("Edit source type"), { target: { value: "URL" } });
-    fireEvent.change(screen.getByLabelText("Edit source label"), { target: { value: "PAK Portal" } });
-    fireEvent.change(screen.getByLabelText("Edit source reference"), {
-      target: { value: "https://pak.example/source" },
-    });
+    expect(screen.queryByLabelText("Edit source type")).toBeNull();
+    expect(screen.getByText("Source type: DOCUMENT")).toBeTruthy();
+    fireEvent.change(screen.getByLabelText("Edit source label"), { target: { value: "Updated Safety Manual" } });
+    fireEvent.change(screen.getByLabelText("Edit source reference"), { target: { value: "Section 5.1" } });
     fireEvent.click(screen.getByRole("button", { name: "Save Workshop safety standard" }));
 
     await waitFor(() => {
       expect(updateKnowledgeAction).toHaveBeenCalledWith(
         expect.objectContaining({
           expectedRevision: 4,
-          sourceType: "URL",
-          sourceLabel: "PAK Portal",
-          sourceReference: "https://pak.example/source",
+          sourceType: "DOCUMENT",
+          sourceLabel: "Updated Safety Manual",
+          sourceReference: "Section 5.1",
         }),
       );
     });
@@ -194,6 +243,7 @@ describe("KnowledgeBaseManager", () => {
           organizationId,
           expectedRevision: 4,
           title: "Updated safety standard",
+          sourceType: "DOCUMENT",
         }),
       );
     });
