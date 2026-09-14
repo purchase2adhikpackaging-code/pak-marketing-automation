@@ -4,7 +4,6 @@ import { AppError } from "@/lib/errors/app-error";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { AppRole } from "@/modules/auth/roles";
 import type { IntegrationConnectionStatus } from "@/modules/integrations/types";
-import { SupabaseFinalAssemblyReadRepository } from "@/modules/video/assembly/read-repository";
 
 export type DashboardOrganizationSummary = {
   organizationId: string;
@@ -41,7 +40,7 @@ export type DashboardWorkspace = {
     approvedPlans: number;
     generation: { active: number; failed: number; completed: number };
     assembly: { active: number; failed: number; completed: number };
-    latestProjectId?: string;
+    actionableProjectId?: string;
   };
   media: { active: number; video: number; finalRenders: number };
   integrations: {
@@ -50,6 +49,10 @@ export type DashboardWorkspace = {
   };
   lastActivityAt?: string;
   nextAction: DashboardNextAction;
+  /** Temporary compatibility for the pre-convergence Dashboard component; Task 3 removes this alias. */
+  openAI: { status: IntegrationConnectionStatus; lastVerifiedAt?: string };
+  /** Temporary compatibility for the pre-convergence Dashboard component; Task 3 removes this alias. */
+  lastContentUpdatedAt?: string;
 };
 
 type MembershipRow = {
@@ -79,7 +82,10 @@ type IntegrationRow = {
   last_verified_at: string | null;
 };
 
-type FinalMediaRow = { final_media_asset_id: string | null };
+type ActiveProductionRow = {
+  plan_version_id: string;
+  updated_at: string;
+};
 
 const GENERATION_ACTIVE_STATES = [
   "QUEUED",
@@ -119,6 +125,12 @@ export function buildDashboardOrganizationSummary(input: DashboardSummaryInput):
   };
 }
 
+function scenePlanningHref(actionableProjectId?: string): string {
+  return actionableProjectId
+    ? `/scene-planning?project=${encodeURIComponent(actionableProjectId)}`
+    : "/scene-planning";
+}
+
 export function resolveDashboardNextAction(input: {
   profileRevision: number | null;
   brandKitRevision: number | null;
@@ -127,8 +139,9 @@ export function resolveDashboardNextAction(input: {
   projects: number;
   plansNeedingWork: number;
   activeGeneration: number;
-  assemblyReadyOrActive: boolean;
+  assemblyActive: number;
   completedAssemblies: number;
+  actionableProjectId?: string;
 }): DashboardNextAction {
   if (input.profileRevision === null || input.brandKitRevision === null) {
     return {
@@ -161,22 +174,22 @@ export function resolveDashboardNextAction(input: {
   if (input.plansNeedingWork > 0) {
     return {
       label: "Continue Scene Planning",
-      href: "/scene-planning",
+      href: scenePlanningHref(input.actionableProjectId),
       reason: "A current Scene Plan still needs planning, quality review, approval, or refresh work.",
     };
   }
   if (input.activeGeneration > 0) {
     return {
       label: "Review generation progress",
-      href: "/scene-planning",
+      href: scenePlanningHref(input.actionableProjectId),
       reason: "Approved shots currently have video generation work in progress.",
     };
   }
-  if (input.assemblyReadyOrActive) {
+  if (input.assemblyActive > 0) {
     return {
       label: "Continue final assembly",
-      href: "/scene-planning",
-      reason: "A current approved plan is ready for final assembly or already has an assembly in progress.",
+      href: scenePlanningHref(input.actionableProjectId),
+      reason: "A final assembly is queued or processing for a current production plan.",
     };
   }
   if (input.completedAssemblies > 0) {
@@ -187,7 +200,7 @@ export function resolveDashboardNextAction(input: {
     };
   }
   return {
-    label: "Open Content Studio",
+    label: "Create or continue content",
     href: "/content-studio",
     reason: "Production prerequisites are ready. Continue with an implemented workflow.",
   };
@@ -261,11 +274,13 @@ export async function loadDashboardWorkspace(): Promise<DashboardWorkspace | nul
     generationFailed,
     generationCompleted,
     latestGeneration,
+    latestActiveGeneration,
     assemblyActive,
     assemblyFailed,
     assemblyCompleted,
-    completedFinalMedia,
+    finalRenders,
     latestAssembly,
+    latestActiveAssembly,
     mediaActive,
     mediaVideo,
     latestMedia,
@@ -288,11 +303,13 @@ export async function loadDashboardWorkspace(): Promise<DashboardWorkspace | nul
     supabase.from("video_generation_attempts").select("id", { count: "exact", head: true }).eq("organization_id", organizationId).eq("state", "FAILED"),
     supabase.from("video_generation_attempts").select("id", { count: "exact", head: true }).eq("organization_id", organizationId).eq("state", "COMPLETED"),
     supabase.from("video_generation_attempts").select("updated_at").eq("organization_id", organizationId).order("updated_at", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("video_generation_attempts").select("plan_version_id,updated_at").eq("organization_id", organizationId).in("state", [...GENERATION_ACTIVE_STATES]).order("updated_at", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("video_assemblies").select("id", { count: "exact", head: true }).eq("organization_id", organizationId).in("state", [...ASSEMBLY_ACTIVE_STATES]),
     supabase.from("video_assemblies").select("id", { count: "exact", head: true }).eq("organization_id", organizationId).eq("state", "FAILED"),
     supabase.from("video_assemblies").select("id", { count: "exact", head: true }).eq("organization_id", organizationId).eq("state", "COMPLETED"),
-    supabase.from("video_assemblies").select("final_media_asset_id").eq("organization_id", organizationId).eq("state", "COMPLETED").not("final_media_asset_id", "is", null),
+    supabase.from("video_assemblies").select("id", { count: "exact", head: true }).eq("organization_id", organizationId).eq("state", "COMPLETED").not("final_media_asset_id", "is", null),
     supabase.from("video_assemblies").select("updated_at").eq("organization_id", organizationId).order("updated_at", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("video_assemblies").select("plan_version_id,updated_at").eq("organization_id", organizationId).in("state", [...ASSEMBLY_ACTIVE_STATES]).order("updated_at", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("media_assets").select("id", { count: "exact", head: true }).eq("organization_id", organizationId).eq("status", "ACTIVE"),
     supabase.from("media_assets").select("id", { count: "exact", head: true }).eq("organization_id", organizationId).eq("status", "ACTIVE").eq("asset_type", "VIDEO"),
     supabase.from("media_assets").select("updated_at").eq("organization_id", organizationId).order("updated_at", { ascending: false }).limit(1).maybeSingle(),
@@ -303,34 +320,34 @@ export async function loadDashboardWorkspace(): Promise<DashboardWorkspace | nul
     contentTotal, contentGenerated, contentFailed, latestContent,
     knowledgeTotal, knowledgeActive, knowledgeDraft, knowledgeCoreActive,
     profile, brandKit, projectsTotal, latestProject, plans,
-    generationActive, generationFailed, generationCompleted, latestGeneration,
-    assemblyActive, assemblyFailed, assemblyCompleted, completedFinalMedia, latestAssembly,
+    generationActive, generationFailed, generationCompleted, latestGeneration, latestActiveGeneration,
+    assemblyActive, assemblyFailed, assemblyCompleted, finalRenders, latestAssembly, latestActiveAssembly,
     mediaActive, mediaVideo, latestMedia, integrations,
   ];
   if (results.some((result) => result.error)) throw queryFailure();
 
-  const currentPlans = currentPlanRows((plans.data ?? []) as PlanRow[]);
-  const plansNeedingWork = currentPlans.filter((row) => PLAN_NEEDS_WORK_STATES.has(row.status)).length;
+  const planRows = (plans.data ?? []) as PlanRow[];
+  const currentPlans = currentPlanRows(planRows);
+  const plansNeedingWorkRows = currentPlans
+    .filter((row) => PLAN_NEEDS_WORK_STATES.has(row.status))
+    .sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at));
+  const plansNeedingWork = plansNeedingWorkRows.length;
   const approvedPlans = currentPlans.filter((row) => row.status === "APPROVED").length;
-  const mostRecentApprovedPlan = currentPlans
-    .filter((row) => row.status === "APPROVED")
-    .sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at))[0];
-
-  let assemblyReady = false;
-  if ((assemblyActive.count ?? 0) === 0 && mostRecentApprovedPlan) {
-    try {
-      const readiness = await new SupabaseFinalAssemblyReadRepository().load(organizationId, mostRecentApprovedPlan.id);
-      assemblyReady = readiness?.ready === true;
-    } catch {
-      assemblyReady = false;
-    }
-  }
+  const projectByPlanId = new Map(planRows.map((row) => [row.id, row.video_project_id]));
+  const generationProjectId = latestActiveGeneration.data
+    ? projectByPlanId.get((latestActiveGeneration.data as ActiveProductionRow).plan_version_id)
+    : undefined;
+  const assemblyProjectId = latestActiveAssembly.data
+    ? projectByPlanId.get((latestActiveAssembly.data as ActiveProductionRow).plan_version_id)
+    : undefined;
+  const actionableProjectId = plansNeedingWorkRows[0]?.video_project_id
+    ?? ((generationActive.count ?? 0) > 0 ? generationProjectId : undefined)
+    ?? ((assemblyActive.count ?? 0) > 0 ? assemblyProjectId : undefined);
 
   const profileRevision = typeof profile.data?.revision === "number" ? profile.data.revision : null;
   const brandKitRevision = typeof brandKit.data?.revision === "number" ? brandKit.data.revision : null;
   const integrationRows = (integrations.data ?? []) as IntegrationRow[];
-  const finalMediaRows = (completedFinalMedia.data ?? []) as FinalMediaRow[];
-  const finalRenders = new Set(finalMediaRows.flatMap((row) => row.final_media_asset_id ? [row.final_media_asset_id] : [])).size;
+  const openAI = safeIntegration(integrationRows, "OPENAI");
 
   const summary = buildDashboardOrganizationSummary({
     organizationId,
@@ -340,7 +357,7 @@ export async function loadDashboardWorkspace(): Promise<DashboardWorkspace | nul
     failedContentCount: contentFailed.count ?? 0,
     activeKnowledgeCount: knowledgeActive.count ?? 0,
     draftKnowledgeCount: knowledgeDraft.count ?? 0,
-    openAiStatus: safeIntegration(integrationRows, "OPENAI").status,
+    openAiStatus: openAI.status,
     ...(latestContent.data?.updated_at ? { lastContentUpdatedAt: latestContent.data.updated_at } : {}),
   });
 
@@ -362,8 +379,9 @@ export async function loadDashboardWorkspace(): Promise<DashboardWorkspace | nul
     projects: projectsTotal.count ?? 0,
     plansNeedingWork,
     activeGeneration: generationActive.count ?? 0,
-    assemblyReadyOrActive: assemblyReady || (assemblyActive.count ?? 0) > 0,
+    assemblyActive: assemblyActive.count ?? 0,
     completedAssemblies: assemblyCompleted.count ?? 0,
+    ...(actionableProjectId ? { actionableProjectId } : {}),
   });
 
   return {
@@ -400,18 +418,20 @@ export async function loadDashboardWorkspace(): Promise<DashboardWorkspace | nul
         failed: assemblyFailed.count ?? 0,
         completed: assemblyCompleted.count ?? 0,
       },
-      ...(latestProject.data?.id ? { latestProjectId: latestProject.data.id } : {}),
+      ...(actionableProjectId ? { actionableProjectId } : {}),
     },
     media: {
       active: mediaActive.count ?? 0,
       video: mediaVideo.count ?? 0,
-      finalRenders,
+      finalRenders: finalRenders.count ?? 0,
     },
     integrations: {
-      openAI: safeIntegration(integrationRows, "OPENAI"),
+      openAI,
       ltx: safeIntegration(integrationRows, "LTX"),
     },
     ...(lastActivityAt ? { lastActivityAt } : {}),
     nextAction,
+    openAI,
+    ...(summary.lastContentUpdatedAt ? { lastContentUpdatedAt: summary.lastContentUpdatedAt } : {}),
   };
 }

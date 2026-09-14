@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { buildDashboardOrganizationSummary, resolveDashboardNextAction } from "./service";
 
 const organizationId = "11111111-1111-4111-8111-111111111111";
+const projectId = "22222222-2222-4222-8222-222222222222";
 
 const readyInput = {
   profileRevision: 3,
@@ -12,7 +13,7 @@ const readyInput = {
   projects: 2,
   plansNeedingWork: 0,
   activeGeneration: 0,
-  assemblyReadyOrActive: false,
+  assemblyActive: 0,
   completedAssemblies: 0,
 };
 
@@ -81,14 +82,10 @@ describe("resolveDashboardNextAction", () => {
       projects: 5,
       plansNeedingWork: 2,
       activeGeneration: 1,
-      assemblyReadyOrActive: true,
+      assemblyActive: 1,
       completedAssemblies: 3,
-    })).toEqual({
-      label: "Complete institutional setup",
-      href: "/settings",
-      reason: "Organization Profile and Brand Kit must be configured before production context is complete.",
-    });
-
+      actionableProjectId: projectId,
+    })).toMatchObject({ href: "/settings", label: "Complete institutional setup" });
     expect(resolveDashboardNextAction({ ...readyInput, brandKitRevision: null }).href).toBe("/settings");
   });
 
@@ -113,17 +110,24 @@ describe("resolveDashboardNextAction", () => {
     });
   });
 
-  it("routes unfinished plans, generation progress, and assembly work to Scene Planning in priority order", () => {
-    expect(resolveDashboardNextAction({ ...readyInput, plansNeedingWork: 1, activeGeneration: 3, assemblyReadyOrActive: true })).toMatchObject({
+  it("uses the DB-derived actionable project for unfinished plans, generation, and assembly", () => {
+    const href = `/scene-planning?project=${projectId}`;
+    expect(resolveDashboardNextAction({ ...readyInput, plansNeedingWork: 1, activeGeneration: 3, assemblyActive: 1, actionableProjectId: projectId })).toMatchObject({
       label: "Continue Scene Planning",
-      href: "/scene-planning",
+      href,
     });
-    expect(resolveDashboardNextAction({ ...readyInput, activeGeneration: 3, assemblyReadyOrActive: true })).toMatchObject({
+    expect(resolveDashboardNextAction({ ...readyInput, activeGeneration: 3, assemblyActive: 1, actionableProjectId: projectId })).toMatchObject({
       label: "Review generation progress",
-      href: "/scene-planning",
+      href,
     });
-    expect(resolveDashboardNextAction({ ...readyInput, assemblyReadyOrActive: true })).toMatchObject({
+    expect(resolveDashboardNextAction({ ...readyInput, assemblyActive: 1, actionableProjectId: projectId })).toMatchObject({
       label: "Continue final assembly",
+      href,
+    });
+  });
+
+  it("falls back to generic Scene Planning when no actionable project identifier is available", () => {
+    expect(resolveDashboardNextAction({ ...readyInput, plansNeedingWork: 1 })).toMatchObject({
       href: "/scene-planning",
     });
   });
@@ -134,7 +138,7 @@ describe("resolveDashboardNextAction", () => {
       href: "/media-library",
     });
     expect(resolveDashboardNextAction(readyInput)).toEqual({
-      label: "Open Content Studio",
+      label: "Create or continue content",
       href: "/content-studio",
       reason: "Production prerequisites are ready. Continue with an implemented workflow.",
     });
