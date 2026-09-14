@@ -20,6 +20,14 @@ function aclHardeningSource(): string {
   return readFileSync(join(migrationsDirectory, filename), "utf8");
 }
 
+function selectedKnowledgeCapHardeningSource(): string {
+  const filename = readdirSync(migrationsDirectory).find((candidate) =>
+    candidate.endsWith("_generation_provenance_selected_knowledge_cap.sql"),
+  );
+  if (!filename) throw new Error("Generation provenance selected-Knowledge cap migration is missing.");
+  return readFileSync(join(migrationsDirectory, filename), "utf8");
+}
+
 describe("generation identity provenance database contract", () => {
   it("stores immutable profile and Brand Kit revisions beside existing Knowledge snapshots", () => {
     const sql = source();
@@ -79,5 +87,19 @@ describe("generation identity provenance database contract", () => {
     expect(sql).toContain(
       "grant select on table public.content_item_knowledge_sources to authenticated",
     );
+  });
+
+  it("caps explicitly selected non-Core Knowledge at 20 without rejecting additional automatic Core Knowledge", () => {
+    const sql = selectedKnowledgeCapHardeningSource();
+
+    expect(sql).toContain("create or replace function public.persist_content_generation_provenance(");
+    expect(sql).toContain("non_core_snapshot_count integer := 0");
+    expect(sql).toContain("if not source.is_core then");
+    expect(sql).toContain("non_core_snapshot_count := non_core_snapshot_count + 1");
+    expect(sql).toContain("if non_core_snapshot_count > 20 then");
+    expect(sql).toContain("too many selected knowledge snapshots");
+    expect(sql).not.toContain("if jsonb_array_length(_knowledge_snapshots) > 20 then");
+    expect(sql).toContain("security definer");
+    expect(sql).toContain("grant execute on function public.persist_content_generation_provenance");
   });
 });
