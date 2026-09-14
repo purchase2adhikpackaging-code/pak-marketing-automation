@@ -9,11 +9,18 @@ import { generateContentAction } from "./actions";
 import { KnowledgeSelector, type SelectableKnowledgeRecord } from "./knowledge-selector";
 import { MultilingualContentPanel } from "./multilingual-content-panel";
 
+type AuthoritativeGenerationContext = {
+  profileRevision: number | null;
+  brandKitRevision: number | null;
+  activeCoreKnowledgeCount: number;
+};
+
 type OrganizationOption = {
   id: string;
   label: string;
   role: AppRole;
   knowledgeRecords: SelectableKnowledgeRecord[];
+  authoritativeContext: AuthoritativeGenerationContext;
 };
 
 type FormState = {
@@ -45,6 +52,14 @@ function providerLabel(provider?: string, model?: string): string | null {
   if (!provider && !model) return null;
   const providerName = provider?.toLowerCase() === "openai" ? "OpenAI" : provider;
   return [providerName, model].filter(Boolean).join(" · ");
+}
+
+function revisionLabel(label: string, revision: number | null): string {
+  return revision === null ? `${label} not configured` : `${label} revision ${revision}`;
+}
+
+function coreKnowledgeLabel(count: number): string {
+  return `${count} ACTIVE Core Knowledge ${count === 1 ? "record" : "records"}`;
 }
 
 export function ContentStudioForm({ organizations }: { organizations: OrganizationOption[] }) {
@@ -115,6 +130,7 @@ export function ContentStudioForm({ organizations }: { organizations: Organizati
 
   const canSubmit = organizationId.length > 0 && form.topic.trim().length >= 3 && !isPending;
   const generatedBy = providerLabel(result.provider, result.providerModel);
+  const authoritativeContext = selectedOrganization.authoritativeContext;
 
   return (
     <div className="mt-8">
@@ -124,6 +140,24 @@ export function ContentStudioForm({ organizations }: { organizations: Organizati
           {selectedOrganization.label} · {selectedOrganization.role}
         </p>
       </div>
+
+      <section aria-labelledby="authoritative-context-heading" className="mb-6 rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
+        <h3 id="authoritative-context-heading" className="text-lg font-semibold text-white">Authoritative context</h3>
+        <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-400">
+          PAK automatically applies the current Organization Profile, Brand Kit and ACTIVE Core Knowledge to generation. The sources selected below are additional approved Knowledge and do not disable Core grounding.
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-3 text-sm text-slate-200">
+            {revisionLabel("Profile", authoritativeContext.profileRevision)}
+          </div>
+          <div className="rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-3 text-sm text-slate-200">
+            {revisionLabel("Brand Kit", authoritativeContext.brandKitRevision)}
+          </div>
+          <div className="rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-3 text-sm text-slate-200">
+            {coreKnowledgeLabel(authoritativeContext.activeCoreKnowledgeCount)}
+          </div>
+        </div>
+      </section>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-6 shadow-sm">

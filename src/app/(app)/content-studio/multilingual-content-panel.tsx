@@ -119,6 +119,10 @@ export function MultilingualContentPanel({ organizationId, contentItemId, artifa
         </p>
       </div>
 
+      <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-400">
+        Scene Planning continues from the persisted script artifact; current Brand Kit defaults remain server-resolved and are not copied through the browser.
+      </p>
+
       {error ? <div className="mt-5 rounded-xl border border-red-900/60 bg-red-950/30 p-4 text-sm leading-6 text-red-200" role="alert">{error}</div> : null}
 
       <div className="mt-5 grid gap-4 xl:grid-cols-3">
