@@ -1,5 +1,5 @@
 import React from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AppRole } from "@/modules/auth/roles";
@@ -70,8 +70,10 @@ describe("KnowledgeBaseManager", () => {
   it("renders authoritative record status, revision, source metadata, and updated time", () => {
     renderManager();
 
-    expect(screen.getByText("Workshop safety standard")).toBeTruthy();
-    expect(screen.getByText("ACTIVE")).toBeTruthy();
+    const recordHeading = screen.getByText("Workshop safety standard");
+    const recordArticle = recordHeading.closest("article");
+    expect(recordArticle).not.toBeNull();
+    expect(within(recordArticle as HTMLElement).getByText("ACTIVE")).toBeTruthy();
     expect(screen.getByText("Revision 4")).toBeTruthy();
     expect(screen.getByText("DOCUMENT")).toBeTruthy();
     expect(screen.getByText("PAK Safety Manual")).toBeTruthy();
@@ -89,8 +91,14 @@ describe("KnowledgeBaseManager", () => {
     expect(screen.queryByLabelText("Source type")).toBeNull();
     expect(screen.getByLabelText("Source label")).toBeTruthy();
     expect(screen.getByLabelText("Source reference")).toBeTruthy();
-    expect(screen.getByText(/DRAFT records require human review/i)).toBeTruthy();
-    expect(screen.getByText(/ACTIVE records are approved for generation/i)).toBeTruthy();
+    expect(screen.getByText((_, element) => (
+      element?.tagName === "P"
+      && element.textContent === "DRAFT records require human review before they can be used for generation."
+    ))).toBeTruthy();
+    expect(screen.getByText((_, element) => (
+      element?.tagName === "P"
+      && element.textContent === "ACTIVE records are approved for generation."
+    ))).toBeTruthy();
   });
 
   it("always creates manual form records with sourceType MANUAL", async () => {
