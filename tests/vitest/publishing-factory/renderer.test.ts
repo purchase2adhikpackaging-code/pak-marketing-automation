@@ -11,11 +11,12 @@ const rendererSource = readFileSync(
 );
 
 describe("publication renderer", () => {
-  it("detects common Vercel/serverless runtime markers before choosing Chromium", () => {
+  it("detects common Vercel/serverless runtime markers and production fallback before choosing Chromium", () => {
     expect(rendererSource).toContain("isServerlessRuntime");
     expect(rendererSource).toContain("process.env.VERCEL");
     expect(rendererSource).toContain("process.env.VERCEL_REGION");
     expect(rendererSource).toContain("process.env.AWS_LAMBDA_FUNCTION_NAME");
+    expect(rendererSource).toContain('process.env.NODE_ENV === "production"');
     expect(rendererSource).toContain("serverlessChromium.executablePath()");
   });
 
