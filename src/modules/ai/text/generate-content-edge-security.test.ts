@@ -23,9 +23,13 @@ describe("generate-content Edge cost guardrails", () => {
     expect(source).toMatch(/body\.input\.length > MAX_INPUT_CHARS/);
   });
 
-  it("caps provider output tokens", () => {
-    expect(source).toContain("MAX_OUTPUT_TOKENS");
-    expect(source).toMatch(/max_output_tokens:\s*MAX_OUTPUT_TOKENS/);
+  it("uses separate bounded output-token budgets for interactive and publishing generation", () => {
+    expect(source).toContain("INTERACTIVE_MAX_OUTPUT_TOKENS");
+    expect(source).toContain("PUBLISHING_MAX_OUTPUT_TOKENS");
+    expect(source).toMatch(/const INTERACTIVE_MAX_OUTPUT_TOKENS = 4_000/);
+    expect(source).toMatch(/const PUBLISHING_MAX_OUTPUT_TOKENS = 12_000/);
+    expect(source).toMatch(/const maxOutputTokens = internalRequest\s*\?\s*PUBLISHING_MAX_OUTPUT_TOKENS\s*:\s*INTERACTIVE_MAX_OUTPUT_TOKENS/);
+    expect(source).toMatch(/max_output_tokens:\s*maxOutputTokens/);
   });
 
   it("keeps interactive and background generation on separate bounded database quotas", () => {
