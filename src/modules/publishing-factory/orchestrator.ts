@@ -1,10 +1,13 @@
-import { chromium } from "@playwright/test";
 import type { BookJob, QaFinding, QaGateResult, QaReport } from "./domain";
 import { hasErrorFindings } from "./domain";
 import { runContentQa } from "./content-qa";
 import { runDomLayoutQa } from "./layout-qa";
 import { runPdfQa } from "./pdf-qa";
-import { renderPublication, type RenderPublicationResult } from "./renderer";
+import {
+  launchPublicationBrowser,
+  renderPublication,
+  type RenderPublicationResult,
+} from "./renderer";
 import { transitionJob } from "./state-machine";
 
 export interface DeterministicBookInput {
@@ -28,7 +31,7 @@ function gateResult(findings: readonly QaFinding[], gate: QaFinding["gate"]): Qa
 }
 
 async function runLayoutQa(html: string): Promise<QaFinding[]> {
-  const browser = await chromium.launch({ headless: true });
+  const browser = await launchPublicationBrowser();
   try {
     const page = await browser.newPage({ viewport: { width: 794, height: 1123 } });
     try {
