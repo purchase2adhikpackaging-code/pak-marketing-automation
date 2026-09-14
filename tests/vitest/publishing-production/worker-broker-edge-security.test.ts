@@ -21,6 +21,14 @@ describe("publishing worker broker Edge security boundary", () => {
     expect(edge).not.toContain('Deno.env.get("PUBLISHING_WORKER_SECRET")');
   });
 
+  it("retries transient Vault reads and stays fail-closed", () => {
+    const edge = source();
+    expect(edge).toContain("WORKER_SECRET_READ_ATTEMPTS");
+    expect(edge).toContain("readPublishingWorkerSecret");
+    expect(edge).toMatch(/for \(let attempt = 1; attempt <= WORKER_SECRET_READ_ATTEMPTS; attempt \+= 1\)/);
+    expect(edge).toContain('error: "WORKER_AUTH_UNAVAILABLE"');
+  });
+
   it("uses an explicit broker action allow-list instead of accepting arbitrary RPC or table names", () => {
     const edge = source();
     for (const action of [
