@@ -6,6 +6,10 @@ const runtimeSource = readFileSync(
   join(process.cwd(), "src/modules/publishing-production/node-worker-runtime.ts"),
   "utf8",
 );
+const automaticRuntimeSource = readFileSync(
+  join(process.cwd(), "src/modules/publishing-production/auto-worker-runtime.ts"),
+  "utf8",
+);
 const routeSource = readFileSync(
   join(process.cwd(), "src/app/api/internal/publishing-worker/route.ts"),
   "utf8",
@@ -14,8 +18,11 @@ const routeSource = readFileSync(
 describe("publishing worker runtime privilege boundary", () => {
   it("never resolves or embeds a Supabase service-role credential in the Vercel worker runtime", () => {
     expect(runtimeSource).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
+    expect(automaticRuntimeSource).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
     expect(runtimeSource).not.toContain("resolvePublishingWorkerSecret");
+    expect(automaticRuntimeSource).not.toContain("resolvePublishingWorkerSecret");
     expect(runtimeSource).not.toContain('from "./worker-auth"');
+    expect(automaticRuntimeSource).not.toContain('from "./worker-auth"');
   });
 
   it("uses the broker client for privileged queue and artifact operations", () => {
@@ -26,8 +33,9 @@ describe("publishing worker runtime privilege boundary", () => {
     expect(runtimeSource).toContain("upsertPublication");
   });
 
-  it("propagates the already-authorized opaque worker capability from the route into the runtime", () => {
-    expect(routeSource).toMatch(/runConfiguredPublishingWorker\(\{[\s\S]*credential/);
+  it("propagates the already-authorized opaque worker capability through the automatic wrapper into the runtime", () => {
+    expect(routeSource).toMatch(/runConfiguredAutomaticPublishingWorker\(\{[\s\S]*credential/);
+    expect(automaticRuntimeSource).toMatch(/runConfiguredPublishingWorker\(\{[\s\S]*credential:\s*input\.credential/);
     expect(runtimeSource).toMatch(/runConfiguredPublishingWorker\(input:\s*\{[\s\S]*credential:\s*string/);
   });
 });
