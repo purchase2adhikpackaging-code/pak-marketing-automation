@@ -14,7 +14,8 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-
 const ALLOWED_MODELS = new Set(["gpt-5.6-luna", "gpt-5.6-terra"]);
 const MAX_INSTRUCTIONS_CHARS = 12_000;
 const MAX_INPUT_CHARS = 60_000;
-const MAX_OUTPUT_TOKENS = 4_000;
+const INTERACTIVE_MAX_OUTPUT_TOKENS = 4_000;
+const PUBLISHING_MAX_OUTPUT_TOKENS = 12_000;
 const RATE_LIMIT_WINDOW_SECONDS = 600;
 const INTERACTIVE_RATE_LIMIT_REQUESTS = 20;
 const PUBLISHING_RATE_LIMIT_REQUESTS = 120;
@@ -259,6 +260,7 @@ Deno.serve(async (req: Request) => {
   }
   if (internalRequest) await auditInternalGeneration(admin, body.organizationId, body.productionJobId, "OPENAI_VAULT_OK");
 
+  const maxOutputTokens = internalRequest ? PUBLISHING_MAX_OUTPUT_TOKENS : INTERACTIVE_MAX_OUTPUT_TOKENS;
   let providerResponse: Response;
   try {
     providerResponse = await fetch("https://api.openai.com/v1/responses", {
@@ -271,7 +273,7 @@ Deno.serve(async (req: Request) => {
         model,
         instructions: body.instructions,
         input: body.input,
-        max_output_tokens: MAX_OUTPUT_TOKENS,
+        max_output_tokens: maxOutputTokens,
       }),
     });
   } catch {
