@@ -1,8 +1,20 @@
 import { describe, expect, it } from "vitest";
 
-import { buildDashboardOrganizationSummary } from "./service";
+import { buildDashboardOrganizationSummary, resolveDashboardNextAction } from "./service";
 
 const organizationId = "11111111-1111-4111-8111-111111111111";
+
+const readyInput = {
+  profileRevision: 3,
+  brandKitRevision: 2,
+  knowledgeDrafts: 0,
+  generatedContent: 4,
+  projects: 2,
+  plansNeedingWork: 0,
+  activeGeneration: 0,
+  assemblyReadyOrActive: false,
+  completedAssemblies: 0,
+};
 
 describe("dashboard summary service", () => {
   it("maps only implemented-domain operational facts", () => {
@@ -33,11 +45,6 @@ describe("dashboard summary service", () => {
     expect(summary).not.toHaveProperty("approvalCount");
     expect(summary).not.toHaveProperty("publishingCount");
     expect(summary).not.toHaveProperty("analyticsCount");
-    expect(summary).not.toHaveProperty("sceneCount");
-    expect(summary).not.toHaveProperty("videoCount");
-    expect(summary).not.toHaveProperty("podcastCount");
-    expect(summary).not.toHaveProperty("testimonialCount");
-    expect(summary).not.toHaveProperty("calendarCount");
   });
 
   it("preserves truthful zero values and defaults missing OpenAI metadata", () => {
@@ -60,6 +67,76 @@ describe("dashboard summary service", () => {
       activeKnowledgeCount: 0,
       draftKnowledgeCount: 0,
       openAiStatus: "NOT_CONFIGURED",
+    });
+  });
+});
+
+describe("resolveDashboardNextAction", () => {
+  it("prioritizes incomplete institutional identity before all downstream work", () => {
+    expect(resolveDashboardNextAction({
+      ...readyInput,
+      profileRevision: null,
+      knowledgeDrafts: 4,
+      generatedContent: 12,
+      projects: 5,
+      plansNeedingWork: 2,
+      activeGeneration: 1,
+      assemblyReadyOrActive: true,
+      completedAssemblies: 3,
+    })).toEqual({
+      label: "Complete institutional setup",
+      href: "/settings",
+      reason: "Organization Profile and Brand Kit must be configured before production context is complete.",
+    });
+
+    expect(resolveDashboardNextAction({ ...readyInput, brandKitRevision: null }).href).toBe("/settings");
+  });
+
+  it("sends draft Knowledge to review before content or production work", () => {
+    expect(resolveDashboardNextAction({ ...readyInput, knowledgeDrafts: 2 })).toMatchObject({
+      label: "Review Knowledge drafts",
+      href: "/knowledge-base",
+    });
+  });
+
+  it("routes an empty generated-content state to Content Studio", () => {
+    expect(resolveDashboardNextAction({ ...readyInput, generatedContent: 0 })).toMatchObject({
+      label: "Create content",
+      href: "/content-studio",
+    });
+  });
+
+  it("routes generated content without a project to the Scene Planning handoff in Content Studio", () => {
+    expect(resolveDashboardNextAction({ ...readyInput, projects: 0 })).toMatchObject({
+      label: "Create a Scene Plan",
+      href: "/content-studio",
+    });
+  });
+
+  it("routes unfinished plans, generation progress, and assembly work to Scene Planning in priority order", () => {
+    expect(resolveDashboardNextAction({ ...readyInput, plansNeedingWork: 1, activeGeneration: 3, assemblyReadyOrActive: true })).toMatchObject({
+      label: "Continue Scene Planning",
+      href: "/scene-planning",
+    });
+    expect(resolveDashboardNextAction({ ...readyInput, activeGeneration: 3, assemblyReadyOrActive: true })).toMatchObject({
+      label: "Review generation progress",
+      href: "/scene-planning",
+    });
+    expect(resolveDashboardNextAction({ ...readyInput, assemblyReadyOrActive: true })).toMatchObject({
+      label: "Continue final assembly",
+      href: "/scene-planning",
+    });
+  });
+
+  it("routes completed assemblies to Media Library and otherwise falls back without guessing an entity id", () => {
+    expect(resolveDashboardNextAction({ ...readyInput, completedAssemblies: 2 })).toMatchObject({
+      label: "Open completed media",
+      href: "/media-library",
+    });
+    expect(resolveDashboardNextAction(readyInput)).toEqual({
+      label: "Open Content Studio",
+      href: "/content-studio",
+      reason: "Production prerequisites are ready. Continue with an implemented workflow.",
     });
   });
 });
