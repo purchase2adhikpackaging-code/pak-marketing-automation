@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { BookJob } from "@/modules/publishing-factory/domain";
+import type { NodePublishingWorkerResult } from "./node-worker";
 import type { PublishingAutomationTarget } from "./worker-broker-client";
 
 type PlannedAutomaticJob = { job: BookJob; curriculumText: string };
@@ -67,4 +68,17 @@ export async function ensureAutomaticPortfolioProduction(
   }
 
   return { targets: targets.length, plannedBooks, runIds: [...runIds] };
+}
+
+export async function runAutomaticWorkerCycle(input: {
+  runWorker(): Promise<NodePublishingWorkerResult>;
+  ensurePortfolio(): Promise<{ targets: number; plannedBooks: number; runIds: string[] }>;
+}): Promise<NodePublishingWorkerResult> {
+  const first = await input.runWorker();
+  if (first.claimed > 0) return first;
+
+  const automation = await input.ensurePortfolio();
+  if (automation.runIds.length === 0) return first;
+
+  return input.runWorker();
 }
