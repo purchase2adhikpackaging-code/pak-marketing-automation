@@ -67,7 +67,7 @@ describe("FinalRenderControls", () => {
     expect(screen.queryByRole("button", { name: "Generate final video" })).toBeNull();
   });
 
-  it("links completed PAK media and describes visual-only output", () => {
+  it("frames assembly as stage four and hands completed PAK media to the operational library", () => {
     render(<FinalRenderControls {...base} actorRole="REVIEWER" view={{
       ready: true,
       reasons: [],
@@ -78,10 +78,12 @@ describe("FinalRenderControls", () => {
         finalMediaAssetId: "55555555-5555-4555-8555-555555555555",
       },
     }} />);
-    const finalMediaLink = screen.getByRole("link", { name: "Open final video in Media Library" });
-    expect(finalMediaLink.getAttribute("href")).toBe(
-      "/media-library?asset=55555555-5555-4555-8555-555555555555",
-    );
+
+    expect(screen.getByRole("heading", { name: "4. Assemble" })).not.toBeNull();
+    const finalMediaLink = screen.getByRole("link", { name: "Open final asset in Media Library" });
+    expect(finalMediaLink.getAttribute("href")).toBe("/media-library");
+    expect(finalMediaLink.getAttribute("href")).not.toContain("?asset=");
+    expect(screen.getByText(/55555555-5555-4555-8555-555555555555/)).not.toBeNull();
     expect(screen.getByRole("heading", { name: "Final visual master" })).not.toBeNull();
     expect(screen.getByText(/does not add narration, music, or provider audio/i)).not.toBeNull();
   });
