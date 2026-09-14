@@ -24,9 +24,9 @@ using (public.is_org_member(organization_id));
 -- Pilot approval/enablement is performed through the trusted operational boundary.
 
 create or replace function public.bootstrap_publishing_auto_portfolio(
-  p_organization_id uuid,
-  p_idempotency_key text,
-  p_jobs jsonb
+  _organization_id uuid,
+  _idempotency_key text,
+  _jobs jsonb
 )
 returns uuid
 language plpgsql
@@ -42,19 +42,19 @@ begin
   if auth.role() <> 'service_role' then
     raise exception 'service role required';
   end if;
-  if p_organization_id is null then
+  if _organization_id is null then
     raise exception 'organization is required';
   end if;
-  if p_idempotency_key is null or length(trim(p_idempotency_key)) < 8 then
+  if _idempotency_key is null or length(trim(_idempotency_key)) < 8 then
     raise exception 'automatic portfolio idempotency key is required';
   end if;
-  if jsonb_typeof(p_jobs) <> 'array' then
+  if jsonb_typeof(_jobs) <> 'array' then
     raise exception 'automatic portfolio jobs must be a JSON array';
   end if;
 
   select s.* into v_setting
   from public.publishing_automation_settings s
-  where s.organization_id = p_organization_id
+  where s.organization_id = _organization_id
   for update;
 
   if v_setting.organization_id is null
@@ -68,7 +68,7 @@ begin
   if v_setting.enabled_by is null or not exists (
     select 1
     from public.organization_memberships m
-    where m.organization_id = p_organization_id
+    where m.organization_id = _organization_id
       and m.user_id = v_setting.enabled_by
       and m.role in ('OWNER','ADMIN')
   ) then
@@ -77,8 +77,8 @@ begin
 
   select r.id into v_existing_run_id
   from public.publishing_production_runs r
-  where r.organization_id = p_organization_id
-    and r.idempotency_key = trim(p_idempotency_key)
+  where r.organization_id = _organization_id
+    and r.idempotency_key = trim(_idempotency_key)
   limit 1;
 
   if v_existing_run_id is not null then
@@ -86,7 +86,7 @@ begin
   end if;
 
   select count(*) into v_eligible_count
-  from jsonb_array_elements(p_jobs) as entry(item)
+  from jsonb_array_elements(_jobs) as entry(item)
   where nullif(entry.item #>> '{job,bookId}', '') is not null
     and nullif(entry.item #>> '{job,edition}', '') is not null
     and nullif(entry.item #>> '{job,revision}', '') is not null
@@ -94,7 +94,7 @@ begin
     and not exists (
       select 1
       from public.publishing_publications p
-      where p.organization_id = p_organization_id
+      where p.organization_id = _organization_id
         and p.book_id = entry.item #>> '{job,bookId}'
         and p.edition = entry.item #>> '{job,edition}'
         and p.revision = entry.item #>> '{job,revision}'
@@ -109,14 +109,14 @@ begin
     organization_id, created_by, scope_type, scope_value, status,
     requested_concurrency, planned_count, idempotency_key
   ) values (
-    p_organization_id,
+    _organization_id,
     v_setting.enabled_by,
     'PORTFOLIO',
     jsonb_build_object('automatic', true),
     'QUEUED',
     4,
     v_eligible_count,
-    trim(p_idempotency_key)
+    trim(_idempotency_key)
   )
   on conflict (organization_id, idempotency_key) where idempotency_key is not null
   do nothing
@@ -125,8 +125,8 @@ begin
   if v_run_id is null then
     select r.id into v_run_id
     from public.publishing_production_runs r
-    where r.organization_id = p_organization_id
-      and r.idempotency_key = trim(p_idempotency_key)
+    where r.organization_id = _organization_id
+      and r.idempotency_key = trim(_idempotency_key)
     limit 1;
     return v_run_id;
   end if;
@@ -145,7 +145,7 @@ begin
     status
   )
   select
-    p_organization_id,
+    _organization_id,
     v_run_id,
     entry.item #>> '{job,bookId}',
     entry.item #>> '{job,programmeCode}',
@@ -156,7 +156,7 @@ begin
     entry.item -> 'job',
     entry.item ->> 'curriculumText',
     'QUEUED'
-  from jsonb_array_elements(p_jobs) as entry(item)
+  from jsonb_array_elements(_jobs) as entry(item)
   where nullif(entry.item #>> '{job,bookId}', '') is not null
     and nullif(entry.item #>> '{job,programmeCode}', '') is not null
     and nullif(entry.item #>> '{job,subjectCode}', '') is not null
@@ -166,7 +166,7 @@ begin
     and not exists (
       select 1
       from public.publishing_publications p
-      where p.organization_id = p_organization_id
+      where p.organization_id = _organization_id
         and p.book_id = entry.item #>> '{job,bookId}'
         and p.edition = entry.item #>> '{job,edition}'
         and p.revision = entry.item #>> '{job,revision}'
