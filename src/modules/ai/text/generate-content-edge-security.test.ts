@@ -79,8 +79,14 @@ describe("generate-content Edge cost guardrails", () => {
     expect(source).toContain('event_type: "PUBLISHING_GENERATION_DIAGNOSTIC"');
     expect(source).toContain("instructionChars");
     expect(source).toContain("inputChars");
-    expect(source).not.toMatch(/metadata:\s*\{[\s\S]*?apiKey/);
-    expect(source).not.toMatch(/metadata:\s*\{[\s\S]*?publishingWorkerSecret/);
+
+    const auditStart = source.indexOf("async function auditInternalGeneration");
+    const auditEnd = source.indexOf("function extractOutputText", auditStart);
+    const auditSource = source.slice(auditStart, auditEnd);
+    expect(auditStart).toBeGreaterThan(-1);
+    expect(auditEnd).toBeGreaterThan(auditStart);
+    expect(auditSource).not.toContain("apiKey");
+    expect(auditSource).not.toContain("publishingWorkerSecret");
   });
 
   it("does not expose the provider API key in responses", () => {
