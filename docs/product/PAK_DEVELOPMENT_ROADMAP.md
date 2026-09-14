@@ -1,8 +1,8 @@
 # PAK Marketing Automation — Development Roadmap
 
 **Document ID:** PAK-RM-001  
-**Version:** 1.3  
-**Status:** Current roadmap through Organization Identity / Brand / Knowledge foundation rollout
+**Version:** 1.4  
+**Status:** Current roadmap through Phase 8, Organization Identity / Brand / Knowledge foundation, and UI/UX Production Convergence
 
 ## Governance rule
 
@@ -225,6 +225,33 @@ Live verification on 13 September 2026:
 - all synthetic fixture rows were rolled back and post-proof cleanup returned zero residue;
 - broad inherited table ACLs were reduced to intended least privilege; provenance tables are SELECT-only to authenticated members and `anon` has no table grants;
 - feature-specific Supabase `auth_rls_initplan` warnings were removed; remaining advisor findings pre-date this slice or are maintenance-level index recommendations.
+
+## Cross-phase UI/UX Production Convergence — IMPLEMENTED ON PR #43 BRANCH; MERGE PENDING
+
+Purpose:
+- expose already-implemented Phase 0–8 + Organization Identity / Brand / Knowledge capabilities as one coherent operator workflow;
+- keep Phase 9–17 routes visible but truthfully Planned/Foundation until their governed slices are built;
+- remove stale UI maturity copy without changing backend authority, RLS/RBAC, provider or storage boundaries.
+
+Delivered:
+- grouped navigation: Operational → Administration → Roadmap;
+- production-command Dashboard backed by existing organization-scoped authoritative state and deterministic next-action resolution;
+- Content Studio read-only `Authoritative context` summary for Profile revision, Brand Kit revision and automatic Core Knowledge grounding;
+- Scene Planning presentation hierarchy: Plan → Review & approve → Generate shots → Assemble, with completed-media handoff to Media Library;
+- operational Media Library framing for the existing catalogue/detail/preview/upload/archive/delete behavior;
+- Knowledge Base source-entry hierarchy separating manual entry from document/URL ingestion, with explicit DRAFT/ACTIVE and Core automatic-grounding semantics;
+- Settings three-domain landing for Organization Profile, Brand Kit and Integrations, including normalized OpenAI/LTX state and truthful Meta `Planned · Phase 10` status;
+- no new domain tables, provider workflows, secret exposure, fake Dashboard metrics, signed-URL persistence or roadmap-domain mutation controls.
+
+Verification on 14 September 2026:
+- Task 8 Settings convergence passed exact-head CI #1265 across typecheck, lint, 640 unit tests, production build, final-assembly worker tests/container smoke and Playwright;
+- Task 9 convergence browser contract passed exact-head CI #1277 across the same repository gates;
+- CI browser fixtures intentionally use the existing development-only auth/role gates and do not seed synthetic organization/domain rows solely to force success-state screens; success branches are covered deterministically by component/service tests while browser tests prove truthful recovery/no-workspace and roadmap boundaries;
+- no production auth bypass or synthetic production behavior was added.
+
+Release state:
+- PR #43 remains draft and unmerged until explicitly authorized;
+- this convergence slice changes presentation/read models/tests/governance only and does not advance Phase 9–17 implementation status.
 
 ## Phase 9 — Approval Center
 

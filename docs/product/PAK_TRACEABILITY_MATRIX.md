@@ -1,8 +1,8 @@
 # PAK Marketing Automation — Requirements Traceability Matrix
 
 **Document ID:** PAK-TRACE-001  
-**Version:** 1.3  
-**Status:** Current baseline through Organization Profile / Brand Kit / Knowledge ingestion foundation
+**Version:** 1.4  
+**Status:** Current baseline through Phase 8, Organization Profile / Brand Kit / Knowledge ingestion foundation, and UI/UX Production Convergence
 
 ## 1. Legend
 
@@ -27,18 +27,20 @@ Existing requirement IDs keep their original meaning. New organization identity/
 | PRD-KB-012..013 Core Knowledge | Knowledge Base / generation resolver | knowledge_records.is_core, Core guards | repository/action/SQL/live EDITOR-negative proof | **Implemented** |
 | PRD-KB-014..019 Document/URL ingestion | Knowledge Base | knowledge_documents, knowledge_records, media_assets | extractor/SSRF/action/E2E/live DRAFT proof | **Implemented** |
 | PRD-CS-001..012 Content Studio baseline | Content Studio | content_items, artifacts, Knowledge snapshots | unit/E2E/build | **Implemented** |
-| PRD-CS-013..019 automatic org context | Content Studio | organization Profile/Brand, resolver, identity provenance | resolver/action/SQL/live provenance proof | **Implemented** |
+| PRD-CS-013..019 automatic org context | Content Studio | organization Profile/Brand, resolver, identity provenance | resolver/action/SQL/live provenance + converged context UI tests | **Implemented** |
 | PRD-ML-001..008 Multilingual artifacts | Content Studio | content_script_artifacts | unit/E2E/schema | **Implemented** |
-| PRD-SET-001/011 identity settings | Settings | Profile/Brand repositories/actions | component/E2E/live RLS | **Implemented for Profile/Brand** |
-| PRD-SET-002..010 Integration Vault | Settings → Integrations | integration_connections, Vault, audit | Edge/security/live tests | **Implemented for OpenAI/LTX** |
-| PRD-MEDIA-001..007 Media identity | Media Library / Brand / Knowledge / Scene Planning | media_assets, private Storage | schema/RLS/UI/E2E/live storage proof | **Implemented foundation** |
+| PRD-SET-001/011 identity settings | Settings | Profile/Brand repositories/actions | component/E2E/live RLS + landing summary tests | **Implemented for Profile/Brand** |
+| PRD-SET-002..010 Integration Vault | Settings → Integrations | integration_connections, Vault, audit | Edge/security/live tests + safe landing metadata | **Implemented for OpenAI/LTX** |
+| PRD-MEDIA-001..007 Media identity | Media Library / Brand / Knowledge / Scene Planning | media_assets, private Storage | schema/RLS/UI/E2E/live storage proof + convergence tests | **Implemented operationally** |
 | PRD-VID-001..019 video planning/generation/final assembly | Scene Planning / Media | normalized planning graph, jobs, attempts, assembly/media | unit/QC/E2E/container/live worker proof | **Implemented engineering** |
 | PRD-VID-020 institutional Brand defaults | Scene Planning | Brand resolver + plan snapshots | brand-default/workflow/replan tests | **Implemented** |
 | PRD-NFR-010 SSRF safety | Knowledge URL ingestion | url-safety boundary | deterministic URL safety tests | **Implemented** |
 | PRD-NFR-011 DB least privilege | identity/Knowledge DB boundary | table ACLs + RLS + function grants | SQL assertions + live ACL/advisor probes | **Implemented** |
-| Dashboard | Dashboard | aggregate workflow state | UI/E2E | **Partial** |
-| Generic Approval / Publishing / Calendar / Analytics | respective modules | roadmap domains | future governed slices | **Roadmap-governed** |
-| Specialized modules / Manual Generation | respective routes | future/shared domains | future governed slices | **Missing/Partial per roadmap** |
+| Dashboard production command center | Dashboard | organization-scoped aggregate read model + deterministic next action | service/component/E2E recovery-state + exact-head CI | **Implemented** |
+| Workflow-maturity navigation | Global shell | static grouped route contract | nav unit/mobile/E2E traversal | **Implemented** |
+| Generic Approval / Publishing / Calendar / Analytics | respective modules | roadmap domains | truthful readiness E2E; future governed slices | **Roadmap-governed** |
+| AI Representative / Podcast / Campus / Testimonials | respective routes | future domains | truthful readiness E2E; future governed slices | **Missing per roadmap** |
+| Manual Generation | Manual Generation | future/shared domains | readiness E2E | **Foundation/readiness only** |
 
 ## 3. Organization Profile traceability
 
@@ -126,7 +128,7 @@ Verification:
 - PDF/DOCX/PPTX/TXT extraction tests;
 - URL SSRF tests for private/loopback/link-local/metadata/unsafe redirects;
 - role/cross-org action tests;
-- Playwright OWNER document upload → DRAFT record + explicit Activate action;
+- browser fixture coverage for OWNER document upload → DRAFT record + explicit Activate action where the fixture supplies the required domain state;
 - live EDITOR ingestion produced exactly one DRAFT and no automatic activation;
 - cross-org source ID rejected without tenant disclosure requirement.
 
@@ -157,7 +159,8 @@ Verified:
 - provenance persistence validates current Profile/Brand revisions and exact ACTIVE Knowledge snapshot data;
 - identity + Knowledge snapshots write atomically;
 - persistence failure marks content failed before source artifact success;
-- live proof produced 1 identity provenance row + 2 Knowledge snapshots, then rollback cleanup returned zero residue.
+- live proof produced 1 identity provenance row + 2 Knowledge snapshots, then rollback cleanup returned zero residue;
+- converged Content Studio exposes read-only Profile revision, Brand Kit revision and automatic Core count while preserving server authority and separate selected non-Core `0..20` semantics.
 
 ## 8. Scene Planning Brand integration traceability
 
@@ -176,7 +179,9 @@ Verified:
 - Brand defaults fill missing palette/typography/logo treatment;
 - explicit Visual Bible values remain project creative direction;
 - official primary logo asset ID remains separate institutional authority;
-- planner prompt explicitly forbids logo substitution/redrawing by Visual Bible.
+- planner prompt explicitly forbids logo substitution/redrawing by Visual Bible;
+- convergence UI presents Plan → Review & approve → Generate shots → Assemble without changing authoritative lifecycle rules;
+- completed final assembly can hand off to `/media-library` without inventing unsupported asset deep links.
 
 ## 9. Database least-privilege traceability
 
@@ -219,37 +224,64 @@ Result:
 Regression:
 - `src/modules/generation-context/rls-initplan-hardening-sql.test.ts`.
 
-## 10. E2E/readiness traceability
+## 10. E2E/readiness and convergence traceability
 
 Implementation:
-- strict development-only E2E fixture resolver requires both the existing auth-bypass gate and `x-pak-e2e-fixture`;
-- production mode cannot activate fixtures;
-- fixture role parser currently models OWNER and REVIEWER only;
-- synthetic Profile/Brand/Media/Knowledge values do not persist to Supabase.
+- strict development-only E2E fixture resolver requires the existing auth-bypass gate plus an allowed fixture role header;
+- production mode cannot activate the auth bypass;
+- fixture role parser models only approved application roles and does not itself create organization/domain rows;
+- synthetic Profile/Brand/Media/Knowledge values are not persisted merely to make convergence success screens appear;
+- `tests/e2e/track-b-release.spec.ts` traverses all 15 current primary routes including Scene Planning;
+- `tests/e2e/production-convergence.spec.ts` verifies grouped workflow-maturity navigation, truthful no-workspace recovery states and roadmap boundaries using existing fixture gates;
+- `tests/e2e/module-readiness.spec.ts` keeps Phase 9–17 Planned/Foundation semantics and absence of fake domain controls locked.
 
-Playwright verifies:
-- OWNER editable Organization Profile and Brand Kit;
-- REVIEWER populated read-only surfaces with no save controls;
-- OWNER private document upload → Knowledge DRAFT review flow;
-- existing tests without the second fixture header retain normal safe no-membership behavior.
+Success-state convergence is separately verified by deterministic unit/component/service tests for:
+- Dashboard command-center sections, normalized integration state and deterministic next action;
+- Content Studio `Authoritative context` semantics;
+- Scene Planning four-stage hierarchy and final-media handoff;
+- Media Library operational framing;
+- Knowledge manual/ingestion/DRAFT/Core hierarchy;
+- Settings Profile/Brand/OpenAI/LTX/Meta summaries and safe error behavior.
 
-Exact Task 12 CI #1180 passed typecheck, lint, units, production build, worker/container and Playwright.
+Exact convergence CI evidence:
+- Task 8 exact-head CI #1265 passed typecheck, lint, 640 unit tests, production build, worker tests/container smoke and Playwright;
+- Task 9 exact-head CI #1277 passed all repository gates including Playwright after aligning the new convergence E2E expectations with the existing no-synthetic-domain-data fixture contract;
+- no production bypass, secret exposure, fake Dashboard metric or fake roadmap workflow was added.
 
-## 11. Live rollout traceability
+## 11. UI/UX Production Convergence traceability
+
+Implementation:
+- `src/components/app-shell/navigation.ts` and `app-navigation.tsx`: Operational / Administration / Roadmap grouping while retaining every governed route;
+- `src/modules/dashboard/service.ts` + Dashboard UI: server-only aggregate production read model and deterministic next action;
+- Content Studio: read-only authoritative Profile/Brand/Core context visibility while server remains grounding authority;
+- Scene Planning: presentation-only four-stage production hierarchy and Media Library handoff;
+- Media Library: operational catalogue framing using existing safe metadata and existing mutation boundaries;
+- Knowledge Base: manual versus document/URL source-entry hierarchy, explicit DRAFT/ACTIVE and Core automatic-grounding semantics;
+- Settings: three-domain landing with revision/configuration status, normalized OpenAI/LTX state and truthful Meta Phase 10 readiness.
+
+Boundaries preserved:
+- no new domain tables or migrations;
+- no RLS/RBAC weakening;
+- no browser authority for Profile/Brand/Knowledge/provider state;
+- no persisted signed URLs/raw storage paths;
+- no Phase 9–17 workflow implementation;
+- no automatic PR merge or deployment acceptance claim.
+
+## 12. Live rollout traceability
 
 Project: PAK Supabase production project used by this repository.
 
-Procedure/evidence:
+Procedure/evidence for the Organization Identity / Brand / Knowledge foundation:
 1. remote migration history inspected first;
 2. only five missing planned identity/ingestion/provenance migrations applied in order;
-3. live-discovered issues fixed only via three later forward migrations;
+3. live-discovered issues fixed only via later forward migrations;
 4. OWNER/EDITOR/REVIEWER + cross-org rollback-only fixture probes executed;
 5. private Media Library bucket confirmed private;
 6. Brand schema confirmed no signed URL/path columns;
 7. atomic provenance and DRAFT ingestion verified;
 8. synthetic fixture cleanup verified zero rows across every touched table;
 9. Supabase security/performance advisors rerun;
-10. exact code-head CI #1186 passed all gates including Playwright.
+10. exact code-head CI passed all gates including Playwright.
 
 Remote migration names/versions for this rollout:
 - `20260913174003 organization_profile_brand_knowledge`
@@ -261,7 +293,9 @@ Remote migration names/versions for this rollout:
 - `20260913175126 core_knowledge_insert_guard`
 - `20260913180118 organization_identity_rls_initplan_hardening`.
 
-## 12. Existing platform traceability retained
+UI/UX Production Convergence introduced no schema/security migration and therefore required no new live Supabase rollout.
+
+## 13. Existing platform traceability retained
 
 The previously implemented and governed areas remain intact:
 - authentication/tenancy/durable jobs;
@@ -269,11 +303,11 @@ The previously implemented and governed areas remain intact:
 - multilingual artifacts;
 - normalized Scene Planning/QC/approval;
 - approved-shot video generation, reconciliation and private import;
-- Phase 8 final assembly + Media Library worker/storage path.
+- Phase 8 final assembly + operational Media Library worker/storage path.
 
 External paid LTX acceptance remains dependent on valid organization credential/credits and must not be fabricated.
 
-## 13. Drift-control rules
+## 14. Drift-control rules
 
 1. Every feature PR lists requirement IDs implemented/modified.
 2. Existing requirement IDs retain meaning; new behavior gets new IDs.
