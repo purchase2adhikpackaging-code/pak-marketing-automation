@@ -7,6 +7,11 @@ export interface PublishingWorkerBrokerClientOptions {
 
 type JsonRecord = Record<string, unknown>;
 
+export interface PublishingAutomationTarget {
+  organizationId: string;
+  concurrency: 4;
+}
+
 const MAX_FAILURE_ERROR_CHARS = 4_000;
 
 function required(name: "NEXT_PUBLIC_SUPABASE_URL" | "NEXT_PUBLIC_SUPABASE_ANON_KEY"): string {
@@ -62,6 +67,30 @@ export function createPublishingWorkerBrokerClient(options: PublishingWorkerBrok
         if (error instanceof PublishingWorkerBrokerError && error.status === 401) return false;
         throw error;
       }
+    },
+
+    async listAutomationTargets(): Promise<PublishingAutomationTarget[]> {
+      const payload = await request<{ targets?: unknown }>({ action: "listAutomationTargets" });
+      if (!Array.isArray(payload.targets)) throw new Error("Publishing worker broker returned invalid automation targets.");
+      return payload.targets.map((target) => {
+        const value = objectValue(target, "automation target");
+        if (typeof value.organizationId !== "string" || value.concurrency !== 4) {
+          throw new Error("Publishing worker broker returned invalid automation target.");
+        }
+        return { organizationId: value.organizationId, concurrency: 4 as const };
+      });
+    },
+
+    async bootstrapPortfolio(input: {
+      organizationId: string;
+      idempotencyKey: string;
+      jobs: JsonRecord[];
+    }): Promise<{ runId: string | null }> {
+      const payload = await request<{ runId?: unknown }>({ action: "bootstrapPortfolio", ...input });
+      if (payload.runId !== null && typeof payload.runId !== "string") {
+        throw new Error("Publishing worker broker returned invalid automatic portfolio run.");
+      }
+      return { runId: payload.runId ?? null };
     },
 
     async claimJobs(input: { workerId: string; limit: number; leaseSeconds: number }): Promise<JsonRecord[]> {
