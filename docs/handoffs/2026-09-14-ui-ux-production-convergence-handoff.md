@@ -126,6 +126,12 @@ Phase 9–17 implementation statuses are unchanged.
 
 The commit containing this handoff is the governance-only closure commit built on implementation head `0d0ddd25f1a2f0b232b467b2734224b80c845c29`. Its SHA is intentionally not embedded inside itself to avoid a self-referential commit cycle. The authoritative closure evidence is the GitHub CI run associated with the final branch head after this governance commit. Before claiming the slice complete or merge-ready, verify that exact head and its full CI gates, then verify PR #43 still targets the intended base and remains unmerged unless explicitly authorized.
 
+## Vercel closure verification checkpoint
+
+On 14 September 2026, the main `pak-marketing-automation` Vercel project was observed creating successful `READY` previews again after the earlier build-rate-limit / `upgradeToPro` condition. Preflight PR head `6f1a84409675bf44c02910a88a6ab46c6f26f9ef` had exact-head GitHub CI #1282 green. This documentation-only checkpoint intentionally advances the PR head so GitHub/Vercel Git integration can produce a fresh exact-head closure run; closure is not complete until the new head has green CI, a `READY` main-project preview whose deployment metadata matches that exact SHA, HTTP 200 verification of the expected app/login surface, and no fatal/runtime-error evidence in the verification window.
+
+The separate `pak-staging-schema-probe` Vercel project remains non-authoritative for this closure unless it materially blocks the main app.
+
 ## Next governed product phase
 
 Phase 9 — Approval Center remains the next roadmap phase only after this convergence PR is reviewed/merged according to user authorization. Do not silently start Phase 9 from this handoff.
