@@ -40,6 +40,45 @@ describe("publishing worker broker client", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
+  it("lists only broker-approved automation targets", async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "anon-key";
+    const fetchImpl = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      expect(JSON.parse(String(init?.body))).toEqual({ action: "listAutomationTargets" });
+      return new Response(JSON.stringify({
+        targets: [{ organizationId: "932a5898-a85f-4ba6-b571-66d6fe8cd9e8", concurrency: 4 }],
+      }), { status: 200, headers: { "content-type": "application/json" } });
+    });
+    const broker = createPublishingWorkerBrokerClient({ credential: "worker", fetchImpl });
+    await expect(broker.listAutomationTargets()).resolves.toEqual([
+      { organizationId: "932a5898-a85f-4ba6-b571-66d6fe8cd9e8", concurrency: 4 },
+    ]);
+  });
+
+  it("bootstraps an idempotent automatic portfolio run through the broker", async () => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "anon-key";
+    const jobs = [{ job: { bookId: "BOOK-1" }, curriculumText: "governed curriculum" }];
+    const fetchImpl = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      expect(JSON.parse(String(init?.body))).toEqual({
+        action: "bootstrapPortfolio",
+        organizationId: "932a5898-a85f-4ba6-b571-66d6fe8cd9e8",
+        idempotencyKey: "auto:2026:0.1.0:abc12345",
+        jobs,
+      });
+      return new Response(JSON.stringify({ runId: "171d9d52-b497-456f-8dbb-bc947a20865e" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    });
+    const broker = createPublishingWorkerBrokerClient({ credential: "worker", fetchImpl });
+    await expect(broker.bootstrapPortfolio({
+      organizationId: "932a5898-a85f-4ba6-b571-66d6fe8cd9e8",
+      idempotencyKey: "auto:2026:0.1.0:abc12345",
+      jobs,
+    })).resolves.toEqual({ runId: "171d9d52-b497-456f-8dbb-bc947a20865e" });
+  });
+
   it("maps an invalid worker credential to unauthorized without leaking the capability", async () => {
     process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "anon-key";
