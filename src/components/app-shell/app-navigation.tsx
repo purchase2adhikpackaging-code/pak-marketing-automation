@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { APP_NAVIGATION, isNavigationItemActive } from "./navigation";
+import { APP_NAVIGATION_GROUPS, isNavigationItemActive } from "./navigation";
 
 export function AppNavigation() {
   const pathname = usePathname();
@@ -24,25 +24,41 @@ export function AppNavigation() {
       <nav
         id="primary-navigation"
         aria-label="Primary"
-        className={`${open ? "grid" : "hidden"} gap-1 pt-4 lg:grid lg:pt-0`}
+        className={`${open ? "grid" : "hidden"} gap-5 pt-4 lg:grid lg:pt-0`}
       >
-        {APP_NAVIGATION.map((item) => {
-          const active = isNavigationItemActive(pathname, item.href);
+        {APP_NAVIGATION_GROUPS.map((group) => {
+          const groupId = `nav-group-${group.label.toLowerCase().replaceAll(" ", "-")}`;
 
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={active ? "page" : undefined}
-              onClick={() => setOpen(false)}
-              className={
-                active
-                  ? "rounded-lg bg-slate-800 px-3 py-2.5 text-sm font-medium text-white"
-                  : "rounded-lg px-3 py-2.5 text-sm text-slate-300 transition hover:bg-slate-800 hover:text-white"
-              }
-            >
-              {item.label}
-            </Link>
+            <section key={group.label} aria-labelledby={groupId}>
+              <p
+                id={groupId}
+                className="px-3 text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-slate-500"
+              >
+                {group.label}
+              </p>
+              <div className="mt-1 grid gap-1">
+                {group.items.map((item) => {
+                  const active = isNavigationItemActive(pathname, item.href);
+
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      aria-current={active ? "page" : undefined}
+                      onClick={() => setOpen(false)}
+                      className={
+                        active
+                          ? "rounded-lg bg-slate-800 px-3 py-2.5 text-sm font-medium text-white"
+                          : "rounded-lg px-3 py-2.5 text-sm text-slate-300 transition hover:bg-slate-800 hover:text-white"
+                      }
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </section>
           );
         })}
       </nav>
