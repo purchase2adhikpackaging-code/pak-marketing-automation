@@ -74,6 +74,43 @@ const errorResponseSchema = z.object({
   code: z.string().optional(),
 }).passthrough();
 
+type ParsedResearchRun = z.infer<typeof researchRunSchema>;
+type ParsedResearchCandidate = z.infer<typeof researchCandidateSchema>;
+
+function mapResearchRun(value: ParsedResearchRun): ResearchRun {
+  return {
+    id: value.id,
+    organizationId: value.organizationId,
+    query: value.query,
+    provider: value.provider,
+    status: value.status,
+    resultCount: value.resultCount,
+    ...(value.failureCode !== undefined ? { failureCode: value.failureCode } : {}),
+    ...(value.createdBy !== undefined ? { createdBy: value.createdBy } : {}),
+    createdAt: value.createdAt,
+    ...(value.completedAt !== undefined ? { completedAt: value.completedAt } : {}),
+  };
+}
+
+function mapResearchCandidate(value: ParsedResearchCandidate): ResearchCandidate {
+  return {
+    id: value.id,
+    organizationId: value.organizationId,
+    researchRunId: value.researchRunId,
+    provider: value.provider,
+    title: value.title,
+    canonicalUrl: value.canonicalUrl,
+    sourceHost: value.sourceHost,
+    excerpt: value.excerpt,
+    retrievedAt: value.retrievedAt,
+    reviewStatus: value.reviewStatus,
+    ...(value.knowledgeRecordId !== undefined
+      ? { knowledgeRecordId: value.knowledgeRecordId }
+      : {}),
+    createdAt: value.createdAt,
+  };
+}
+
 function safeError(code: ResearchEdgeErrorCode): string {
   switch (code) {
     case "CREDENTIAL_REQUIRED":
@@ -132,7 +169,11 @@ export class KnowledgeResearchEdgeClient {
       };
     }
 
-    return { ok: true, run: parsed.data.run, candidates: parsed.data.candidates };
+    return {
+      ok: true,
+      run: mapResearchRun(parsed.data.run),
+      candidates: parsed.data.candidates.map(mapResearchCandidate),
+    };
   }
 
   async dismiss(
@@ -154,7 +195,7 @@ export class KnowledgeResearchEdgeClient {
       };
     }
 
-    return { ok: true, candidate: parsed.data.candidate };
+    return { ok: true, candidate: mapResearchCandidate(parsed.data.candidate) };
   }
 
   private async invoke(
