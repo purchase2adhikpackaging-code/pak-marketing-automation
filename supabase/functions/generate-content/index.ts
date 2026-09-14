@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 
 type RequestBody = {
   organizationId?: string;
@@ -18,9 +18,26 @@ const MAX_OUTPUT_TOKENS = 4_000;
 const RATE_LIMIT_WINDOW_SECONDS = 600;
 const INTERACTIVE_RATE_LIMIT_REQUESTS = 20;
 const PUBLISHING_RATE_LIMIT_REQUESTS = 120;
+const WORKER_SECRET_READ_ATTEMPTS = 3;
+const WORKER_SECRET_RETRY_DELAY_MS = 75;
 
 function json(status: number, body: Record<string, unknown>) {
   return new Response(JSON.stringify(body), { status, headers: JSON_HEADERS });
+}
+
+function sleep(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+async function readPublishingWorkerSecret(admin: SupabaseClient): Promise<string | null> {
+  for (let attempt = 1; attempt <= WORKER_SECRET_READ_ATTEMPTS; attempt += 1) {
+    const { data, error } = await admin.rpc("read_publishing_worker_dispatch_secret");
+    if (!error && typeof data === "string" && data.trim()) return data.trim();
+    if (attempt < WORKER_SECRET_READ_ATTEMPTS) {
+      await sleep(WORKER_SECRET_RETRY_DELAY_MS * attempt);
+    }
+  }
+  return null;
 }
 
 function extractOutputText(payload: Record<string, unknown>): string | null {
@@ -50,13 +67,6 @@ Deno.serve(async (req: Request) => {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const { data: publishingWorkerSecretData, error: publishingWorkerSecretError } = await admin.rpc(
-    "read_publishing_worker_dispatch_secret",
-  );
-  const publishingWorkerSecret = !publishingWorkerSecretError && typeof publishingWorkerSecretData === "string"
-    ? publishingWorkerSecretData.trim()
-    : "";
-
   let body: RequestBody;
   try {
     body = await req.json();
@@ -78,9 +88,13 @@ Deno.serve(async (req: Request) => {
   }
 
   const internalHeader = req.headers.get("x-publishing-worker-secret") ?? "";
-  const internalRequest = Boolean(
-    publishingWorkerSecret && internalHeader && internalHeader === publishingWorkerSecret,
-  );
+  let internalRequest = false;
+  if (internalHeader) {
+    const publishingWorkerSecret = await readPublishingWorkerSecret(admin);
+    if (!publishingWorkerSecret) return json(503, { error: "WORKER_AUTH_UNAVAILABLE" });
+    if (internalHeader !== publishingWorkerSecret) return json(401, { error: "UNAUTHORIZED" });
+    internalRequest = true;
+  }
 
   let actorUserId: string | null = null;
 
