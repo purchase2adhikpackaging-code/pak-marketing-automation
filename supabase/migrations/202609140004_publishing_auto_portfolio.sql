@@ -36,7 +36,6 @@ as $$
 declare
   v_setting public.publishing_automation_settings;
   v_run_id uuid;
-  v_existing_run_id uuid;
   v_eligible_count integer := 0;
 begin
   if auth.role() <> 'service_role' then
@@ -45,8 +44,8 @@ begin
   if _organization_id is null then
     raise exception 'organization is required';
   end if;
-  if _idempotency_key is null or length(trim(_idempotency_key)) < 8 then
-    raise exception 'automatic portfolio idempotency key is required';
+  if _idempotency_key is null or length(trim(_idempotency_key)) <> 64 then
+    raise exception 'automatic portfolio idempotency key must be a SHA-256 identity';
   end if;
   if jsonb_typeof(_jobs) <> 'array' then
     raise exception 'automatic portfolio jobs must be a JSON array';
@@ -75,15 +74,11 @@ begin
     raise exception 'automatic portfolio enablement actor is not authorized';
   end if;
 
-  select r.id into v_existing_run_id
+  select r.id into v_run_id
   from public.publishing_production_runs r
   where r.organization_id = _organization_id
     and r.idempotency_key = trim(_idempotency_key)
   limit 1;
-
-  if v_existing_run_id is not null then
-    return v_existing_run_id;
-  end if;
 
   select count(*) into v_eligible_count
   from jsonb_array_elements(_jobs) as entry(item)
@@ -101,34 +96,35 @@ begin
         and p.status = 'RELEASED'
     );
 
-  if v_eligible_count = 0 then
+  if v_run_id is null and v_eligible_count = 0 then
     return null;
   end if;
 
-  insert into public.publishing_production_runs (
-    organization_id, created_by, scope_type, scope_value, status,
-    requested_concurrency, planned_count, idempotency_key
-  ) values (
-    _organization_id,
-    v_setting.enabled_by,
-    'PORTFOLIO',
-    jsonb_build_object('automatic', true),
-    'QUEUED',
-    4,
-    v_eligible_count,
-    trim(_idempotency_key)
-  )
-  on conflict (organization_id, idempotency_key) where idempotency_key is not null
-  do nothing
-  returning id into v_run_id;
-
   if v_run_id is null then
-    select r.id into v_run_id
-    from public.publishing_production_runs r
-    where r.organization_id = _organization_id
-      and r.idempotency_key = trim(_idempotency_key)
-    limit 1;
-    return v_run_id;
+    insert into public.publishing_production_runs (
+      organization_id, created_by, scope_type, scope_value, status,
+      requested_concurrency, planned_count, idempotency_key
+    ) values (
+      _organization_id,
+      v_setting.enabled_by,
+      'PORTFOLIO',
+      jsonb_build_object('automatic', true),
+      'QUEUED',
+      4,
+      0,
+      trim(_idempotency_key)
+    )
+    on conflict (organization_id, idempotency_key) where idempotency_key is not null
+    do nothing
+    returning id into v_run_id;
+
+    if v_run_id is null then
+      select r.id into v_run_id
+      from public.publishing_production_runs r
+      where r.organization_id = _organization_id
+        and r.idempotency_key = trim(_idempotency_key)
+      limit 1;
+    end if;
   end if;
 
   insert into public.publishing_production_jobs (
@@ -173,6 +169,15 @@ begin
         and p.status = 'RELEASED'
     )
   on conflict (production_run_id, book_id, edition, revision) do nothing;
+
+  update public.publishing_production_runs r
+  set planned_count = (
+        select count(*)
+        from public.publishing_production_jobs j
+        where j.production_run_id = v_run_id
+      ),
+      updated_at = now()
+  where r.id = v_run_id;
 
   perform public.refresh_publishing_run_summary(v_run_id);
   return v_run_id;
