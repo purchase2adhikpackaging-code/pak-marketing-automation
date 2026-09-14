@@ -49,6 +49,8 @@ describe("publishing worker broker Edge security boundary", () => {
       "createCheckpointDownload",
       "createStorageUpload",
       "upsertPublication",
+      "listAutomationTargets",
+      "bootstrapPortfolio",
     ]) {
       expect(edge).toContain(`"${action}"`);
     }
@@ -56,6 +58,17 @@ describe("publishing worker broker Edge security boundary", () => {
     expect(edge).not.toMatch(/admin\.rpc\(\s*body\./);
     expect(edge).not.toMatch(/admin\.from\(\s*body\./);
     expect(edge).not.toMatch(/storage\.from\(\s*body\./);
+  });
+
+  it("restricts automatic portfolio bootstrap to approved settings and the dedicated RPC", () => {
+    const edge = source();
+    expect(edge).toContain('from("publishing_automation_settings")');
+    expect(edge).toContain('.eq("enabled", true)');
+    expect(edge).toContain('.not("pilot_approved_at", "is", null)');
+    expect(edge).toContain('admin.rpc("bootstrap_publishing_auto_portfolio"');
+    expect(edge).toContain("_organization_id: organizationId");
+    expect(edge).toContain("_idempotency_key: idempotencyKey");
+    expect(edge).toContain("_jobs: jobs");
   });
 
   it("restricts privileged queue operations to the existing publishing RPC contract", () => {
