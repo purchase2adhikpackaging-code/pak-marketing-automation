@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 const modules = [
   ["Dashboard", "/dashboard"],
   ["Content Studio", "/content-studio"],
+  ["Scene Planning", "/scene-planning"],
   ["AI Representative", "/ai-representative"],
   ["Campus / Locations", "/campus-locations"],
   ["Podcast", "/podcast"],
@@ -17,7 +18,7 @@ const modules = [
   ["Settings", "/settings"],
 ] as const;
 
-test("Track B desktop navigation traverses all fourteen primary routes", async ({ page }) => {
+test("Track B desktop navigation traverses all fifteen primary routes", async ({ page }) => {
   await page.goto("/dashboard");
 
   for (const [label, href] of modules) {
@@ -52,7 +53,7 @@ test("Track B traversal preserves truthful operational, future, and foundation-o
   await expect(main.getByRole("button")).toHaveCount(0);
 });
 
-test("Track B mobile navigation traverses all fourteen primary routes without horizontal overflow", async ({ page }) => {
+test("Track B mobile navigation traverses all fifteen primary routes without horizontal overflow", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/dashboard");
 
