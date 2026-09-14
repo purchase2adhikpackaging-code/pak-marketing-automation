@@ -1,44 +1,29 @@
 # PAK Knowledge Research — SDD Execution Handoff
 
-**Date:** 2026-09-13
+**Date:** 2026-09-14
 **Execution branch:** `feature/knowledge-research-zero-secret-exec`
-**Current execution head before this handoff refresh:** `7830f14620671abd0e6ba1d5b72425c2539e1742`
-**Latest verified foundation / PR #40 head:** `ea7d53d4259c48b2c709870d2e1fdb542e5c647c`
+**Latest synchronized execution head before this refresh:** `403df3d3ec8ee196263b08fbd492de74736af926`
+**Latest verified foundation / PR #40 head:** `2f3b17702dc57bebfe760790d59aecfc3089ccc9`
 **Status:** Execution preparation complete; implementation has not started.
 
 ## Governing design and plan
 
-The approved design and implementation plan are already present on this execution branch:
+The approved design and implementation plan are present on this execution branch:
 
 - `docs/superpowers/specs/2026-09-13-knowledge-research-zero-secret-design.md`
 - `docs/superpowers/plans/2026-09-13-knowledge-research-zero-secret.md`
 
-No documentation cherry-pick remains. The execution branch was merged forward to the latest PR #40 foundation head and carries the exact approved spec/plan blobs.
-
 Treat the design spec as binding authority and the implementation plan as the execution argument.
 
-## Foundation verification
-
-PR #40 remained open and draft when last checked. Its head was:
-
-`ea7d53d4259c48b2c709870d2e1fdb542e5c647c` — `fix: guard Core Knowledge inserts by role`
-
-GitHub Actions CI for that exact foundation head completed successfully (`CI` run 34772863241, conclusion `success`).
-
-GitHub combined status also reported two Vercel failures, both pointing to the Vercel build-rate-limit page:
-
-- `Vercel – pak-marketing-automation`
-- `Vercel – pak-staging-schema-probe`
-
-Treat those as external platform/quota status unless later evidence shows an application failure. Do not waive any application CI gate.
+The execution branch has been merged forward to PR #40 head `2f3b17702dc57bebfe760790d59aecfc3089ccc9` while preserving the approved spec, plan and this handoff. No documentation cherry-pick remains.
 
 ## Required execution method
 
-Use `superpowers:subagent-driven-development` in Codex.
+Use `superpowers:subagent-driven-development` in a Codex runtime with repository/worktree access.
 
 Before Task 1:
 
-1. Re-check PR #40 head. If it advanced beyond `ea7d53d4259c48b2c709870d2e1fdb542e5c647c`, integrate the newer foundation head first.
+1. Re-check PR #40 head. If it advanced beyond `2f3b17702dc57bebfe760790d59aecfc3089ccc9`, integrate the newer foundation head first.
 2. Use `superpowers:using-git-worktrees` and create/verify the isolated worktree.
 3. Run the SDD workspace helper for this exact plan and create/check the plan-scoped ledger.
 4. Read the complete design spec and implementation plan once.
@@ -63,14 +48,14 @@ For every task: fresh implementer -> tests/commit/self-review -> task reviewer -
 - TDD RED -> GREEN for every slice.
 - No single-agent unchecked coding path.
 
-## Runtime note
+## Runtime blocker observed in this ChatGPT session
 
-This ChatGPT harness does not expose a Codex fresh-subagent dispatch primitive. A local shell is available, but it cannot resolve `github.com`, so it cannot clone the repository to construct the required local worktree/SDD ledger either. GitHub connector operations were sufficient to reconcile the execution branch and preserve the exact docs, but they are not a substitute for the mandated fresh-implementer/reviewer SDD loop.
+This ChatGPT harness has the GitHub connector and can read/write repository branches, commits, files, PRs and CI, but it does **not** expose a Codex fresh-subagent dispatch primitive. The local container has `git` but no checked-out repository and no `codex` executable. Therefore the mandated fresh implementer/reviewer SDD loop cannot be truthfully executed in this runtime.
 
-Therefore no implementation code was started here. Do **not** reinterpret this as permission to implement Task 1 in a single-agent path.
+Do not reinterpret this as permission to implement Task 1 through a single-agent GitHub-edit path.
 
 ## Exact next action
 
-In a Codex session with repository/worktree access, open `feature/knowledge-research-zero-secret-exec`, verify PR #40 has not advanced, initialize the SDD worktree/workspace/ledger, run the pre-flight scan, and dispatch the Task 1 implementer from:
+In a Codex session with repository/worktree access, checkout `feature/knowledge-research-zero-secret-exec`, initialize the SDD worktree/workspace/ledger, run the pre-flight scan, and dispatch the Task 1 implementer from:
 
 `docs/superpowers/plans/2026-09-13-knowledge-research-zero-secret.md`
