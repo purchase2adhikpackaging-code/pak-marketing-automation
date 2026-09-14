@@ -8,12 +8,16 @@ const SAFE_SEGMENT_RE = /^[A-Za-z0-9._-]+$/;
 const MAX_WORKER_ID_CHARS = 200;
 const MAX_STAGE_CHARS = 200;
 const MAX_ERROR_CHARS = 4_000;
+const MAX_IDEMPOTENCY_KEY_CHARS = 300;
+const MAX_BOOTSTRAP_JOBS = 2_000;
 const SIGNED_DOWNLOAD_SECONDS = 300;
 const MAX_LISTED_CHECKPOINT_FILES = 5_000;
 const MAX_STORAGE_DEPTH = 16;
 
 const ALLOWED_ACTIONS = new Set([
   "authorize",
+  "listAutomationTargets",
+  "bootstrapPortfolio",
   "claimJobs",
   "yieldJob",
   "completeJob",
@@ -276,6 +280,40 @@ Deno.serve(async (req: Request) => {
   if (action === "authorize") return json(200, { ok: true });
 
   try {
+    if (action === "listAutomationTargets") {
+      const { data, error } = await admin
+        .from("publishing_automation_settings")
+        .select("organization_id,concurrency")
+        .eq("enabled", true)
+        .not("pilot_approved_at", "is", null)
+        .eq("concurrency", 4);
+      if (error) throw new BrokerHttpError(500, "AUTOMATION_TARGETS_UNAVAILABLE");
+      const targets = (data ?? []).map((row) => ({
+        organizationId: String(row.organization_id),
+        concurrency: 4,
+      }));
+      return json(200, { targets });
+    }
+
+    if (action === "bootstrapPortfolio") {
+      const organizationId = requiredString(body, "organizationId", { uuid: true });
+      const idempotencyKey = requiredString(body, "idempotencyKey", { max: MAX_IDEMPOTENCY_KEY_CHARS });
+      const jobs = body.jobs;
+      if (!Array.isArray(jobs) || jobs.length === 0 || jobs.length > MAX_BOOTSTRAP_JOBS) {
+        throw new BrokerHttpError(400, "INVALID_AUTOMATION_JOBS");
+      }
+      if (jobs.some((job) => !job || typeof job !== "object" || Array.isArray(job))) {
+        throw new BrokerHttpError(400, "INVALID_AUTOMATION_JOBS");
+      }
+      const { data, error } = await admin.rpc("bootstrap_publishing_auto_portfolio", {
+        _organization_id: organizationId,
+        _idempotency_key: idempotencyKey,
+        _jobs: jobs,
+      });
+      if (error) throw new BrokerHttpError(409, "AUTO_PORTFOLIO_BOOTSTRAP_FAILED");
+      return json(200, { runId: typeof data === "string" ? data : null });
+    }
+
     if (action === "claimJobs") {
       const workerId = requiredString(body, "workerId", { max: MAX_WORKER_ID_CHARS });
       const limit = integerInRange(body, "limit", 1, 32, 4);
