@@ -6,6 +6,10 @@ const edgePath = join(
   process.cwd(),
   "supabase/functions/publishing-worker-broker/index.ts",
 );
+const vaultRetryMigrationPath = join(
+  process.cwd(),
+  "supabase/migrations/202609140001_publishing_worker_vault_read_retry.sql",
+);
 
 function source(): string {
   expect(existsSync(edgePath)).toBe(true);
@@ -21,12 +25,16 @@ describe("publishing worker broker Edge security boundary", () => {
     expect(edge).not.toContain('Deno.env.get("PUBLISHING_WORKER_SECRET")');
   });
 
-  it("retries transient Vault reads and stays fail-closed", () => {
-    const edge = source();
-    expect(edge).toContain("WORKER_SECRET_READ_ATTEMPTS");
-    expect(edge).toContain("readPublishingWorkerSecret");
-    expect(edge).toMatch(/for \(let attempt = 1; attempt <= WORKER_SECRET_READ_ATTEMPTS; attempt \+= 1\)/);
-    expect(edge).toContain('error: "WORKER_AUTH_UNAVAILABLE"');
+  it("uses a bounded shared Vault retry at the dispatch-secret RPC boundary", () => {
+    expect(existsSync(vaultRetryMigrationPath)).toBe(true);
+    const sql = readFileSync(vaultRetryMigrationPath, "utf8");
+    expect(sql).toContain("read_publishing_worker_dispatch_secret");
+    expect(sql).toContain("for v_attempt in 1..5 loop");
+    expect(sql).toContain("pg_sleep");
+    expect(sql).toContain("security definer");
+    expect(sql).toContain("grant execute on function public.read_publishing_worker_dispatch_secret() to service_role");
+    expect(sql).toContain("revoke all on function public.read_publishing_worker_dispatch_secret() from anon");
+    expect(sql).toContain("revoke all on function public.read_publishing_worker_dispatch_secret() from authenticated");
   });
 
   it("uses an explicit broker action allow-list instead of accepting arbitrary RPC or table names", () => {
