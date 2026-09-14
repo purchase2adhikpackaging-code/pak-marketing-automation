@@ -64,6 +64,15 @@ describe("generate-content Edge cost guardrails", () => {
     expect(source).toContain('error: "UNAUTHORIZED"');
   });
 
+  it("enforces exact publishing blueprint and chapter JSON contracts at the live Edge boundary", () => {
+    expect(source).toContain("publishingJsonContract");
+    expect(source).toContain("BLUEPRINT JSON CONTRACT");
+    expect(source).toContain("CHAPTER MANUSCRIPT JSON CONTRACT");
+    expect(source).toContain("Do not rename, omit, nest, or wrap these keys");
+    expect(source).toMatch(/providerInstructions\s*=\s*internalRequest/);
+    expect(source).toMatch(/instructions:\s*providerInstructions/);
+  });
+
   it("records secret-free internal generation diagnostics", () => {
     expect(source).toContain("auditInternalGeneration");
     expect(source).toContain('from("integration_audit_events")');
