@@ -34,6 +34,7 @@ function source(overrides: Partial<VisualAssetSource> = {}): VisualAssetSource {
         bytes: new Uint8Array([0xff, 0xd8, 0xff, 0xdb, 1, 2, 3, 4]),
         sourceKind: "approved-library",
         provenance: "PAK approved textbook visual library",
+        realismVerified: true,
         labelsPresent: false,
       };
     },
@@ -50,6 +51,7 @@ describe("book visual resolver", () => {
     expect(bundle.visuals[0]?.dataUri).toMatch(/^data:image\/jpeg;base64,/);
     expect(bundle.visuals[0]?.provenance).toBe("PAK approved textbook visual library");
     expect(bundle.visuals[0]?.sourceKind).toBe("approved-library");
+    expect(bundle.visuals[0]?.realismVerified).toBe(true);
   });
 
   it("tries the next source when the first source has no approved asset", async () => {
@@ -66,6 +68,28 @@ describe("book visual resolver", () => {
     );
   });
 
+  it("rejects unverified realistic imagery", async () => {
+    const unverified = source({
+      async resolve(requirement) {
+        return {
+          requirementId: requirement.id,
+          assetId: "unverified",
+          mimeType: "image/jpeg",
+          width: 1800,
+          height: 2700,
+          bytes: new Uint8Array([0xff, 0xd8, 0xff, 0xdb, 1, 2, 3, 4]),
+          sourceKind: "generated",
+          provenance: "Generated visual awaiting QA",
+          realismVerified: false,
+          labelsPresent: false,
+        };
+      },
+    });
+    await expect(createBookVisualResolver([unverified]).resolve(plan)).rejects.toBeInstanceOf(
+      VisualAssetResolutionError,
+    );
+  });
+
   it("rejects remote-only or malformed asset payloads instead of persisting URLs", async () => {
     const bad = source({
       async resolve(requirement) {
@@ -78,6 +102,7 @@ describe("book visual resolver", () => {
           bytes: new Uint8Array(),
           sourceKind: "licensed-source",
           provenance: "https://example.test/signed?token=secret",
+          realismVerified: true,
           labelsPresent: false,
         };
       },
