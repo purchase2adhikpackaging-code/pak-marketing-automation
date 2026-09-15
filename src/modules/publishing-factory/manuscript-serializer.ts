@@ -1,5 +1,6 @@
 import type { BookJob } from "./domain";
 import type { BookManuscript, ChapterManuscript } from "./manuscript-domain";
+import type { ResolvedBookVisual, ResolvedBookVisualBundle } from "./visual-production";
 
 function escapeHtml(value: string): string {
   return value
@@ -125,7 +126,47 @@ function renderList(items: readonly string[], className?: string): string {
     .join("")}</ul>`;
 }
 
-function renderChapter(chapter: ChapterManuscript): string {
+function renderVisualFigure(visual: ResolvedBookVisual): string {
+  return `<figure class="book-figure book-figure-${escapeHtml(
+    visual.placement,
+  )}" data-visual-id="${escapeHtml(visual.id)}" data-visual-source="${escapeHtml(
+    visual.sourceKind,
+  )}"><img src="${escapeHtml(visual.dataUri)}" alt="${escapeHtml(
+    visual.altText,
+  )}" decoding="sync"><figcaption>${escapeHtml(visual.caption)}</figcaption></figure>`;
+}
+
+function renderCover(
+  visual: ResolvedBookVisual,
+  side: "front" | "back",
+  job: BookJob,
+): string {
+  const overlay =
+    side === "front"
+      ? `<p class="cover-brand">Polish Railway Academy</p><p class="cover-programme">${escapeHtml(
+          job.programmeCode,
+        )} — ${escapeHtml(job.programmeTitle)}</p><h1>${escapeHtml(
+          job.subjectCode,
+        )}<span>${escapeHtml(job.subjectTitle)}</span></h1><p class="cover-type">Student Textbook</p><p class="cover-edition">Edition ${escapeHtml(
+          job.edition,
+        )} · Revision ${escapeHtml(job.revision)}</p>`
+      : `<p class="cover-brand">Polish Railway Academy</p><h2>${escapeHtml(
+          job.subjectCode,
+        )} — ${escapeHtml(job.subjectTitle)}</h2><p class="cover-type">Professional railway education · ${escapeHtml(
+          job.programmeCode,
+        )}</p><p class="cover-edition">Edition ${escapeHtml(job.edition)}</p>`;
+
+  return `<section class="book-cover book-cover-${side}" data-pak-cover="${side}" data-visual-id="${escapeHtml(
+    visual.id,
+  )}"><img class="book-cover-image" src="${escapeHtml(visual.dataUri)}" alt="${escapeHtml(
+    visual.altText,
+  )}" decoding="sync"><div class="book-cover-shade"></div><div class="book-cover-content">${overlay}</div></section>`;
+}
+
+function renderChapter(
+  chapter: ChapterManuscript,
+  chapterVisuals: readonly ResolvedBookVisual[] = [],
+): string {
   const sections = chapter.sections
     .map(
       (section, index) => `<section class="teaching-section" id="${escapeHtml(
@@ -172,13 +213,15 @@ function renderChapter(chapter: ChapterManuscript): string {
     )
     .join("");
 
+  const figures = chapterVisuals.map(renderVisualFigure).join("");
+
   return `<article class="chapter" id="chapter-${chapter.number}" data-component-id="${escapeHtml(
     chapter.chapterId,
   )}"><header class="chapter-header" data-pak-no-overlap="${escapeHtml(
     chapter.chapterId,
   )}-header"><p class="chapter-kicker">Chapter ${chapter.number}</p><h1>${escapeHtml(
     chapter.title,
-  )}</h1><p>${escapeHtml(chapter.purpose)}</p></header><section class="learning-outcomes callout" data-pak-box="${escapeHtml(
+  )}</h1><p>${escapeHtml(chapter.purpose)}</p></header>${figures}<section class="learning-outcomes callout" data-pak-box="${escapeHtml(
     chapter.chapterId,
   )}-outcomes"><h2>Learning Outcomes</h2>${renderList(
     chapter.learningOutcomes,
@@ -203,9 +246,22 @@ function renderChapter(chapter: ChapterManuscript): string {
 
 const DEFAULT_CSS = `
 @page { size: A4; margin: 16mm 16mm 18mm; }
+@page cover { size: A4; margin: 0; }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
 body { font-family: Arial, Helvetica, sans-serif; color: #14212b; font-size: 10.5pt; line-height: 1.45; }
+.book-cover { page: cover; position: relative; width: 210mm; height: 297mm; break-after: page; overflow: hidden; background: #071d33; color: #fff; }
+.book-cover-image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.book-cover-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(4,21,38,.2) 0%, rgba(4,21,38,.5) 50%, rgba(4,21,38,.92) 100%); }
+.book-cover-content { position: absolute; z-index: 2; left: 18mm; right: 18mm; bottom: 20mm; }
+.book-cover-back .book-cover-content { bottom: 24mm; }
+.cover-brand { margin: 0 0 5mm; font-size: 12pt; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.cover-programme { margin: 0 0 8mm; font-size: 10pt; }
+.book-cover h1 { margin: 0; color: #fff; font-size: 34pt; line-height: 1; }
+.book-cover h1 span { display: block; margin-top: 5mm; font-size: 22pt; line-height: 1.12; max-width: 155mm; }
+.book-cover h2 { color: #fff; font-size: 22pt; max-width: 155mm; }
+.cover-type { display: inline-block; margin: 8mm 0 0; padding: 2.5mm 4mm; border-left: 3px solid #d8262e; background: rgba(7,29,51,.72); font-weight: 700; }
+.cover-edition { margin-top: 6mm; font-size: 9.5pt; }
 .book-front { break-after: page; padding-top: 28mm; }
 .book-front h1 { font-size: 25pt; line-height: 1.15; margin: 10mm 0 4mm; }
 .book-front .programme { font-size: 12pt; font-weight: 700; letter-spacing: .02em; }
@@ -218,6 +274,10 @@ h1 { color: #0b2d4d; }
 h2 { color: #143f63; margin: 6mm 0 2.5mm; break-after: avoid; }
 h3 { color: #143f63; break-after: avoid; }
 p, li, dd { orphans: 3; widows: 3; overflow-wrap: anywhere; }
+.book-figure { width: 100%; margin: 5mm 0 7mm; break-inside: avoid; }
+.book-figure img { display: block; width: 100%; max-height: 150mm; object-fit: contain; border: 1px solid #c8d3dc; background: #fff; }
+.book-figure figcaption { padding: 2.5mm 3mm; font-size: 8.5pt; line-height: 1.35; background: #f1f5f8; border-left: 3px solid #d8262e; }
+.book-figure-technical-diagram img { max-height: 165mm; }
 .callout { width: 100%; height: auto; min-height: 0; padding: 4mm 5mm; margin: 5mm 0; border: 1px solid #9fb2c2; background: #f7f9fb; break-inside: avoid; overflow: visible; }
 .learning-outcomes { border-left: 3px solid #d8262e; }
 .safety-note { border-left: 3px solid #d8a73c; }
@@ -232,11 +292,25 @@ dd { margin: 0; }
 export function renderBookHtml(input: {
   job: BookJob;
   manuscript: BookManuscript;
+  visuals?: ResolvedBookVisualBundle;
   css?: string;
 }): string {
-  const { job, manuscript } = input;
+  const { job, manuscript, visuals } = input;
   const css = input.css ?? DEFAULT_CSS;
-  const chapters = manuscript.chapters.map(renderChapter).join("");
+  if (visuals && visuals.bookId !== job.bookId) {
+    throw new Error(`Visual bundle book id mismatch: expected ${job.bookId}, received ${visuals.bookId}.`);
+  }
+
+  const frontCover = visuals?.visuals.find((visual) => visual.placement === "front-cover");
+  const backCover = visuals?.visuals.find((visual) => visual.placement === "back-cover");
+  const chapters = manuscript.chapters
+    .map((chapter) =>
+      renderChapter(
+        chapter,
+        visuals?.visuals.filter((visual) => visual.chapterId === chapter.chapterId) ?? [],
+      ),
+    )
+    .join("");
 
   return `<!doctype html>
 <html lang="en">
@@ -248,6 +322,7 @@ export function renderBookHtml(input: {
 </head>
 <body>
 <main class="book" data-book-id="${escapeHtml(job.bookId)}">
+${frontCover ? renderCover(frontCover, "front", job) : ""}
 <section class="book-front" data-component-id="front-matter">
 <p class="programme">${escapeHtml(job.programmeCode)} — ${escapeHtml(job.programmeTitle)}</p>
 <h1>${escapeHtml(job.subjectCode)} — ${escapeHtml(job.subjectTitle)}</h1>
@@ -260,6 +335,7 @@ export function renderBookHtml(input: {
 </div>
 </section>
 ${chapters}
+${backCover ? renderCover(backCover, "back", job) : ""}
 </main>
 </body>
 </html>`;
