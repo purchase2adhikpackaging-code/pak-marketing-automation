@@ -9,7 +9,7 @@ const ROUTES = [
   "/podcast",
   "/student-testimonials",
   "/content-calendar",
-  "/publishing",
+  "/approval-center",
   "/analytics",
 ] as const;
 
