@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <style>
+    @page { size: A4; margin: 18mm 16mm 18mm 20mm; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.4; }
+    [data-pak-box] { overflow: visible; box-sizing: border-box; }
+    .bad-box { width: 55mm; height: 16mm; border: 1px solid #60758a; padding: 3mm; }
+    .forced { width: 120mm; white-space: nowrap; display: block; }
+  </style>
+</head>
+<body>
+  <main data-pak-publication-root>
+    <h1>PAK-D01 — D01-101 Railway Fundamentals</h1>
+    <section class="bad-box" data-pak-box="overflow-example">
+      <span class="forced">This deliberately long railway technical label extends outside the assigned rectangle while remaining inside the A4 page.</span>
+    </section>
+  </main>
+</body>
+</html>

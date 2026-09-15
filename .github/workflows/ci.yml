@@ -26,14 +26,66 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
       - name: Typecheck
         run: npm run typecheck
 
       - name: Lint
         run: npm run lint
 
+      - name: Diagnostic publishing production tests
+        continue-on-error: true
+        run: npx vitest run tests/vitest/publishing-production --reporter=basic
+
+      - name: Diagnostic publishing factory tests
+        continue-on-error: true
+        run: npx vitest run tests/vitest/publishing-factory --reporter=basic
+
+      - name: Diagnostic source tests
+        continue-on-error: true
+        run: npx vitest run src --reporter=basic
+
+      - name: Diagnostic serialized full unit tests
+        continue-on-error: true
+        run: npx vitest run --no-file-parallelism --reporter=basic
+
+      - name: Diagnostic combined unit report
+        continue-on-error: true
+        run: |
+          mkdir -p artifacts/test-diagnostics
+          npx vitest run --reporter=json --outputFile=artifacts/test-diagnostics/vitest-full.json
+
+      - name: Upload Vitest diagnostic report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: d01-101-vitest-diagnostic
+          path: artifacts/test-diagnostics/vitest-full.json
+          if-no-files-found: warn
+          retention-days: 1
+
       - name: Unit tests
         run: npm run test:run
+
+      - name: Publishing registry smoke test
+        run: npm run publishing:registry
+
+      - name: Canonical knowledge validation
+        run: npm run publishing:knowledge-validate
+
+      - name: Canonical knowledge lock audit
+        run: npm run publishing:knowledge-list
+
+      - name: Publishing manuscript factory smoke
+        run: npm run publishing:book-write -- --programme PAK-D01 --subject D01-102 --provider fake --state-root artifacts/publishing/ci-manuscript
+
+      - name: Publishing production runner smoke
+        run: npm run publishing:production-smoke
+
+      - name: Publishing deterministic QA fixture
+        run: npm run publishing:qa-fixture
 
       - name: Build
         run: npm run build
@@ -52,9 +104,6 @@ jobs:
 
       - name: Smoke final assembly worker container
         run: docker run --rm --entrypoint node pak-video-assembly-worker dist/smoke.js
-
-      - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
 
       - name: E2E smoke test
         run: npm run test:e2e

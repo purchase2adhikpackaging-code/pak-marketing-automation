@@ -1,0 +1,5 @@
+{
+  "verify_jwt": false,
+  "auth_contract": "handler-enforced",
+  "reason": "Supports both authenticated user JWT requests and Vault-backed publishing worker capability requests; the handler validates both modes before privileged work."
+}
