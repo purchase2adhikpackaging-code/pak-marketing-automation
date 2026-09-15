@@ -40,11 +40,14 @@ export async function publishQaPassedBook(input: {
   if (
     compilerResult.job.status !== "QA_PASSED" ||
     compilerResult.report?.passed !== true ||
+    compilerResult.report.gateResults["visual-assets"] !== "PASS" ||
     !compilerResult.render?.pdfPath ||
     !compilerResult.manuscript ||
-    !compilerResult.html
+    !compilerResult.html ||
+    !compilerResult.visualPlan ||
+    !compilerResult.visualAssets
   ) {
-    throw new Error("Only a fully QA-passed compiled book may be published.");
+    throw new Error("Only a fully QA-passed visual-compliant compiled book may be published.");
   }
 
   const organization = safeSegment(input.organizationId, "organization id");
@@ -62,6 +65,30 @@ export async function publishQaPassedBook(input: {
   const blueprintPath = `${prefix}blueprint.json`;
   const qaReportPath = `${prefix}qa-report.json`;
   const releaseManifestPath = `${prefix}release-manifest.json`;
+  const visualPlanPath = `${prefix}visual-plan.json`;
+  const visualManifestPath = `${prefix}visual-assets.json`;
+
+  const frontCoverCount = compilerResult.visualAssets.visuals.filter((visual) => visual.placement === "front-cover").length;
+  const backCoverCount = compilerResult.visualAssets.visuals.filter((visual) => visual.placement === "back-cover").length;
+  const chapterIds = new Set(
+    compilerResult.visualPlan.requirements
+      .map((visual) => visual.chapterId)
+      .filter((chapterId): chapterId is string => Boolean(chapterId)),
+  );
+  const coveredChapterIds = [...chapterIds].filter((chapterId) =>
+    compilerResult.visualAssets!.visuals.some((visual) => visual.chapterId === chapterId),
+  );
+  const visualReleaseSummary = {
+    assetCount: compilerResult.visualAssets.visuals.length,
+    frontCoverPresent: frontCoverCount === 1,
+    backCoverPresent: backCoverCount === 1,
+    chapterCount: chapterIds.size,
+    chapterVisualCoverage: coveredChapterIds.length,
+    allRealismVerified: compilerResult.visualAssets.visuals.every((visual) => !visual.realistic || visual.realismVerified),
+    allRequiredLabelsVerified: compilerResult.visualAssets.visuals.every((visual) => !visual.labelsRequired || visual.labelsPresent),
+    sourceKinds: [...new Set(compilerResult.visualAssets.visuals.map((visual) => visual.sourceKind))].sort(),
+    provenance: [...new Set(compilerResult.visualAssets.visuals.map((visual) => visual.provenance))].sort(),
+  };
 
   const releaseManifest = {
     bookId: job.bookId,
@@ -71,8 +98,14 @@ export async function publishQaPassedBook(input: {
     qaStatus: "QA_PASSED",
     provider: compilerResult.manuscript.provider,
     knowledgePacks: compilerResult.manuscript.knowledgePacks,
+    visuals: visualReleaseSummary,
     productionRunId: job.productionRunId,
     productionJobId: job.id,
+  };
+
+  const safeVisualManifest = {
+    bookId: compilerResult.visualAssets.bookId,
+    visuals: compilerResult.visualAssets.visuals.map(({ dataUri: _dataUri, ...visual }) => visual),
   };
 
   await Promise.all([
@@ -82,6 +115,8 @@ export async function publishQaPassedBook(input: {
     input.storage.put(blueprintPath, json(compilerResult.blueprint), "application/json"),
     input.storage.put(qaReportPath, json(compilerResult.report), "application/json"),
     input.storage.put(releaseManifestPath, json(releaseManifest), "application/json"),
+    input.storage.put(visualPlanPath, json(compilerResult.visualPlan), "application/json"),
+    input.storage.put(visualManifestPath, json(safeVisualManifest), "application/json"),
   ]);
 
   await input.publications.upsert({
@@ -108,6 +143,7 @@ export async function publishQaPassedBook(input: {
       passed: true,
       findings: compilerResult.report.findings.length,
       gateResults: compilerResult.report.gateResults,
+      visuals: visualReleaseSummary,
     },
   });
 
