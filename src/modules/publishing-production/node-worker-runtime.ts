@@ -8,7 +8,9 @@ import { OpenAITextGenerationProvider, type OpenAIResponsesTransport } from "@/m
 import { compileBook } from "@/modules/publishing-factory/book-compiler";
 import { FileCheckpointStore } from "@/modules/publishing-factory/checkpoint-store";
 import { loadKnowledgeRegistry } from "@/modules/publishing-factory/knowledge-registry";
+import { createBookVisualResolver } from "@/modules/publishing-factory/visual-resolver";
 import { publishQaPassedBook } from "./artifact-publisher";
+import { createInternalPublishingVisualSource } from "./internal-visual-source";
 import { PublishingProductionRepository, type PublishingProductionTransport } from "./repository";
 import { runNodePublishingWorker, type NodePublishingWorkerDependencies, type WorkerProcessOutcome } from "./node-worker";
 import {
@@ -244,9 +246,20 @@ async function processProductionJob(input: {
       await restoreCheckpoints({ broker, job, workerId, localRoot: checkpointRoot, storagePrefix: storageCheckpointPrefix });
     }
 
+    const supabaseUrl = required("NEXT_PUBLIC_SUPABASE_URL");
+    const anonKey = required("NEXT_PUBLIC_SUPABASE_ANON_KEY");
     const provider = new OpenAITextGenerationProvider({
       transport: internalOpenAITransport(job, credential),
     });
+    const visualResolver = createBookVisualResolver([
+      createInternalPublishingVisualSource({
+        supabaseUrl,
+        anonKey,
+        credential,
+        organizationId: job.organizationId,
+        productionJobId: job.id,
+      }),
+    ]);
     const result = await compileBook({
       job: job.bookJobPayload,
       curriculumText: job.curriculumText,
@@ -254,6 +267,7 @@ async function processProductionJob(input: {
       registry: await loadKnowledgeRegistry(process.cwd()),
       checkpointStore: new FileCheckpointStore(checkpointRoot),
       artifactRoot,
+      visualResolver,
       maxNewChapters: 1,
     });
 

@@ -4,45 +4,20 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { TextGenerationProvider } from "@/modules/ai/text/provider";
-import type {
-  TextGenerationRequest,
-  TextGenerationResult,
-} from "@/modules/ai/text/types";
+import type { TextGenerationRequest, TextGenerationResult } from "@/modules/ai/text/types";
 import type { BookBlueprint } from "@/modules/publishing-factory/blueprint";
-import {
-  compileBook,
-  type CompileBookResult,
-} from "@/modules/publishing-factory/book-compiler";
+import { compileBook, type CompileBookResult } from "@/modules/publishing-factory/book-compiler";
 import { FileCheckpointStore } from "@/modules/publishing-factory/checkpoint-store";
 import type { BookJob } from "@/modules/publishing-factory/domain";
 import type { ChapterManuscript } from "@/modules/publishing-factory/manuscript-domain";
 import { loadKnowledgeRegistry } from "@/modules/publishing-factory/knowledge-registry";
+import { createBookVisualResolver, type VisualAssetSource } from "@/modules/publishing-factory/visual-resolver";
 
-interface FixtureFile {
-  blueprint: BookBlueprint;
-  chapters: Record<string, ChapterManuscript>;
-}
-
-const fixture = JSON.parse(
-  readFileSync("publishing/fixtures/manuscript-provider-book.fixture.json", "utf8"),
-) as FixtureFile;
+interface FixtureFile { blueprint: BookBlueprint; chapters: Record<string, ChapterManuscript>; }
+const fixture = JSON.parse(readFileSync("publishing/fixtures/manuscript-provider-book.fixture.json", "utf8")) as FixtureFile;
 
 function job(): BookJob {
-  return {
-    bookId: "PAK-D01-S1-D01-102-TEXTBOOK",
-    programmeCode: "PAK-D01",
-    programmeTitle: "Diploma in Railway Rolling Stock Engineering & Maintenance",
-    level: "diploma",
-    academicPeriod: "S1",
-    subjectCode: "D01-102",
-    subjectTitle: "Applied Engineering Mathematics & Physics for Railways",
-    publicationType: "textbook",
-    edition: "2026",
-    revision: "0.1.0",
-    curriculumSourcePaths: ["docs/academic/diplomas/D01/S1.md"],
-    status: "PLANNED",
-    repairAttempts: {},
-  };
+  return { bookId: "PAK-D01-S1-D01-102-TEXTBOOK", programmeCode: "PAK-D01", programmeTitle: "Diploma in Railway Rolling Stock Engineering & Maintenance", level: "diploma", academicPeriod: "S1", subjectCode: "D01-102", subjectTitle: "Applied Engineering Mathematics & Physics for Railways", publicationType: "textbook", edition: "2026", revision: "0.1.0", curriculumSourcePaths: ["docs/academic/diplomas/D01/S1.md"], status: "PLANNED", repairAttempts: {} };
 }
 
 class FixtureBookProvider implements TextGenerationProvider {
@@ -50,121 +25,106 @@ class FixtureBookProvider implements TextGenerationProvider {
   readonly requests: TextGenerationRequest[] = [];
   readonly callsByArtifact = new Map<string, number>();
   private readonly invalidChapterId: string | undefined;
-
-  constructor(options: { invalidChapterId?: string } = {}) {
-    this.invalidChapterId = options.invalidChapterId;
-  }
-
+  constructor(options: { invalidChapterId?: string } = {}) { this.invalidChapterId = options.invalidChapterId; }
   async validateConfiguration(): Promise<void> {}
-
   async generate(request: TextGenerationRequest): Promise<TextGenerationResult> {
     this.requests.push(request);
     const artifact = request.idempotencyKey.split(":").slice(-2).join(":");
     this.callsByArtifact.set(artifact, (this.callsByArtifact.get(artifact) ?? 0) + 1);
-
-    if (request.idempotencyKey.endsWith(":blueprint")) {
-      return {
-        text: JSON.stringify(fixture.blueprint),
-        provider: this.name,
-        model: "deterministic-book-fixture-v1",
-      };
-    }
-
+    if (request.idempotencyKey.endsWith(":blueprint")) return { text: JSON.stringify(fixture.blueprint), provider: this.name, model: "deterministic-book-fixture-v1" };
     const chapterId = request.idempotencyKey.split(":").at(-1);
     if (!chapterId) throw new Error("Fixture request has no chapter id.");
-    if (chapterId === this.invalidChapterId) {
-      return {
-        text: JSON.stringify({ ...fixture.chapters[chapterId], sourceIds: ["invented-source"] }),
-        provider: this.name,
-        model: "deterministic-book-fixture-v1",
-      };
-    }
+    if (chapterId === this.invalidChapterId) return { text: JSON.stringify({ ...fixture.chapters[chapterId], sourceIds: ["invented-source"] }), provider: this.name, model: "deterministic-book-fixture-v1" };
     const chapter = fixture.chapters[chapterId];
     if (!chapter) throw new Error(`No fixture chapter for ${chapterId}`);
-    return {
-      text: JSON.stringify(chapter),
-      provider: this.name,
-      model: "deterministic-book-fixture-v1",
-    };
+    return { text: JSON.stringify(chapter), provider: this.name, model: "deterministic-book-fixture-v1" };
   }
 }
 
-async function roots(prefix: string) {
-  const root = await mkdtemp(join(tmpdir(), prefix));
-  return {
-    checkpointStore: new FileCheckpointStore(join(root, "checkpoints")),
-    artifactRoot: join(root, "artifacts"),
-  };
+function decodablePngBytes(): Uint8Array {
+  const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Zl8sAAAAASUVORK5CYII=", "base64");
+  const bytes = new Uint8Array(2048);
+  bytes.set(png);
+  return bytes;
 }
 
-async function compile(provider: TextGenerationProvider, overrides: Partial<{
-  checkpointStore: FileCheckpointStore;
-  artifactRoot: string;
-  maxNewChapters: number;
-}> = {}): Promise<CompileBookResult> {
+const fixtureVisualSource: VisualAssetSource = {
+  name: "fixture-visuals",
+  async resolve(requirement) {
+    const cover = requirement.placement === "front-cover" || requirement.placement === "back-cover";
+    return { requirementId: requirement.id, assetId: `fixture-${requirement.id}`, mimeType: "image/png", width: cover ? 1800 : 1600, height: cover ? 2700 : 1200, bytes: decodablePngBytes(), sourceKind: "approved-library", provenance: "Deterministic PAK publishing test visual library", realismVerified: true, labelsPresent: requirement.labelsRequired };
+  },
+};
+
+async function roots(prefix: string) {
+  const root = await mkdtemp(join(tmpdir(), prefix));
+  return { checkpointStore: new FileCheckpointStore(join(root, "checkpoints")), artifactRoot: join(root, "artifacts") };
+}
+
+async function compile(provider: TextGenerationProvider, overrides: Partial<{ checkpointStore: FileCheckpointStore; artifactRoot: string; maxNewChapters: number; withoutVisualResolver: boolean; }> = {}): Promise<CompileBookResult> {
   const defaults = await roots("pak-book-compiler-");
   return compileBook({
     job: job(),
-    curriculumText:
-      "D01-102 | Applied Engineering Mathematics & Physics for Railways | applied units, mechanics, force and motion calculations for railway engineering training.",
+    curriculumText: "D01-102 | Applied Engineering Mathematics & Physics for Railways | applied units, mechanics, force and motion calculations for railway engineering training.",
     provider,
     registry: await loadKnowledgeRegistry(process.cwd()),
     checkpointStore: overrides.checkpointStore ?? defaults.checkpointStore,
     artifactRoot: overrides.artifactRoot ?? defaults.artifactRoot,
+    ...(overrides.withoutVisualResolver ? {} : { visualResolver: createBookVisualResolver([fixtureVisualSource]) }),
     ...(overrides.maxNewChapters ? { maxNewChapters: overrides.maxNewChapters } : {}),
   });
 }
 
 describe("end-to-end governed book compiler", () => {
-  it("compiles a deterministic D01-style book through HTML, searchable PDF and QA", async () => {
-    const provider = new FixtureBookProvider();
-    const result = await compile(provider);
-
+  it("compiles a deterministic D01-style book through visuals, HTML, searchable PDF and QA", async () => {
+    const result = await compile(new FixtureBookProvider());
     expect(result.job.status).toBe("QA_PASSED");
     expect(result.report?.passed).toBe(true);
+    expect(result.report?.gateResults["visual-assets"]).toBe("PASS");
     expect(result.manuscript?.chapters).toHaveLength(2);
+    expect(result.visualPlan?.requirements.length).toBeGreaterThanOrEqual(4);
+    expect(result.visualAssets?.visuals.length).toBe(result.visualPlan?.requirements.length);
     expect(result.generatedChapterIds).toEqual(["D01-102-CH01", "D01-102-CH02"]);
     expect(result.resumedChapterIds).toEqual([]);
-    expect(result.html).toContain("D01-102 — Applied Engineering Mathematics &amp; Physics for Railways");
+    expect(result.html).toContain("book-cover-front");
+    expect(result.html).toContain("book-cover-back");
+    expect(result.html).toContain("data-visual-id=");
     expect(result.render?.pdfPath).toBeTruthy();
     expect(existsSync(result.render!.pdfPath)).toBe(true);
     expect(result.report?.findings.filter((finding) => finding.severity === "error")).toHaveLength(0);
   });
 
+  it("fails closed instead of publishing a text-only manuscript when no visual resolver is configured", async () => {
+    const result = await compile(new FixtureBookProvider(), { withoutVisualResolver: true });
+    expect(result.job.status).toBe("BLOCKED");
+    expect(result.blockedReason).toMatch(/visual assets|required|resolver/i);
+    expect(result.render).toBeUndefined();
+  });
+
   it("resumes from completed chapter checkpoints without calling the provider again for them", async () => {
     const shared = await roots("pak-book-resume-");
-    const store = shared.checkpointStore;
     const baseJob = job();
-    await store.saveBlueprint(baseJob, fixture.blueprint);
-    await store.saveChapter(baseJob, fixture.chapters["D01-102-CH01"]!);
-    await store.saveStage(baseJob, "MANUSCRIPT_IN_PROGRESS");
-
+    await shared.checkpointStore.saveBlueprint(baseJob, fixture.blueprint);
+    await shared.checkpointStore.saveChapter(baseJob, fixture.chapters["D01-102-CH01"]!);
+    await shared.checkpointStore.saveStage(baseJob, "MANUSCRIPT_IN_PROGRESS");
     const provider = new FixtureBookProvider();
     const result = await compile(provider, shared);
-
     expect(result.job.status).toBe("QA_PASSED");
     expect(result.resumedChapterIds).toEqual(["D01-102-CH01"]);
     expect(result.generatedChapterIds).toEqual(["D01-102-CH02"]);
     expect(provider.requests.some((request) => request.idempotencyKey.endsWith(":blueprint"))).toBe(false);
-    expect(
-      provider.requests.some((request) => request.idempotencyKey.endsWith(":D01-102-CH01")),
-    ).toBe(false);
-    expect(
-      provider.requests.filter((request) => request.idempotencyKey.endsWith(":D01-102-CH02")),
-    ).toHaveLength(1);
+    expect(provider.requests.some((request) => request.idempotencyKey.endsWith(":D01-102-CH01"))).toBe(false);
+    expect(provider.requests.filter((request) => request.idempotencyKey.endsWith(":D01-102-CH02"))).toHaveLength(1);
   });
 
   it("bounds new chapter work and resumes the next invocation", async () => {
     const shared = await roots("pak-book-bounded-");
-    const firstProvider = new FixtureBookProvider();
-    const first = await compile(firstProvider, { ...shared, maxNewChapters: 1 });
-
+    const first = await compile(new FixtureBookProvider(), { ...shared, maxNewChapters: 1 });
     expect(first.incomplete).toBe(true);
     expect(first.generatedChapterIds).toEqual(["D01-102-CH01"]);
     expect(first.nextChapterId).toBe("D01-102-CH02");
     expect(first.report).toBeUndefined();
     expect(first.render).toBeUndefined();
-
     const secondProvider = new FixtureBookProvider();
     const second = await compile(secondProvider, { ...shared, maxNewChapters: 1 });
     expect(second.incomplete).toBe(false);
@@ -178,19 +138,11 @@ describe("end-to-end governed book compiler", () => {
     const shared = await roots("pak-book-blocked-");
     const provider = new FixtureBookProvider({ invalidChapterId: "D01-102-CH02" });
     const result = await compile(provider, shared);
-
     expect(result.job.status).toBe("BLOCKED");
     expect(result.generatedChapterIds).toEqual(["D01-102-CH01"]);
-    expect(
-      provider.requests.filter((request) => request.idempotencyKey.endsWith(":D01-102-CH02")),
-    ).toHaveLength(3);
+    expect(provider.requests.filter((request) => request.idempotencyKey.endsWith(":D01-102-CH02"))).toHaveLength(3);
     expect(result.report).toBeUndefined();
-
-    const checkpoint = await shared.checkpointStore.loadRun(
-      job().bookId,
-      job().edition,
-      job().revision,
-    );
+    const checkpoint = await shared.checkpointStore.loadRun(job().bookId, job().edition, job().revision);
     expect(checkpoint?.completedChapterIds).toEqual(["D01-102-CH01"]);
     expect(checkpoint?.nextChapterNumber).toBe(2);
   });
