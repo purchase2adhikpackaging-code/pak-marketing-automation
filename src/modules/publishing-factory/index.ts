@@ -23,4 +23,5 @@ export * from "./renderer";
 export * from "./repair";
 export * from "./state-machine";
 export * from "./visual-production";
+export * from "./visual-resolver";
 export * from "./worker-queue";
