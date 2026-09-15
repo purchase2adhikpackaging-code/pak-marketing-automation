@@ -7,11 +7,11 @@ const routes = [
   ["/podcast", "Podcast", "Planned"],
   ["/student-testimonials", "Student Testimonials", "Planned"],
   ["/content-calendar", "Content Calendar", "Planned"],
-  ["/publishing", "Publishing", "Planned"],
+  ["/approval-center", "Approval Center", "Planned"],
   ["/analytics", "Analytics", "Planned"],
 ] as const;
 
-test("B3 routes expose truthful readiness without fake domain controls", async ({ page }) => {
+test("still-future B3 routes expose truthful readiness without fake domain controls", async ({ page }) => {
   for (const [route, title, status] of routes) {
     await page.goto(route);
 
@@ -24,7 +24,7 @@ test("B3 routes expose truthful readiness without fake domain controls", async (
   }
 });
 
-test("B3 routes have no horizontal workflow dependency at 390x844", async ({ page }) => {
+test("still-future B3 routes have no horizontal workflow dependency at 390x844", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
 
   for (const [route] of routes) {
