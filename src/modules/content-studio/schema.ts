@@ -1,9 +1,11 @@
 import { z } from "zod";
 
+export const MAX_CONTENT_GENERATION_CONTEXT_CHARACTERS = 12000;
+
 export const contentGenerationRequestSchema = z.object({
   organizationId: z.string().uuid(),
   topic: z.string().trim().min(3).max(300),
-  knowledgeContext: z.string().trim().max(12000).optional(),
+  knowledgeContext: z.string().trim().max(MAX_CONTENT_GENERATION_CONTEXT_CHARACTERS).optional(),
   knowledgeRecordIds: z
     .array(z.string().uuid())
     .max(20)

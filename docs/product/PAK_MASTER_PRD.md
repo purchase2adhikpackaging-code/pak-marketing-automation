@@ -1,48 +1,52 @@
 # PAK Marketing Automation — Master Product Requirements Document (PRD)
 
 **Document ID:** PAK-PRD-001  
-**Version:** 1.1  
-**Status:** Current baseline after Phase 7  
+**Version:** 1.2  
+**Status:** Current baseline through Organization Profile / Brand Kit / Knowledge ingestion foundation  
 **Product:** Polska Akademia Kolejnictwa (PAK) Marketing Automation  
 **Primary users:** PAK marketing, communications, reviewers, analysts, administrators and owners
 
 ## 1. Product purpose
 
-PAK Marketing Automation is a multi-tenant-ready internal marketing operating system for planning, generating, reviewing, producing, publishing and measuring multilingual railway-industry content. The product combines approved institutional knowledge, AI-assisted content generation, versioned scene planning, provider-backed media generation, approval workflows, publishing integrations, campaign scheduling and analytics without exposing organization data or provider secrets to unauthorized users.
+PAK Marketing Automation is a multi-tenant-ready internal marketing operating system for planning, generating, reviewing, producing, publishing and measuring multilingual railway-industry content. The product combines authoritative organization identity, approved institutional knowledge, official Brand Kit rules/assets, AI-assisted content generation, versioned scene planning, provider-backed media generation, approval workflows, publishing integrations, campaign scheduling and analytics without exposing organization data or provider secrets to unauthorized users.
 
-The post-Phase 7 baseline has a production-grade content/knowledge/scene-planning/video-generation core. Approval Center, final video assembly, full Media Library operations, publishing, calendar, analytics and the specialized content modules remain roadmap work.
+The current foundation includes production-grade content/knowledge/scene-planning/video-generation capabilities plus authoritative Organization Profile, Brand Kit, Core Knowledge, review-first document/URL ingestion and shared server-side generation grounding. Later roadmap modules remain governed by their own phase acceptance.
 
 ## 2. Product principles
 
-- **PRD-GEN-001 — Grounded by default.** AI-generated institutional content must use explicitly approved PAK Knowledge records plus optional user-supplied context.
+- **PRD-GEN-001 — Grounded by default.** AI-generated institutional content must automatically use authoritative Organization Profile, Brand Kit and ACTIVE Core Knowledge, may use explicitly selected ACTIVE non-core Knowledge, and may include bounded user-supplied task context.
 - **PRD-GEN-002 — Human control.** AI output remains editable and must never be externally published without an explicit policy/approval path.
-- **PRD-GEN-003 — Traceable output.** Generated content must retain immutable generation-time provenance for selected approved Knowledge records.
+- **PRD-GEN-003 — Traceable output.** Generated content must retain immutable generation-time provenance for exact Profile revision, Brand Kit revision and approved Knowledge snapshots used for grounding.
 - **PRD-GEN-004 — Multilingual first.** Canonical content and translations support EN, PL and HI in the initial product baseline.
 - **PRD-GEN-005 — Tenant isolation.** Every organization-owned resource is organization-scoped and protected by database authorization.
 - **PRD-GEN-006 — Server-side secrets.** Provider credentials must never be exposed back to browser clients after storage.
 - **PRD-GEN-007 — Durable workflows.** Long-running generation, video, publishing and synchronization operations use durable jobs with retry/failure states.
 - **PRD-GEN-008 — Evidence-based release.** Features are complete only when implementation, automated tests and required runtime verification are green.
-- **PRD-GEN-009 — Authoritative state.** Browser state never overrides authoritative database workflow, approval, source-integrity or tenant state.
+- **PRD-GEN-009 — Authoritative state.** Browser state never overrides authoritative database workflow, approval, source-integrity, organization identity or tenant state.
+- **PRD-GEN-010 — Deterministic context order.** Shared generation context is assembled in the order Profile → Brand Kit → ACTIVE Core Knowledge → explicitly selected ACTIVE Knowledge → task context, with duplicate Knowledge sources collapsed.
 
 ## 3. Current implementation snapshot
 
 | Capability | Current product state |
 |---|---|
 | Authentication, organization membership, RBAC/RLS | Implemented |
-| Knowledge Base lifecycle and provenance | Implemented |
+| Organization Profile and Brand Kit | Implemented and live-verified |
+| Knowledge Base lifecycle, Core Knowledge and provenance | Implemented and live-verified |
+| PDF/DOCX/PPTX/TXT/URL Knowledge ingestion to DRAFT | Implemented and live-verified |
+| Shared automatic generation context + identity provenance | Implemented and live-verified |
 | Content Studio grounded canonical generation | Implemented |
 | EN/PL/HI artifacts and stale/regeneration workflow | Implemented |
 | Integration Vault — OpenAI | Implemented |
 | Integration Vault — LTX | Implemented |
-| Scene Planning, Visual Bible, QC, review and approval | Implemented |
+| Scene Planning, Visual Bible, QC, review and approval | Implemented; Brand Kit institutional defaults integrated |
 | Approved-shot LTX generation, retry/reconciliation, private media import | Implemented; paid provider acceptance awaits an org credential/credits |
-| Media Library operator catalogue/upload/detail UX | Partial foundation |
-| Final assembled video render | Missing — Phase 8 |
-| Generic Approval Center | Missing — Phase 9 |
-| Publishing / Meta | Missing — Phase 10 |
-| Content Calendar | Missing — Phase 11 |
-| Analytics | Missing — Phase 12 |
-| AI Representative / Podcast / Campus / Testimonials | Missing — Phases 13–16 |
+| Media Library operator catalogue/upload/detail UX | Implemented foundation used by Brand/document flows |
+| Final assembled video render | Implemented Phase 8 foundation |
+| Generic Approval Center | Roadmap-governed separately |
+| Publishing / Meta | Roadmap-governed separately |
+| Content Calendar | Roadmap-governed separately |
+| Analytics | Roadmap-governed separately |
+| AI Representative / Podcast / Campus / Testimonials | Roadmap-governed separately |
 | Manual Generation completion | Partial foundation — Phase 17 |
 
 This table reports implementation maturity only. Requirements below remain normative even when roadmap implementation is pending.
@@ -50,16 +54,16 @@ This table reports implementation maturity only. Requirements below remain norma
 ## 4. User roles
 
 ### PRD-RBAC-001 OWNER
-Full organization administration, integrations, members, content, approval, publishing, analytics, Knowledge and destructive actions.
+Full organization administration, Organization Profile/Brand Kit mutation, Core Knowledge control, integrations, members, content, approval, publishing, analytics, Knowledge and destructive actions.
 
 ### PRD-RBAC-002 ADMIN
-Operational administration equivalent to OWNER except ownership-only governance functions that may be added later.
+Operational administration equivalent to OWNER except ownership-only governance functions that may be added later. May mutate Organization Profile/Brand Kit and Core Knowledge.
 
 ### PRD-RBAC-003 EDITOR
-Create/edit content, manage Knowledge records, generate AI artifacts, plan scenes, initiate approved-shot media generation, use media tools and view analytics. No destructive organization ownership operations.
+Create/edit content, manage normal Knowledge records and ingestion, generate AI artifacts, plan scenes, initiate approved-shot media generation, use media tools and view analytics. Cannot mutate Organization Profile, Brand Kit or Core Knowledge status.
 
 ### PRD-RBAC-004 REVIEWER
-Read approved Knowledge, review generated content and Scene Plans, approve/reject where explicitly authorized, acknowledge review warnings where allowed and view analytics. No Knowledge mutation or provider credential administration.
+Read Organization Profile/Brand Kit and approved Knowledge, review generated content and Scene Plans, approve/reject where explicitly authorized, acknowledge review warnings where allowed and view analytics. No Organization Profile/Brand Kit/Knowledge mutation or provider credential administration.
 
 ### PRD-RBAC-005 ANALYST
 Read-only access to approved content/Knowledge and analytics. No mutation privileges.
@@ -84,7 +88,7 @@ The current application shell contains 15 primary modules:
 14. Analytics
 15. Settings
 
-Routes for roadmap modules may exist as truthful readiness surfaces before workflows are enabled. A rendered route alone does not satisfy a module requirement.
+Settings contains dedicated Organization Profile and Brand Kit surfaces. Routes for roadmap modules may exist as truthful readiness surfaces before workflows are enabled. A rendered route alone does not satisfy a module requirement.
 
 ## 6. Dashboard
 
@@ -108,8 +112,29 @@ Routes for roadmap modules may exist as truthful readiness surfaces before workf
 - **PRD-KB-009** Creation audit fields are immutable; update actor/time are system-controlled.
 - **PRD-KB-010** Delete is restricted to OWNER/ADMIN.
 - **PRD-KB-011** Auth-user FK nullification must not corrupt or fabricate Knowledge revision history.
+- **PRD-KB-012** `is_core=true` identifies authoritative organization Knowledge that is automatically grounded whenever ACTIVE.
+- **PRD-KB-013** Only OWNER/ADMIN may create Core Knowledge or change Core status; EDITOR may manage normal Knowledge but cannot bypass this boundary through direct Data API writes.
+- **PRD-KB-014** Uploaded PDF/DOCX/PPTX/TXT and validated URL sources create/update Knowledge only as DRAFT; ingestion never activates a record automatically.
+- **PRD-KB-015** Ingested records retain `knowledge_document_id` lineage and the source revision used for extraction.
+- **PRD-KB-016** File ingestion accepts a same-org ACTIVE DOCUMENT Media Library asset ID, never a browser-supplied raw storage path.
+- **PRD-KB-017** URL ingestion accepts only public HTTP/HTTPS destinations and rejects loopback, private, link-local, cloud-metadata and unsafe redirect targets.
+- **PRD-KB-018** Unsupported spreadsheet/OCR ingestion is out of scope for this slice.
+- **PRD-KB-019** Human review and explicit activation are mandatory before ingested DRAFT content becomes normal selectable or automatic Core grounding.
 
-**Current maturity:** Implemented.
+**Current maturity:** Implemented and live-verified, including direct Data API Core-insert protection and cross-organization source rejection.
+
+### 7A. Organization Profile and Brand Kit
+
+- **PRD-ORG-001** Every organization has exactly one revisioned Organization Profile containing authoritative institutional identity and contact/legal metadata.
+- **PRD-ORG-002** Every organization has exactly one revisioned Brand Kit containing institutional palette, typography, voice, logo usage and visual constraints.
+- **PRD-ORG-003** Organization Profile and Brand Kit are readable by organization members and mutable only by OWNER/ADMIN.
+- **PRD-ORG-004** Business updates use optimistic revision/CAS semantics and preserve immutable creation audit fields.
+- **PRD-BRAND-001** Brand asset assignments reference Media Library UUIDs only and must resolve to same-org ACTIVE image assets.
+- **PRD-BRAND-002** Brand Kit persistence must never store signed URLs or raw private storage paths.
+- **PRD-BRAND-003** Official primary logo identity remains authoritative in downstream generation; project creative direction may affect presentation but cannot silently substitute another logo identity.
+- **PRD-BRAND-004** Brand asset relationships use semantic roles: `PRIMARY_LOGO`, `LIGHT_LOGO`, `DARK_LOGO`, `BRAND_MARK`, `FAVICON`, `APPROVED_IMAGERY`.
+
+**Current maturity:** Implemented and live-verified with rollback-only OWNER/EDITOR/REVIEWER and cross-org asset probes.
 
 ## 8. Content Studio
 
@@ -125,8 +150,15 @@ Routes for roadmap modules may exist as truthful readiness surfaces before workf
 - **PRD-CS-010** If snapshot persistence fails, the generated item must not remain successful-looking; it transitions to FAILED with a safe operational failure code.
 - **PRD-CS-011** User-facing errors must not expose secrets, provider payloads, SQL errors or stack traces.
 - **PRD-CS-012** A GENERATED script artifact may be handed off into Scene Planning without browser-supplied script text being trusted as authoritative source content.
+- **PRD-CS-013** Browser input never supplies authoritative Profile/Brand text; the server resolves current same-org Profile and Brand Kit.
+- **PRD-CS-014** Every ACTIVE Core Knowledge record is included automatically and deterministically before explicitly selected Knowledge.
+- **PRD-CS-015** Duplicate selected Knowledge IDs collapse while preserving the first requested occurrence; Core records explicitly selected appear only once.
+- **PRD-CS-016** Cross-org/non-ACTIVE selected IDs cannot become grounding and fail safely before generation.
+- **PRD-CS-017** Generation context is composed Profile → Brand Kit → Core → selected Knowledge → additional task context.
+- **PRD-CS-018** Generation provenance stores the exact Profile revision and Brand Kit revision plus exact Knowledge snapshots atomically.
+- **PRD-CS-019** If atomic provenance persistence fails, generated content is not exposed as successful and is marked failed with safe operational metadata.
 
-**Current maturity:** Implemented.
+**Current maturity:** Implemented and live-verified.
 
 ## 9. Multilingual content artifacts
 
@@ -143,7 +175,7 @@ Routes for roadmap modules may exist as truthful readiness surfaces before workf
 
 ## 10. Scene Planning and video production
 
-The original video requirements keep their IDs and meanings; Phases 6–7 add new IDs rather than reusing old ones.
+The original video requirements keep their IDs and meanings; later slices add new IDs rather than reusing old ones.
 
 ### Original video requirements
 
@@ -172,8 +204,9 @@ The original video requirements keep their IDs and meanings; Phases 6–7 add ne
 - **PRD-VID-017** Unattended reconciliation continues without an open browser using a privileged dispatcher that browser roles cannot invoke directly.
 - **PRD-VID-018** LTX credentials use Integration Vault, never return to browser state, and support non-billable credential validation where provider semantics permit.
 - **PRD-VID-019** Final video assembly is a separate durable job from per-shot generation and produces an organization-scoped final media asset with component lineage.
+- **PRD-VID-020** Scene Planning resolves Brand Kit institutional defaults server-side. Explicit Visual Bible creative direction remains authoritative for project style when present, but cannot replace the official logo asset identity or violate institutional brand constraints.
 
-**Current maturity:** Scene Planning and per-shot provider generation implemented. PRD-VID-005 and PRD-VID-019 final assembly/readiness remain Phase 8.
+**Current maturity:** Scene Planning, per-shot generation, final assembly foundation and Brand Kit default integration are implemented.
 
 ## 11. AI Representative
 
@@ -224,8 +257,9 @@ The original video requirements keep their IDs and meanings; Phases 6–7 add ne
 - **PRD-MEDIA-004** Upload/read/delete authorization follows explicit roles and storage policies.
 - **PRD-MEDIA-005** Provider-generated assets retain safe provider/job metadata where operationally necessary.
 - **PRD-MEDIA-006** Generated-video objects are stored in private organization-scoped paths before a generation job is considered successfully imported.
+- **PRD-MEDIA-007** Brand Kit and Knowledge ingestion consumers persist Media Library asset IDs only; signed URLs are request-scoped transport and never durable business identity.
 
-**Current maturity:** Backend/storage/generated-video foundation implemented; full operator catalogue/upload/preview/detail/lifecycle UX remains Phase 8.
+**Current maturity:** Implemented foundation supports operator catalogue/upload/detail plus Brand Kit image selection and private document ingestion.
 
 ## 17. Approval Center
 
@@ -235,7 +269,7 @@ The original video requirements keep their IDs and meanings; Phases 6–7 add ne
 - **PRD-APR-004** Publication may enforce approval prerequisites by channel/content policy.
 - **PRD-APR-005** Revisions after approval invalidate prior approval when substantive content changes.
 
-**Current maturity:** Generic Approval Center missing. Scene Planning has its own implemented domain approval lifecycle but does not replace product-wide approval.
+**Current maturity:** Governed separately. Scene Planning has its own implemented domain approval lifecycle but does not replace product-wide approval.
 
 ## 18. Content Calendar
 
@@ -243,7 +277,7 @@ The original video requirements keep their IDs and meanings; Phases 6–7 add ne
 - **PRD-CAL-002** Users can schedule or reschedule eligible content.
 - **PRD-CAL-003** Calendar state references authoritative publishing/scheduling records and does not duplicate workflow state.
 
-**Current maturity:** Missing.
+**Current maturity:** Roadmap-governed separately.
 
 ## 19. Publishing
 
@@ -254,7 +288,7 @@ The original video requirements keep their IDs and meanings; Phases 6–7 add ne
 - **PRD-PUB-005** Failed publish may be retried without duplicate posts where provider semantics permit.
 - **PRD-PUB-006** Browser clients never receive raw provider secrets.
 
-**Current maturity:** Missing; Settings/Vault foundation exists but no production publishing workflow.
+**Current maturity:** Governed separately; Settings/Vault foundation exists.
 
 ## 20. Analytics
 
@@ -264,11 +298,11 @@ The original video requirements keep their IDs and meanings; Phases 6–7 add ne
 - **PRD-AN-004** Analytics UI must distinguish fresh, delayed and unavailable data.
 - **PRD-AN-005** ANALYST role is read-only.
 
-**Current maturity:** Missing.
+**Current maturity:** Roadmap-governed separately.
 
 ## 21. Settings and Integration Vault
 
-- **PRD-SET-001** Settings contains organization, members, integrations and operational configuration. Integrations are the currently implemented Settings section; remaining sections may be phased.
+- **PRD-SET-001** Settings contains Organization Profile, Brand Kit, members, integrations and operational configuration. Organization Profile, Brand Kit and Integrations are implemented surfaces; remaining sections may be phased.
 - **PRD-SET-002** Integration UI supports OpenAI first and generic provider credential schemas thereafter; LTX is now the second implemented organization provider.
 - **PRD-SET-003** Credentials are written only through authenticated server-side/Edge actions and narrowly scoped privileged RPCs.
 - **PRD-SET-004** Raw secret values are never returned after storage.
@@ -278,8 +312,9 @@ The original video requirements keep their IDs and meanings; Phases 6–7 add ne
 - **PRD-SET-008** OpenAI key must be usable by Content Studio without a Vercel redeploy after being saved in PAK Settings.
 - **PRD-SET-009** Future Meta credentials may contain app ID, app secret, access token, page/business/account IDs and webhook metadata as provider-specific fields.
 - **PRD-SET-010** LTX key is usable by approved-shot generation without a redeploy and supports no-spend credential validation where possible.
+- **PRD-SET-011** Organization Profile and Brand Kit Settings surfaces are editable only for OWNER/ADMIN and are read-only for other members.
 
-**Current maturity:** Integrations/Vault implemented for OpenAI and LTX; Organization/Members/Operational Configuration UI remains partial.
+**Current maturity:** Integrations/Vault implemented for OpenAI/LTX and Organization Profile/Brand Kit implemented with role-aware read-only modes.
 
 ## 22. Durable jobs
 
@@ -289,7 +324,7 @@ The original video requirements keep their IDs and meanings; Phases 6–7 add ne
 - **PRD-JOB-004** Provider errors are normalized before persistence/UI display.
 - **PRD-JOB-005** Provider-spend jobs have a single validated creation boundary that derives trusted execution input from authoritative domain state.
 
-**Current maturity:** Implemented foundation; exercised by Phase 7 video generation.
+**Current maturity:** Implemented foundation; exercised by video generation and final assembly.
 
 ## 23. Non-functional requirements
 
@@ -302,37 +337,48 @@ The original video requirements keep their IDs and meanings; Phases 6–7 add ne
 - **PRD-NFR-007 Testing:** typecheck, lint, unit/integration, build and applicable E2E are mandatory release gates.
 - **PRD-NFR-008 Data integrity:** database constraints/triggers/RLS are authoritative for security-critical invariants, not browser validation alone.
 - **PRD-NFR-009 Cost safety:** paid-provider execution cannot be triggered through an unvalidated browser-controlled payload or unconstrained retry loop.
+- **PRD-NFR-010 URL ingestion safety:** server-side URL ingestion must enforce public HTTP/HTTPS destination validation across redirects and reject SSRF-sensitive address classes.
+- **PRD-NFR-011 Database least privilege:** RLS-backed feature tables must not retain unnecessary anonymous, TRUNCATE, REFERENCES or other broad inherited table privileges.
 
-## 24. Operational core baseline after Phase 7
+## 24. Operational core baseline after Organization Identity foundation
 
 The current operational core consists of:
 
 1. Supabase Auth and organization membership
 2. RBAC/RLS tenant foundation
-3. Settings → Integrations with secure OpenAI and LTX credential storage
-4. Knowledge Base lifecycle and authorization
-5. Content Studio grounded canonical generation
-6. EN/PL/HI artifact workflow
-7. immutable Knowledge provenance snapshots
-8. Scene Planning with Video Project, Visual Bible, versioned scenes/shots, deterministic QC and approval
-9. durable approved-shot LTX generation with bounded retry/reconciliation
-10. private generated-video import into organization-scoped storage and `media_assets`
-11. unattended video-generation dispatcher
-12. GitHub CI / release verification discipline
+3. Settings → Organization Profile / Brand Kit / Integrations
+4. revisioned authoritative Organization Profile and Brand Kit
+5. private Media Library asset identity for logos and ingestion documents
+6. Knowledge Base lifecycle, Core Knowledge and explicit human activation
+7. PDF/DOCX/PPTX/TXT/URL ingestion to linked DRAFT Knowledge
+8. shared server-only automatic generation-context resolver
+9. deterministic Profile → Brand → Core → selected Knowledge → task context order
+10. atomic immutable Profile/Brand/Knowledge generation provenance
+11. Content Studio grounded canonical generation
+12. EN/PL/HI artifact workflow
+13. Scene Planning with Brand Kit institutional defaults, Visual Bible, versioned scenes/shots, deterministic QC and approval
+14. durable approved-shot LTX generation with bounded retry/reconciliation
+15. private generated-video import and final assembly foundation
+16. unattended video-generation dispatcher
+17. GitHub CI / release verification discipline plus live Supabase rollback-only authorization proof
 
-This operational core is not the full product. Phase 8 onward completes final assembly/media operations, generic approvals, publishing, scheduling, analytics and specialized modules.
+This operational core is not the full product. Remaining roadmap modules continue through their own governance and acceptance slices.
 
 ## 25. Explicit non-goals for the current baseline
 
 - generic autonomous web crawling
 - unrestricted RAG over unknown third-party content
+- automatic activation of uploaded or URL-ingested Knowledge
+- OCR or spreadsheet ingestion in the current Knowledge ingestion slice
+- multiple named Brand Kits per organization
 - customer-facing billing/subscriptions
 - public multi-tenant signup marketplace
 - production-scale GPU orchestration owned by PAK
 - secrets stored in browser local storage or returned by read APIs
+- signed URLs/raw private storage paths stored as durable Brand Kit identity
 - treating provider result URLs as durable PAK media storage
 - browser-controlled paid-provider payloads that bypass approved domain state
 
 ## 26. Product acceptance principle
 
-Every implemented requirement must be traceable through the project traceability matrix to its UX surface, backend ownership, authorization rule, automated verification and release phase. Existing requirement IDs retain their original semantic meaning; new behavior receives new IDs. A rendered route or database table alone does not make a requirement implemented.
+Every implemented requirement must be traceable through the project traceability matrix to its UX surface, backend ownership, authorization rule, automated verification and release phase. Existing requirement IDs retain their original semantic meaning; new behavior receives new IDs. A rendered route or database table alone does not make a requirement implemented. Live-discovered authorization or ACL defects require a forward migration plus regression coverage before the slice is considered merge-ready.

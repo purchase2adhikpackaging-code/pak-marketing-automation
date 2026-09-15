@@ -1,5 +1,7 @@
 export const dynamic = "force-dynamic";
 
+import Link from "next/link";
+
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { AppRole } from "@/modules/auth/roles";
 import { SupabaseIntegrationMetadataStore } from "@/modules/integrations/repository";
@@ -57,10 +59,21 @@ export default async function SettingsPage() {
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">PAK Workspace</p>
       <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white">Settings</h2>
       <p className="mt-4 max-w-3xl text-base leading-7 text-slate-400">
-        Manage organization-scoped provider connections. Credentials are stored through the server-side Integration Vault and are never returned to the browser after save.
+        Manage authoritative institutional identity, official brand rules and organization-scoped provider connections.
       </p>
 
-      <div className="mt-7 border-b border-slate-800 pb-3 text-sm font-semibold text-white">Integrations</div>
+      <div className="mt-7 grid gap-4 md:grid-cols-2">
+        <Link href="/settings/organization-profile" className="rounded-xl border border-slate-800 bg-slate-900/50 p-5 transition hover:border-slate-600">
+          <h3 className="font-semibold text-white">Organization Profile</h3>
+          <p className="mt-2 text-sm leading-6 text-slate-400">Official institute name, contacts, website, address, locale and institutional identifiers.</p>
+        </Link>
+        <Link href="/settings/brand-kit" className="rounded-xl border border-slate-800 bg-slate-900/50 p-5 transition hover:border-slate-600">
+          <h3 className="font-semibold text-white">Brand Kit</h3>
+          <p className="mt-2 text-sm leading-6 text-slate-400">Official logos, approved imagery, colors, typography, voice and visual constraints.</p>
+        </Link>
+      </div>
+
+      <div className="mt-8 border-b border-slate-800 pb-3 text-sm font-semibold text-white">Integrations</div>
       <IntegrationsManager organizations={organizations} />
     </section>
   );

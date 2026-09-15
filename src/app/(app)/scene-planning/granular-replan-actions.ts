@@ -4,6 +4,8 @@ import { z } from "zod";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createTextGenerationProvider } from "@/modules/ai/text/provider-factory";
 import type { AppRole } from "@/modules/auth/roles";
+import { generationContextRepository } from "@/modules/generation-context/repository";
+import { applyBrandKitDefaults, type ScenePlanningInstitutionalBrand } from "@/modules/scene-planning/brand-defaults";
 import { generateScenePlan } from "@/modules/scene-planning/planner";
 import { assertGranularReplanBoundary, type GranularReplanBoundary } from "@/modules/scene-planning/replan-boundary";
 import { SupabaseScenePlanningRepository } from "@/modules/scene-planning/repository";
@@ -54,6 +56,8 @@ export type ScenePlanningGenerationContext = {
     scriptText: string;
     integrityHash: string;
   };
+  brandKitRevision: number;
+  institutionalBrand: ScenePlanningInstitutionalBrand;
   visualBible: Record<string, unknown>;
 };
 
@@ -266,6 +270,27 @@ async function loadReplanContext(
     })),
   });
 
+  const brandKit = await generationContextRepository.getBrandKit(organizationId);
+  if (!brandKit) throw new Error("Scene Planning Brand Kit unavailable");
+  const rawVisualBible: Record<string, unknown> = visualBible
+    ? {
+        characters: visualBible.characters,
+        wardrobe: visualBible.wardrobe,
+        locations: visualBible.locations,
+        props: visualBible.props,
+        palette: visualBible.palette,
+        lightingLanguage: visualBible.lighting_language,
+        realismLevel: visualBible.realism_level,
+        cinematographyLanguage: visualBible.cinematography_language,
+        logoTreatment: visualBible.logo_treatment,
+        typographyTreatment: visualBible.typography_treatment,
+        culturalConstraints: visualBible.cultural_constraints,
+        forbiddenTraits: visualBible.forbidden_traits,
+        globalNegativeConstraints: visualBible.global_negative_constraints,
+      }
+    : {};
+  const branded = applyBrandKitDefaults(rawVisualBible, brandKit);
+
   const context: ScenePlanningGenerationContext = {
     organizationId,
     project: {
@@ -284,23 +309,9 @@ async function loadReplanContext(
       scriptText: source.scriptText,
       integrityHash,
     },
-    visualBible: visualBible
-      ? {
-          characters: visualBible.characters,
-          wardrobe: visualBible.wardrobe,
-          locations: visualBible.locations,
-          props: visualBible.props,
-          palette: visualBible.palette,
-          lightingLanguage: visualBible.lighting_language,
-          realismLevel: visualBible.realism_level,
-          cinematographyLanguage: visualBible.cinematography_language,
-          logoTreatment: visualBible.logo_treatment,
-          typographyTreatment: visualBible.typography_treatment,
-          culturalConstraints: visualBible.cultural_constraints,
-          forbiddenTraits: visualBible.forbidden_traits,
-          globalNegativeConstraints: visualBible.global_negative_constraints,
-        }
-      : {},
+    brandKitRevision: brandKit.revision,
+    institutionalBrand: branded.institutionalBrand,
+    visualBible: branded.visualBible,
   };
 
   return { context, currentPlan };
@@ -337,6 +348,7 @@ export async function granularReplanScenePlanAction(input: unknown) {
           productionConstraints: Object.entries(context.project.productionConstraints).map(
             ([key, value]) => `${key}: ${String(value)}`,
           ),
+          institutionalBrand: context.institutionalBrand,
           visualBible: context.visualBible,
           replan: {
             scope: boundary.scope,
@@ -367,6 +379,8 @@ export async function granularReplanScenePlanAction(input: unknown) {
           aspectRatio: context.project.aspectRatio,
           qualityProfile: context.project.qualityProfile,
           targetPlatforms: context.project.targetPlatforms,
+          brandKitRevision: context.brandKitRevision,
+          institutionalBrand: context.institutionalBrand,
           replanScope: "GRANULAR",
         },
         visualBibleSnapshot: context.visualBible,

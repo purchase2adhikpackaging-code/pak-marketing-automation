@@ -11,12 +11,19 @@ function assetTypeForMime(mimeType: string): "IMAGE" | "VIDEO" | "AUDIO" | "DOCU
   return "DOCUMENT";
 }
 
+export type UploadedMediaFile = Readonly<{
+  filename: string;
+  mimeType: string;
+}>;
+
 export function MediaUpload({
   organizationId,
   onUploaded,
+  accept,
 }: {
   organizationId: string;
-  onUploaded(mediaAssetId: string): void | Promise<void>;
+  onUploaded(mediaAssetId: string, file: UploadedMediaFile): void | Promise<void>;
+  accept?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -26,16 +33,18 @@ export function MediaUpload({
 
   async function upload() {
     if (!file || pending) return;
+    const uploadFile = file;
+    const mimeType = uploadFile.type || "application/octet-stream";
     setPending(true);
     setMessage(null);
 
     try {
       const issued = await issueMediaUploadAction({
         organizationId,
-        assetType: assetTypeForMime(file.type || "application/octet-stream"),
-        filename: file.name,
-        mimeType: file.type || "application/octet-stream",
-        sizeBytes: file.size,
+        assetType: assetTypeForMime(mimeType),
+        filename: uploadFile.name,
+        mimeType,
+        sizeBytes: uploadFile.size,
         ...(displayName.trim() ? { displayName: displayName.trim() } : {}),
       });
       if (!issued.ok) {
@@ -45,8 +54,8 @@ export function MediaUpload({
 
       const response = await fetch(issued.signedUploadUrl, {
         method: "PUT",
-        headers: { "content-type": file.type || "application/octet-stream" },
-        body: file,
+        headers: { "content-type": mimeType },
+        body: uploadFile,
       });
       if (!response.ok) {
         setMessage("The file could not be uploaded to private storage.");
@@ -62,7 +71,10 @@ export function MediaUpload({
         return;
       }
 
-      await onUploaded(finalized.mediaAssetId);
+      await onUploaded(finalized.mediaAssetId, {
+        filename: uploadFile.name,
+        mimeType,
+      });
       setFile(null);
       setDisplayName("");
       setOpen(false);
@@ -91,6 +103,7 @@ export function MediaUpload({
             File
             <input
               type="file"
+              accept={accept}
               onChange={(event) => setFile(event.target.files?.[0] ?? null)}
               disabled={pending}
               className="mt-2 block w-full text-sm text-slate-400 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-800 file:px-3 file:py-2 file:text-slate-200"

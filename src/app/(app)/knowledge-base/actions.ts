@@ -5,6 +5,7 @@ import { z } from "zod";
 import { AppError } from "@/lib/errors/app-error";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { can } from "@/modules/auth/authorization";
+import { getE2EFixtureRole } from "@/modules/auth/e2e-fixture-server";
 import type { AppRole } from "@/modules/auth/roles";
 import {
   SupabaseKnowledgeRepository,
@@ -16,6 +17,21 @@ import {
   updateKnowledgeRecordSchema,
 } from "@/modules/knowledge-base/schema";
 import type { KnowledgeRecord } from "@/modules/knowledge-base/types";
+import {
+  createProductionKnowledgeIngestionService,
+  type FileIngestionRequest,
+  type UrlIngestionRequest,
+} from "@/modules/knowledge-ingestion/ingestion-service";
+import {
+  createFileKnowledgeDocumentSchema,
+  createUrlKnowledgeDocumentSchema,
+} from "@/modules/knowledge-ingestion/schema";
+import {
+  createE2EKnowledgeDraft,
+  E2E_FIXTURE_DOCUMENT_ID,
+  E2E_FIXTURE_MEDIA_ASSET_ID,
+  E2E_FIXTURE_ORGANIZATION_ID,
+} from "@/modules/testing/e2e-organization-fixtures";
 
 type Actor = { id: string };
 type Membership = { role: AppRole } | null;
@@ -31,11 +47,22 @@ const deleteKnowledgeSchema = z.object({
   organizationId: z.string().uuid(),
 });
 
+const setCoreKnowledgeSchema = z.object({
+  id: z.string().uuid(),
+  organizationId: z.string().uuid(),
+  expectedRevision: z.number().int().min(1),
+  isCore: z.boolean(),
+}).strict();
+
 export type KnowledgeActionResult =
   | { ok: true; record: KnowledgeRecord }
   | { ok: false; error: string };
 
 export type DeleteKnowledgeActionResult = { ok: true } | { ok: false; error: string };
+
+export type KnowledgeIngestionActionResult =
+  | { ok: true; documentId: string; record: KnowledgeRecord }
+  | { ok: false; error: string };
 
 export type KnowledgeActionDependencies = {
   getActor(): Promise<Actor | null>;
@@ -49,6 +76,25 @@ export type KnowledgeActionDependencies = {
     actorUserId: string,
   ): Promise<KnowledgeRecord>;
   delete(id: string, organizationId: string): Promise<void>;
+};
+
+export type CoreKnowledgeActionDependencies = {
+  getActor(): Promise<Actor | null>;
+  getMembership(actorId: string, organizationId: string): Promise<Membership>;
+  setCore(
+    id: string,
+    organizationId: string,
+    expectedRevision: number,
+    isCore: boolean,
+    actorUserId: string,
+  ): Promise<KnowledgeRecord>;
+};
+
+export type KnowledgeIngestionActionDependencies = {
+  getActor(): Promise<Actor | null>;
+  getMembership(actorId: string, organizationId: string): Promise<Membership>;
+  ingestFile(input: FileIngestionRequest): Promise<{ documentId: string; record: KnowledgeRecord }>;
+  ingestUrl(input: UrlIngestionRequest): Promise<{ documentId: string; record: KnowledgeRecord }>;
 };
 
 function mutationError(error: unknown): KnowledgeActionResult {
@@ -179,6 +225,39 @@ export async function executeArchiveKnowledgeAction(
   }
 }
 
+export async function executeSetCoreKnowledgeAction(
+  input: unknown,
+  dependencies: CoreKnowledgeActionDependencies,
+): Promise<KnowledgeActionResult> {
+  const parsed = setCoreKnowledgeSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "Please check the Core Knowledge change and try again." };
+  }
+
+  const actor = await dependencies.getActor();
+  if (!actor) {
+    return { ok: false, error: "You must be signed in to manage Knowledge Base records." };
+  }
+
+  const membership = await dependencies.getMembership(actor.id, parsed.data.organizationId);
+  if (!membership || (membership.role !== "OWNER" && membership.role !== "ADMIN")) {
+    return { ok: false, error: "Only organization Owners and Admins may change Core Knowledge." };
+  }
+
+  try {
+    const record = await dependencies.setCore(
+      parsed.data.id,
+      parsed.data.organizationId,
+      parsed.data.expectedRevision,
+      parsed.data.isCore,
+      actor.id,
+    );
+    return { ok: true, record };
+  } catch (error) {
+    return mutationError(error);
+  }
+}
+
 export async function executeDeleteKnowledgeAction(
   input: unknown,
   dependencies: KnowledgeActionDependencies,
@@ -198,6 +277,63 @@ export async function executeDeleteKnowledgeAction(
     return { ok: true };
   } catch {
     return { ok: false, error: "Knowledge Base is temporarily unavailable." };
+  }
+}
+
+export async function executeIngestKnowledgeFileAction(
+  input: unknown,
+  dependencies: KnowledgeIngestionActionDependencies,
+): Promise<KnowledgeIngestionActionResult> {
+  const parsed = createFileKnowledgeDocumentSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "Please check the knowledge source and try again." };
+  }
+
+  const authorization = await authorize(parsed.data.organizationId, "knowledge:manage", dependencies);
+  if ("error" in authorization) return { ok: false, error: authorization.error };
+
+  try {
+    const result = await dependencies.ingestFile({
+      organizationId: parsed.data.organizationId,
+      mediaAssetId: parsed.data.mediaAssetId,
+      format: parsed.data.format,
+      ...(parsed.data.sourceLabel !== undefined ? { sourceLabel: parsed.data.sourceLabel } : {}),
+      actorUserId: authorization.actorId,
+    });
+    if (result.record.status !== "DRAFT") {
+      return { ok: false, error: "Knowledge source could not be ingested. Check the source and try again." };
+    }
+    return { ok: true, ...result };
+  } catch {
+    return { ok: false, error: "Knowledge source could not be ingested. Check the source and try again." };
+  }
+}
+
+export async function executeIngestKnowledgeUrlAction(
+  input: unknown,
+  dependencies: KnowledgeIngestionActionDependencies,
+): Promise<KnowledgeIngestionActionResult> {
+  const parsed = createUrlKnowledgeDocumentSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "Please check the knowledge source and try again." };
+  }
+
+  const authorization = await authorize(parsed.data.organizationId, "knowledge:manage", dependencies);
+  if ("error" in authorization) return { ok: false, error: authorization.error };
+
+  try {
+    const result = await dependencies.ingestUrl({
+      organizationId: parsed.data.organizationId,
+      sourceUrl: parsed.data.sourceUrl,
+      ...(parsed.data.sourceLabel !== undefined ? { sourceLabel: parsed.data.sourceLabel } : {}),
+      actorUserId: authorization.actorId,
+    });
+    if (result.record.status !== "DRAFT") {
+      return { ok: false, error: "Knowledge source could not be ingested. Check the source and try again." };
+    }
+    return { ok: true, ...result };
+  } catch {
+    return { ok: false, error: "Knowledge source could not be ingested. Check the source and try again." };
   }
 }
 
@@ -234,6 +370,26 @@ function productionDependencies(): KnowledgeActionDependencies {
   };
 }
 
+function productionCoreDependencies(): CoreKnowledgeActionDependencies {
+  const repository = new SupabaseKnowledgeRepository();
+  return {
+    getActor,
+    getMembership,
+    setCore: (id, organizationId, expectedRevision, isCore, actorUserId) =>
+      repository.setCore(id, organizationId, expectedRevision, isCore, actorUserId),
+  };
+}
+
+function productionIngestionDependencies(): KnowledgeIngestionActionDependencies {
+  const service = createProductionKnowledgeIngestionService();
+  return {
+    getActor,
+    getMembership,
+    ingestFile: (input) => service.ingestFile(input),
+    ingestUrl: (input) => service.ingestUrl(input),
+  };
+}
+
 export async function createKnowledgeAction(input: unknown): Promise<KnowledgeActionResult> {
   return executeCreateKnowledgeAction(input, productionDependencies());
 }
@@ -246,6 +402,42 @@ export async function archiveKnowledgeAction(input: unknown): Promise<KnowledgeA
   return executeArchiveKnowledgeAction(input, productionDependencies());
 }
 
+export async function setCoreKnowledgeAction(input: unknown): Promise<KnowledgeActionResult> {
+  return executeSetCoreKnowledgeAction(input, productionCoreDependencies());
+}
+
 export async function deleteKnowledgeAction(input: unknown): Promise<DeleteKnowledgeActionResult> {
   return executeDeleteKnowledgeAction(input, productionDependencies());
+}
+
+export async function ingestKnowledgeFileAction(input: unknown): Promise<KnowledgeIngestionActionResult> {
+  const parsed = createFileKnowledgeDocumentSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: "Please check the knowledge source and try again." };
+  }
+
+  const fixtureRole = await getE2EFixtureRole();
+  if (fixtureRole) {
+    if (parsed.data.organizationId !== E2E_FIXTURE_ORGANIZATION_ID) {
+      return { ok: false, error: "You do not have permission to manage Knowledge Base records for this organization." };
+    }
+    if (fixtureRole !== "OWNER" && fixtureRole !== "ADMIN" && fixtureRole !== "EDITOR") {
+      return { ok: false, error: "You do not have permission to manage Knowledge Base records for this organization." };
+    }
+    if (parsed.data.mediaAssetId !== E2E_FIXTURE_MEDIA_ASSET_ID) {
+      return { ok: false, error: "Knowledge source could not be ingested. Check the source and try again." };
+    }
+
+    return {
+      ok: true,
+      documentId: E2E_FIXTURE_DOCUMENT_ID,
+      record: createE2EKnowledgeDraft(parsed.data.sourceLabel),
+    };
+  }
+
+  return executeIngestKnowledgeFileAction(parsed.data, productionIngestionDependencies());
+}
+
+export async function ingestKnowledgeUrlAction(input: unknown): Promise<KnowledgeIngestionActionResult> {
+  return executeIngestKnowledgeUrlAction(input, productionIngestionDependencies());
 }

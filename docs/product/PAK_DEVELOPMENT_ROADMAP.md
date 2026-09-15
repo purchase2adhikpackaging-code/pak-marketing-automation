@@ -1,8 +1,8 @@
 # PAK Marketing Automation — Development Roadmap
 
 **Document ID:** PAK-RM-001  
-**Version:** 1.2  
-**Status:** Current roadmap after Phase 8
+**Version:** 1.3  
+**Status:** Current roadmap through Organization Identity / Brand / Knowledge foundation rollout
 
 ## Governance rule
 
@@ -192,6 +192,39 @@ Verification:
 - exact-head Railway deployment verified successful
 - fixture storage/database residue removed and fixture seeder disabled behind JWT
 - Supabase security/performance advisors rerun; remaining non-blocking findings documented for maintenance
+
+## Cross-phase foundation — Organization Profile, Brand Kit & Knowledge Ingestion — IMPLEMENTED
+
+Purpose:
+- establish one authoritative organization identity and brand source for downstream generation;
+- make approved Core Knowledge automatic while preserving explicit selection of normal ACTIVE Knowledge;
+- add review-first PDF/DOCX/PPTX/TXT/URL ingestion without creating a parallel document store.
+
+Delivered:
+- one revisioned `organization_profiles` row per organization;
+- one revisioned `organization_brand_kits` row per organization plus semantic `brand_kit_media_assets` references to same-org ACTIVE image `media_assets`;
+- safe Brand Kit contracts persist Media Library UUIDs only—never signed URLs or raw storage paths;
+- `knowledge_records.is_core` with OWNER/ADMIN-only Core mutation, including a live-discovered INSERT guard so EDITOR cannot create Core records through direct Data API writes;
+- `knowledge_documents` source lineage for FILE/URL ingestion and `knowledge_records.knowledge_document_id` linkage;
+- PDF/DOCX/PPTX/TXT/URL extraction with bounded text and SSRF protection for loopback/private/link-local/cloud-metadata destinations and unsafe redirects;
+- ingestion creates DRAFT Knowledge only; activation remains explicit human review;
+- shared server-only generation-context resolver with deterministic priority Profile → Brand Kit → ACTIVE Core Knowledge → selected ACTIVE Knowledge → task context;
+- duplicate selected IDs collapse; Core explicitly selected appears once; cross-org/non-ACTIVE selected sources cannot become grounding;
+- atomic immutable generation provenance for exact Profile revision, Brand Kit revision and Knowledge snapshots;
+- Content Studio automatically applies the authoritative context without trusting browser-supplied profile/brand text;
+- Scene Planning receives Brand Kit institutional defaults while Visual Bible remains creative-direction authority and cannot replace official logo identity;
+- OWNER/ADMIN editable Settings surfaces, REVIEWER/read-only behavior, and deterministic browser fixtures for Profile/Brand/Knowledge smoke tests;
+- forward-only live hardening migrations for inherited table ACLs, Core INSERT RBAC, and RLS `auth.uid()` initplan performance.
+
+Live verification on 13 September 2026:
+- remote migration history was inspected before applying only missing migrations;
+- OWNER Profile/Brand CAS revisioning, same-org official asset enforcement and cross-org rejection were proven with rollback-only fixtures;
+- EDITOR normal Knowledge management and DRAFT ingestion succeeded while Profile/Brand/Core boundaries remained denied;
+- Core automatic grounding, normal ACTIVE selection behavior, atomic identity/Knowledge provenance and REVIEWER read-only access were proven;
+- private Media Library bucket remained private and Brand Kit schema persisted no URL/path fields;
+- all synthetic fixture rows were rolled back and post-proof cleanup returned zero residue;
+- broad inherited table ACLs were reduced to intended least privilege; provenance tables are SELECT-only to authenticated members and `anon` has no table grants;
+- feature-specific Supabase `auth_rls_initplan` warnings were removed; remaining advisor findings pre-date this slice or are maintenance-level index recommendations.
 
 ## Phase 9 — Approval Center
 

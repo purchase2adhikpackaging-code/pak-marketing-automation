@@ -26,6 +26,14 @@ const context: ScenePlanningGenerationContext = {
     scriptText: "Alpha beta",
     integrityHash: "sha256:current",
   },
+  brandKitRevision: 5,
+  institutionalBrand: {
+    brandKitRevision: 5,
+    defaultPalette: { primary: "#102A43" },
+    brandVoice: "Authoritative and educational.",
+    officialPrimaryLogoAssetId: "77777777-7777-4777-8777-777777777777",
+    approvedImageryAssetIds: [],
+  },
   visualBible: {},
 };
 

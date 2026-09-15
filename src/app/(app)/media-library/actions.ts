@@ -3,6 +3,7 @@
 import { z } from "zod";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { getE2EFixtureRole } from "@/modules/auth/e2e-fixture-server";
 import type { AppRole } from "@/modules/auth/roles";
 import {
   invokeMediaLibrary,
@@ -11,6 +12,11 @@ import {
 import { SupabaseMediaRepository } from "@/modules/media/repository";
 import type { MediaListPage, MediaListQuery } from "@/modules/media/read-model";
 import { SupabaseScenePlanningRepository } from "@/modules/scene-planning/repository";
+import {
+  E2E_FIXTURE_MEDIA_ASSET_ID,
+  E2E_FIXTURE_ORGANIZATION_ID,
+  E2E_FIXTURE_UPLOAD_SESSION_ID,
+} from "@/modules/testing/e2e-organization-fixtures";
 
 const EDIT_ROLES: readonly AppRole[] = ["OWNER", "ADMIN", "EDITOR"];
 const ADMIN_ROLES: readonly AppRole[] = ["OWNER", "ADMIN"];
@@ -240,6 +246,24 @@ export async function issueMediaUploadAction(input: unknown): Promise<IssueMedia
   const parsed = issueUploadSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Please check the selected file and try again." };
 
+  const fixtureRole = await getE2EFixtureRole();
+  if (fixtureRole) {
+    if (parsed.data.organizationId !== E2E_FIXTURE_ORGANIZATION_ID) {
+      return { ok: false, error: "You do not have access to this organization's Media Library." };
+    }
+    if (!EDIT_ROLES.includes(fixtureRole)) {
+      return { ok: false, error: "You do not have permission to upload media." };
+    }
+    return {
+      ok: true,
+      sessionId: E2E_FIXTURE_UPLOAD_SESSION_ID,
+      signedUploadUrl: `https://e2e-upload.invalid/${E2E_FIXTURE_UPLOAD_SESSION_ID}`,
+      uploadToken: "deterministic-e2e-upload-token",
+      storageBucket: "media-library",
+      expiresAt: "2099-01-01T00:00:00.000Z",
+    };
+  }
+
   try {
     const authorization = await authorizeMember(parsed.data.organizationId, productionDependencies);
     if ("error" in authorization) return { ok: false, error: authorization.error };
@@ -264,6 +288,25 @@ export async function issueMediaUploadAction(input: unknown): Promise<IssueMedia
 export async function finalizeMediaUploadAction(input: unknown): Promise<FinalizeMediaUploadActionResult> {
   const parsed = finalizeUploadSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Please check the upload session and try again." };
+
+  const fixtureRole = await getE2EFixtureRole();
+  if (fixtureRole) {
+    if (parsed.data.organizationId !== E2E_FIXTURE_ORGANIZATION_ID) {
+      return { ok: false, error: "You do not have access to this organization's Media Library." };
+    }
+    if (!EDIT_ROLES.includes(fixtureRole)) {
+      return { ok: false, error: "You do not have permission to finalize media uploads." };
+    }
+    if (parsed.data.sessionId !== E2E_FIXTURE_UPLOAD_SESSION_ID) {
+      return { ok: false, error: "Please check the upload session and try again." };
+    }
+    return {
+      ok: true,
+      sessionId: E2E_FIXTURE_UPLOAD_SESSION_ID,
+      mediaAssetId: E2E_FIXTURE_MEDIA_ASSET_ID,
+      reused: false,
+    };
+  }
 
   try {
     const authorization = await authorizeMember(parsed.data.organizationId, productionDependencies);

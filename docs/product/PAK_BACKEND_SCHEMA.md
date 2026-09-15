@@ -1,29 +1,38 @@
 # PAK Marketing Automation — Backend Schema & Data Architecture
 
 **Document ID:** PAK-DB-001  
-**Version:** 1.1  
-**Status:** Current baseline after Phase 7
+**Version:** 1.2  
+**Status:** Current baseline through Organization Profile / Brand Kit / Knowledge ingestion foundation
 
 ## 1. Schema principles
 
 - **DB-PRIN-001** Every tenant-owned root record is organization-scoped.
-- **DB-PRIN-002** RLS is the final authorization boundary for browser/session clients.
+- **DB-PRIN-002** RLS is the final row-authorization boundary for browser/session clients.
 - **DB-PRIN-003** Security-critical invariants use constraints/triggers/functions, not UI validation alone.
 - **DB-PRIN-004** Immutable audit/provenance records never expose ordinary authenticated UPDATE/DELETE.
 - **DB-PRIN-005** Privileged backend writes are narrowly scoped and occur only after user/session or trusted-worker authorization succeeds.
 - **DB-PRIN-006** Shared applied migrations are corrected by forward migrations, never history rewriting.
 - **DB-PRIN-007** Paid-provider execution input is reconstructed from approved persisted state rather than trusted from browser JSON.
-- **DB-PRIN-008** Ephemeral provider result URLs are not durable PAK media identity.
+- **DB-PRIN-008** Ephemeral provider/signed URLs are transport data, not durable PAK media or Brand identity.
+- **DB-PRIN-009** Exposed tables use explicit least-privilege table ACLs in addition to RLS; inherited broad `anon`/`authenticated` grants are revoked when not required.
+- **DB-PRIN-010** Organization generation provenance records the exact Profile revision, Brand Kit revision and Knowledge snapshots used for a successful generation.
+- **DB-PRIN-011** Document/URL ingestion produces DRAFT Knowledge only; activation is a separate human action.
 
 ## 2. Current implemented domain map
 
 ```text
 organizations
-└─ organization_memberships
+├─ organization_memberships
+├─ organization_profiles
+└─ organization_brand_kits
+   └─ brand_kit_media_assets ──> media_assets
 
-knowledge_records
+knowledge_documents ──> media_assets (FILE sources only)
+└─ knowledge_records
+
 content_items
 ├─ content_script_artifacts
+├─ content_item_identity_provenance
 └─ content_item_knowledge_sources
 
 integration_connections
@@ -38,14 +47,15 @@ video_projects
    └─ scene_plan_qc_findings
 
 jobs
-└─ video_generation_attempts
-   └─ media_assets (via generating_job_id/media_asset_id)
+├─ video_generation_attempts
+│  └─ media_assets
+└─ final video assembly domain / media output
 
 legacy/foundation compatibility:
 video_scenes
 ```
 
-The authoritative post-Phase 6 planning model is the normalized Scene Planning hierarchy above. `video_scenes` remains a legacy/foundation table and is not the current Scene Planning source of truth.
+The authoritative generation identity model is Organization Profile + Brand Kit + ACTIVE Core Knowledge + selected ACTIVE Knowledge. The authoritative post-Phase 6 planning model is the normalized Scene Planning hierarchy; `video_scenes` remains compatibility state.
 
 ## 3. `organizations`
 
@@ -54,7 +64,13 @@ Purpose: tenant root.
 Required/current logical fields:
 - `id uuid PK`
 - `name text`
+- `slug text`
 - timestamps
+
+Identity bootstrap behavior:
+- inserting a new organization initializes exactly one `organization_profiles` row and one `organization_brand_kits` row;
+- existing organizations were backfilled by the identity foundation migration;
+- bootstrap rows begin at revision 1 and are system-owned until a human edit.
 
 ## 4. `organization_memberships`
 
@@ -70,7 +86,75 @@ Fields:
 
 RLS: users read permitted membership context; mutation is restricted by organization governance rules.
 
-## 5. `jobs`
+## 5. `organization_profiles`
+
+Purpose: one authoritative, revisioned institutional profile per organization.
+
+Fields:
+- `organization_id uuid PK/FK organizations`
+- `official_name`
+- optional `short_name`, `about`, `address`
+- optional `primary_email`, `primary_phone`, `website`
+- `social_links jsonb`
+- `default_language`
+- `timezone`
+- `legal_identifiers jsonb`
+- `revision >= 1`
+- `created_by`, `updated_by`
+- `created_at`, `updated_at`
+
+Rules:
+- one row per organization;
+- organization and creation audit fields are immutable;
+- each business update increments revision exactly once;
+- trigger controls update actor/time;
+- authenticated members may SELECT;
+- table ACL permits authenticated SELECT/UPDATE only;
+- RLS permits UPDATE only to OWNER/ADMIN;
+- no `anon` table privileges.
+
+## 6. `organization_brand_kits`
+
+Purpose: one authoritative, revisioned institutional Brand Kit per organization.
+
+Fields:
+- `organization_id uuid PK/FK organizations`
+- optional `primary_color`, `secondary_color`, `accent_color`
+- optional `typography_rules`
+- optional `brand_voice`
+- optional `logo_usage_rules`
+- optional `visual_constraints`
+- `revision >= 1`
+- audit/timestamps
+
+Rules:
+- one row per organization;
+- same revision/audit invariants as Profile;
+- authenticated members may SELECT;
+- authenticated table ACL permits SELECT/UPDATE only; RLS limits UPDATE to OWNER/ADMIN;
+- Brand Kit does **not** store signed URLs or raw storage object paths.
+
+### `brand_kit_media_assets`
+
+Purpose: semantic links from Brand Kit to official/approved Media Library images.
+
+Fields:
+- `id uuid PK`
+- `organization_id uuid FK organization_brand_kits`
+- `role`: `PRIMARY_LOGO|LIGHT_LOGO|DARK_LOGO|BRAND_MARK|FAVICON|APPROVED_IMAGERY`
+- `media_asset_id uuid FK media_assets`
+- `sort_order`
+- `created_by`, `created_at`
+
+Constraints/rules:
+- same-org referenced media is mandatory;
+- referenced media must be `ACTIVE`, `asset_type='IMAGE'` and image MIME;
+- singleton roles are unique per organization except `APPROVED_IMAGERY`;
+- active media assigned to the Brand Kit cannot be silently archived;
+- authenticated table ACL permits SELECT/INSERT/UPDATE/DELETE, but RLS limits mutation to OWNER/ADMIN;
+- insert audit actor uses initplan-safe `(select auth.uid())`.
+
+## 7. `jobs`
 
 Purpose: durable asynchronous work authority.
 
@@ -95,10 +179,10 @@ Current logical fields:
 Rules:
 - provider/publish operations use deterministic idempotency semantics;
 - browser roles cannot claim worker jobs;
-- generic authenticated job policies exclude `VIDEO_SHOT_GENERATION` direct INSERT/UPDATE;
-- video-generation job creation occurs only through the validated enqueue RPC.
+- generic authenticated job policies exclude paid generation direct INSERT/UPDATE;
+- provider generation job creation occurs only through validated enqueue boundaries.
 
-## 6. `content_items`
+## 8. `content_items`
 
 Purpose: parent workflow for generated/manual content.
 
@@ -120,7 +204,7 @@ RLS:
 - OWNER/ADMIN/EDITOR create/update according to content workflow;
 - destructive policy follows product permissions.
 
-## 7. `content_script_artifacts`
+## 9. `content_script_artifacts`
 
 Purpose: one current script artifact per language for a content item.
 
@@ -146,7 +230,38 @@ Constraints:
 - non-source artifact uses canonical source revision;
 - parent organization integrity is enforced.
 
-## 8. `knowledge_records`
+## 10. `knowledge_documents`
+
+Purpose: immutable source identity and extraction lifecycle for uploaded/URL Knowledge sources.
+
+Fields:
+- `id uuid PK`
+- `organization_id uuid FK organizations`
+- `source_type`: FILE|URL
+- `format`: PDF|DOCX|PPTX|TXT|URL
+- `media_asset_id uuid nullable FK media_assets`
+- `source_url text nullable`
+- `source_label`
+- `source_fingerprint`
+- `extraction_status`: PENDING|PROCESSING|EXTRACTED|FAILED
+- `extracted_text`
+- `extraction_metadata jsonb`
+- `error_summary`
+- `revision >= 1`
+- `created_by`, `updated_by`
+- timestamps
+
+Source-shape rules:
+- FILE requires a media asset, no URL, and non-URL format;
+- URL requires canonical URL, no media asset, and format URL;
+- FILE asset must be same-org ACTIVE DOCUMENT media;
+- source identity (`organization_id`, source type/format, media ID/URL) is immutable after creation;
+- document revision increments exactly once on business update;
+- authenticated ACL is SELECT/INSERT/UPDATE only;
+- RLS permits OWNER/ADMIN/EDITOR management; reviewer/analyst do not manage extraction rows;
+- insert policy requires revision 1, PENDING state and actor audit IDs matching initplan-safe `(select auth.uid())`.
+
+## 11. `knowledge_records`
 
 Purpose: approved institutional grounding records.
 
@@ -160,6 +275,9 @@ Fields:
 - `source_label`
 - `source_reference`
 - `revision >= 1`
+- `is_core boolean not null default false`
+- `knowledge_document_id uuid nullable FK knowledge_documents`
+- `knowledge_document_revision integer nullable`
 - `created_by`, `updated_by`
 - `created_at`, `updated_at`
 
@@ -168,15 +286,20 @@ Rules:
 - creation audit fields immutable for business mutations;
 - update actor/time system-controlled;
 - each business update increments revision exactly once;
-- FK-only auth-user nullification does not fabricate a business revision.
+- FK-only auth-user nullification does not fabricate a business revision;
+- document-linked Knowledge must remain DRAFT at ingestion-finalization time and source type must match document source;
+- ACTIVE `is_core=true` is automatic grounding authority;
+- only OWNER/ADMIN may insert a Core record or change `is_core`; the `core_knowledge_insert_guard` forward migration closes direct Data API insert bypass;
+- ingestion finalization never activates Knowledge.
 
 RLS matrix:
 - SELECT ACTIVE: all same-org roles;
 - SELECT DRAFT/ARCHIVED: OWNER/ADMIN/EDITOR;
-- INSERT/UPDATE: OWNER/ADMIN/EDITOR;
+- INSERT/UPDATE normal Knowledge: OWNER/ADMIN/EDITOR;
+- Core INSERT/toggle: OWNER/ADMIN via database trigger guard;
 - DELETE: OWNER/ADMIN.
 
-## 9. `content_item_knowledge_sources`
+## 12. `content_item_knowledge_sources`
 
 Purpose: immutable generation-time Knowledge provenance snapshot.
 
@@ -192,11 +315,60 @@ Fields:
 Rules:
 - snapshot organization equals content organization;
 - referenced Knowledge organization must match;
-- same-org authenticated SELECT only;
-- no authenticated INSERT/UPDATE/DELETE;
-- creation is trusted backend persistence after authenticated source resolution.
+- authenticated table ACL is SELECT only;
+- same-org member RLS governs SELECT;
+- no direct authenticated INSERT/UPDATE/DELETE;
+- current generation path writes through `persist_content_generation_provenance(...)` atomically with identity provenance.
 
-## 10. Integration Vault domain
+## 13. `content_item_identity_provenance`
+
+Purpose: immutable generation-time Organization Profile and Brand Kit revision identity.
+
+Fields:
+- `content_item_id uuid PK/FK content_items`
+- `organization_id uuid`
+- `profile_revision integer >= 1`
+- `brand_kit_revision integer >= 1`
+- `created_at`
+
+Rules:
+- organization must equal parent content item organization;
+- revisions must match the authoritative rows supplied to the persistence RPC at write time;
+- update is blocked by immutable guard;
+- authenticated table ACL is SELECT only and same-org member RLS governs visibility;
+- `anon` has no table privileges.
+
+### Atomic generation provenance RPC
+
+`persist_content_generation_provenance(...)`:
+- authenticated SECURITY DEFINER RPC with `public`/`anon` execution revoked;
+- requires OWNER/ADMIN/EDITOR membership;
+- content item must be GENERATED, same-org and created by the caller;
+- Profile/Brand Kit revisions must equal current authoritative rows;
+- each Knowledge snapshot must match an ACTIVE same-org record at the exact revision/title/content/source metadata supplied;
+- writes identity provenance and `content_item_knowledge_sources` in one PostgreSQL transaction;
+- any mismatch fails the whole operation.
+
+## 14. Identity / ingestion mutation RPCs
+
+### `save_organization_brand_kit(...)`
+
+Authenticated guarded mutation for Brand Kit + asset relationships.
+- OWNER/ADMIN only;
+- compare-and-set expected revision;
+- validates same-org ACTIVE IMAGE Media assets;
+- updates Brand Kit and semantic asset links atomically.
+
+### `finalize_knowledge_document_ingestion(...)`
+
+Authenticated guarded ingestion finalizer.
+- OWNER/ADMIN/EDITOR only;
+- checks source document, organization and expected revision;
+- persists extraction result/source fingerprint/metadata;
+- creates linked Knowledge as `DRAFT` only;
+- no automatic activation.
+
+## 15. Integration Vault domain
 
 ### `integration_connections`
 
@@ -236,7 +408,7 @@ Current logical fields:
 
 Security:
 - no ordinary browser read of plaintext or Vault decrypted value;
-- current storage mode uses `vault_secret_id` → `vault.secrets` / privileged `vault.decrypted_secrets` access;
+- current storage mode uses `vault_secret_id` → Vault privileged access;
 - save/read/remove functions are privilege-restricted;
 - plaintext never enters client read models.
 
@@ -249,7 +421,7 @@ Fields:
 - `organization_id`
 - `connection_id`
 - `actor_user_id`
-- event type such as CREATED, UPDATED, SECRET_REPLACED, SECRET_REMOVED, TEST_SUCCEEDED, TEST_FAILED, DISABLED, ENABLED
+- event type
 - non-secret `metadata jsonb`
 - `created_at`
 
@@ -258,7 +430,7 @@ Rules:
 - privileged insert;
 - no authenticated update/delete.
 
-## 11. Scene Planning domain
+## 16. Scene Planning domain
 
 ### `video_projects`
 
@@ -289,7 +461,7 @@ Rules:
 
 ### `visual_bibles`
 
-Purpose: versioned creative/continuity language for a Video Project.
+Purpose: versioned project creative/continuity language for a Video Project.
 
 Fields include:
 - `id`
@@ -308,6 +480,11 @@ Constraints:
 - unique `(video_project_id, version_number)`;
 - one active Visual Bible per project.
 
+Brand interaction:
+- Brand Kit is resolved separately as institutional authority/defaults;
+- Visual Bible remains project-specific creative direction;
+- official primary logo asset ID cannot be silently replaced by Visual Bible styling.
+
 ### `scene_plan_versions`
 
 Purpose: immutable/versioned Scene Plan header and snapshots.
@@ -321,7 +498,7 @@ Fields include:
 - `parent_version_id nullable`
 - `status`: DRAFT|PLANNING|QC_REQUIRED|REVIEW_REQUIRED|APPROVED|FAILED|STALE|SUPERSEDED
 - planner provider/model metadata
-- `creative_brief_snapshot jsonb`
+- `creative_brief_snapshot jsonb` — includes Brand Kit revision and institutional brand snapshot for current workflow
 - `visual_bible_snapshot jsonb`
 - `canonical_narration`
 - `language`
@@ -338,284 +515,103 @@ Rules:
 - approved versions are immutable except explicitly allowed lifecycle transitions;
 - plan organization must match project organization.
 
-### `scene_plan_scenes`
+### `scene_plan_scenes`, `scene_plan_shots`, `scene_plan_qc_findings`
 
-Purpose: ordered narrative units within one Scene Plan version.
+These retain the normalized ordered narration, creative direction, shot-generation requirements and deterministic QC model documented in the Scene Planning architecture. Parent organization integrity and approved-plan immutability remain database-enforced.
 
-Fields include:
-- `id`
-- `organization_id`
-- `scene_plan_version_id`
-- `ordinal`
-- `title`
-- `narrative_role`: HOOK|SETUP|EXPLANATION|PROOF|TRANSITION|CTA|OTHER
-- narration text and source char span
-- narrative/emotional objectives
-- `duration_seconds`
-- `continuity_context jsonb`
-- `creative_direction`
-- timestamps
-
-Constraints:
-- unique `(scene_plan_version_id, ordinal)`;
-- valid narration span shape;
-- parent org integrity.
-
-### `scene_plan_shots`
-
-Purpose: provider-generation unit beneath a Scene.
-
-Fields include:
-- `id`
-- `organization_id`
-- `scene_id`
-- `ordinal`
-- `duration_seconds`
-- narration text + exact char span
-- `creative_direction`
-- `master_visual_prompt`
-- negative constraints and subject/location refs
-- composition, shot size, camera angle, lens/camera/subject/environment motion
-- depth-of-field, lighting, mood, transitions, ambience/SFX/music intent
-- `aspect_ratio`
-- `continuity_state jsonb`
-- `generation_requirements jsonb`
-- `human_modified boolean`
-- timestamps
-
-Constraints:
-- unique `(scene_id, ordinal)`;
-- positive duration;
-- valid narration span shape;
-- approved-plan child immutability.
-
-### `scene_plan_qc_findings`
-
-Purpose: deterministic blocker/warning/info results for a Scene Plan version.
-
-Fields:
-- `id`
-- `organization_id`
-- `scene_plan_version_id`
-- optional `scene_id`, `shot_id`
-- `severity`: BLOCKER|WARNING|INFO
-- `code`, `message`
-- optional acknowledgement actor/time
-- `created_at`
-
-Rules:
-- same-org read;
-- mutation constrained by plan lifecycle and reviewer/editor roles;
-- approved plan children are immutable.
-
-## 12. Video provider execution domain
+## 17. Video provider execution domain
 
 ### `video_generation_attempts`
 
 Purpose: durable provider execution lineage for one video-generation job attempt.
 
-Fields:
-- `id uuid PK`
-- `organization_id`
-- `job_id`
-- `plan_version_id`
-- `scene_id` → `scene_plan_scenes`
-- `shot_id` → `scene_plan_shots`
-- optional `media_asset_id`
-- `attempt_number` constrained to 1..4
-- `provider`
-- `provider_model`
-- optional `provider_job_id`
-- `state`: QUEUED|SUBMITTING|SUBMITTED|PROCESSING|IMPORT_PENDING|COMPLETED|FAILED|CANCELLED|SUBMISSION_UNKNOWN
-- requested/effective duration
-- resolution/fps
-- `generate_audio boolean`
-- `prompt_hash`
-- normalized error code/message/retryable
-- submitted/polled/terminal/imported timestamps
-- `created_by`
-- timestamps
+Fields include:
+- organization/job/plan/scene/shot lineage;
+- optional imported `media_asset_id`;
+- attempt number constrained to 1..4;
+- provider/model/job ID;
+- state: QUEUED|SUBMITTING|SUBMITTED|PROCESSING|IMPORT_PENDING|COMPLETED|FAILED|CANCELLED|SUBMISSION_UNKNOWN;
+- requested/effective duration, resolution/fps, audio flag, prompt hash;
+- normalized retry/error metadata and timestamps.
 
 Rules:
 - immutable tenant/job/plan/scene/shot lineage after creation;
-- INSERT requires approved plan parentage;
-- browser roles have SELECT-only visibility through organization membership;
 - authenticated browser cannot directly INSERT/UPDATE attempts;
-- unique `(job_id, attempt_number)`;
-- provider job ID uniqueness when present.
+- provider job ID uniqueness when present;
+- validated enqueue constructs trusted payload from approved persisted state.
 
-### Enqueue boundary
+## 18. `media_assets`
 
-`enqueue_video_shot_generation(...)` is the only authenticated creation path for paid shot generation.
+Purpose: normalized provider-agnostic Media Library authority.
 
-It verifies:
-- authenticated OWNER/ADMIN/EDITOR role;
-- supported profile;
-- plan exists and is APPROVED;
-- source artifact is still GENERATED and integrity hash is current;
-- no BLOCKER QC finding;
-- shot belongs to the approved plan and organization;
-- aspect ratio/duration are supported;
-- idempotency key reuse returns the latest attempt rather than creating duplicate spend.
-
-The function constructs trusted job `input_payload` from persisted shot data and creates both the job and first attempt atomically.
-
-### Retry / reconciliation
-
-`schedule_video_generation_retry(...)`:
-- service-role only;
-- accepts only FAILED + retryable attempt;
-- maximum four attempts;
-- creates a new QUEUED attempt rather than mutating failed lineage;
-- resets job to RETRYING.
-
-`claim_due_video_generation_dispatch(...)`:
-- service-role only;
-- bounded batch;
-- `FOR UPDATE ... SKIP LOCKED` job leasing;
-- claims SUBMIT, RECONCILE or RETRY work;
-- retry eligibility follows 5/15/45-second delays.
-
-## 13. `media_assets`
-
-Purpose: normalized provider-agnostic media library foundation.
-
-Current fields:
+Current logical fields include:
 - `id uuid PK`
 - `organization_id`
 - `asset_type`: IMAGE|VIDEO|AUDIO|DOCUMENT
+- `storage_bucket`
 - `storage_path`
+- `display_name`
 - `source`: UPLOAD|GENERATED|IMPORT
 - `mime_type`
-- optional width/height/duration
-- `checksum`
-- optional `generating_job_id`
-- optional legacy `scene_id`
+- optional width/height/duration/size
+- checksum
+- optional job/scene lineage
+- `metadata jsonb`
 - `status`: ACTIVE|ARCHIVED|FAILED
-- timestamps
-- unique `(organization_id, storage_path)`
+- actor/archive timestamps
+- unique organization/path semantics.
 
-Important current architecture rule:
-- `media_assets.scene_id` belongs to the earlier `video_scenes` foundation and is not used as a forced FK to `scene_plan_scenes`;
-- Phase 7 generated-video lineage is preserved through `generating_job_id`, `video_generation_attempts.plan_version_id/scene_id/shot_id`, and job result metadata.
+Private storage:
+- `generated-media` for generated outputs;
+- `media-library` for operator-uploaded private assets/documents.
 
-### Generated-media storage
+Business consumers:
+- Brand Kit persists `media_asset_id` references only;
+- Knowledge FILE ingestion persists `media_asset_id` source lineage only;
+- signed URLs are generated as short-lived transport and are not durable identity.
 
-Private bucket: `generated-media`
-
-Generated object path pattern:
-
-`<organization_id>/generated-video/<plan>-<shot>-<attempt>.mp4`
-
-`complete_generated_video_import(...)` is service-role only and:
-- validates same-org deterministic path;
-- accepts only `IMPORT_PENDING` attempt;
-- idempotently inserts/updates the `media_assets` row;
-- links attempt to media;
-- marks attempt/job COMPLETED only after durable PAK storage succeeds.
-
-## 14. Legacy/foundation `video_scenes`
+## 19. Legacy/foundation `video_scenes`
 
 Purpose: early scene/media foundation retained for compatibility.
 
-It is **not** the authoritative Phase 6+ Scene Planning model. New planning, approval and shot-generation features must use `video_projects`, `visual_bibles`, `scene_plan_versions`, `scene_plan_scenes` and `scene_plan_shots`.
+It is **not** the authoritative Phase 6+ Scene Planning model. New planning, approval and shot-generation features use the normalized Scene Planning hierarchy.
 
-No new feature should extend `video_scenes` without an explicit migration/compatibility reason.
+## 20. Internal dispatch/Vault infrastructure
 
-## 15. Internal dispatch/Vault infrastructure
+Current infrastructure includes Vault-backed provider/internal credentials, scheduled dispatcher execution and privileged Edge worker boundaries. These are infrastructure capabilities, not browser-managed organization identity or Knowledge sources.
 
-Current Phase 7 infrastructure includes:
-- Vault secret `pak/video-generation/dispatcher` for internal worker authentication;
-- Vault `project_url` for environment-specific scheduled Edge invocation;
-- `pg_cron` job `pak-video-generation-dispatch` on a 10-second cadence where installed;
-- `pg_net` POST to `video-generation-dispatcher`;
-- Edge workers `video-generation`, `video-generation-retry`, `video-generation-dispatcher`;
-- user-path authorization plus internal dispatcher-token authorization as appropriate.
+## 21. Planned entities
 
-These are infrastructure capabilities, not browser-managed organization integrations.
+Future governed slices may add or extend publishing, analytics, AI representative, podcast, campus/location and testimonial entities. They must not be added speculatively before their PRD/workflow slice is designed.
 
-## 16. Planned entity — `approval_requests`
+## 22. Live ACL/RLS hardening record
 
-Fields:
-- `id`
-- `organization_id`
-- target content/artifact/revision/media reference
-- `status`: PENDING|CHANGES_REQUESTED|APPROVED|REJECTED|SUPERSEDED
-- requested_by/timestamps
+Live rollout on 13 September 2026 discovered that project default table ACLs granted broad operations to new public tables. Forward migration `20260913174704_organization_identity_provenance_acl_hardening.sql` established the intended contract:
+- no `anon` table privileges on new identity/provenance tables;
+- Profile/Brand Kit: authenticated SELECT + UPDATE only, with OWNER/ADMIN update RLS;
+- Brand asset links: authenticated CRUD table privilege, OWNER/ADMIN mutation RLS;
+- identity and Knowledge provenance: authenticated SELECT only.
 
-Phase: 9.
+Forward migration `20260913175126_core_knowledge_insert_guard.sql` prevents non-OWNER/ADMIN actors from inserting `is_core=true`, closing a direct Data API bypass not covered by the original update-only trigger.
 
-## 17. Planned entity — `approval_events`
+Forward migration `20260913180118_organization_identity_rls_initplan_hardening.sql` preserves the same RBAC/audit semantics while replacing per-row `auth.uid()` comparisons in the two new insert policies with initplan-safe `(select auth.uid())`. Supabase advisor count for `auth_rls_initplan` decreased from 11 to 9; the two feature-specific findings disappeared.
 
-Immutable event log:
-- approval request
-- actor
-- decision/event
-- comment
-- target revision
-- created_at
+## 23. Migration ownership summary
 
-No authenticated UPDATE/DELETE.
-
-Phase: 9.
-
-## 18. Planned publishing entities
-
-### `publication_targets`
-- organization
-- provider/channel
-- integration connection
-- external account/page/channel ID
-- display label/status/metadata
-- no raw provider secret fields
-
-### `publication_attempts`
-- organization
-- content/artifact/revision
-- target
-- job_id
-- idempotency key
-- requested schedule/timezone
-- status
-- safe external publication identifier/URL
-- normalized provider error
-- timestamps
-
-Phase: 10.
-
-## 19. Planned analytics entities
-
-### `metric_sync_runs`
-Tracks channel/account sync windows, job/provider state, watermark and failure state.
-
-### `content_metrics_daily`
-Normalized daily grain:
-- organization
-- publication target/attempt/external post
-- metric date
-- nullable provider-supported metrics
-- provider/source timestamp
-- ingested_at
-
-Phase: 12.
-
-## 20. Planned specialized domain entities
-
-Future phases may add:
-- AI representative profile/generation records — Phase 13;
-- podcast episode/audio workflow records — Phase 14;
-- campus/location records — Phase 15;
-- testimonial/consent/restricted-data records — Phase 16.
-
-These entities must not be added speculatively before their PRD/workflow slice is designed.
-
-## 21. Migration ownership summary
-
-Implemented high-level migration groups:
+Implemented high-level migration groups include:
 - foundation: organizations, memberships, jobs, media, legacy scenes, content/artifacts;
 - Knowledge integrity/provenance;
 - Integration Vault + transactional audit + Supabase Vault migration;
-- Scene Planning migrations `202609110001`–`202609110007`;
-- Phase 7 video generation migrations `202609110008`–`202609110012`.
+- Scene Planning and video-generation/final-assembly foundations;
+- Organization Profile / Brand Kit / Core Knowledge foundation:
+  - repository source `20260912180000_organization_profile_brand_knowledge.sql`
+  - `20260912180030_organization_identity_save_rpcs.sql`
+  - `20260912180100_knowledge_documents.sql`
+  - `20260912180130_knowledge_ingestion_finalize.sql`
+  - `20260912180200_generation_identity_provenance.sql`
+- live-discovered forward hardening:
+  - `20260913174704_organization_identity_provenance_acl_hardening.sql`
+  - `20260913175126_core_knowledge_insert_guard.sql`
+  - `20260913180118_organization_identity_rls_initplan_hardening.sql`.
 
-The repository migration chain and live Supabase migration history are the authoritative executable schema. This document describes the intended logical model and must be updated whenever a merged migration materially changes that model.
+Live Supabase migration history was inspected before rollout and only missing migrations were applied. The repository migration chain and live Supabase migration history are the authoritative executable schema. This document describes the intended logical model and must be updated whenever a merged migration materially changes that model.

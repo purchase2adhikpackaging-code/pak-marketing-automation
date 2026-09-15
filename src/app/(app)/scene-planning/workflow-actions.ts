@@ -4,6 +4,8 @@ import { z } from "zod";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createTextGenerationProvider } from "@/modules/ai/text/provider-factory";
 import type { AppRole } from "@/modules/auth/roles";
+import { generationContextRepository } from "@/modules/generation-context/repository";
+import { applyBrandKitDefaults, type ScenePlanningInstitutionalBrand } from "@/modules/scene-planning/brand-defaults";
 import { generateScenePlan } from "@/modules/scene-planning/planner";
 import { runScenePlanQc, type ScenePlanQcInput } from "@/modules/scene-planning/qc";
 import { SupabaseScenePlanningRepository } from "@/modules/scene-planning/repository";
@@ -58,6 +60,8 @@ export type ScenePlanningGenerationContext = {
     scriptText: string;
     integrityHash: string;
   };
+  brandKitRevision: number;
+  institutionalBrand: ScenePlanningInstitutionalBrand;
   visualBible: Record<string, unknown>;
 };
 
@@ -180,13 +184,33 @@ async function loadGenerationContext(
   if (!source?.scriptText || source.status !== "GENERATED") throw new Error("Scene Planning source unavailable");
   const integrityHash = computeSceneSourceIntegrityHash({ artifactId: source.id, revision: source.revision, scriptText: source.scriptText });
 
-  const { data: visualBible } = await supabase
+  const { data: visualBible, error: visualBibleError } = await supabase
     .from("visual_bibles")
     .select("characters,wardrobe,locations,props,palette,lighting_language,realism_level,cinematography_language,logo_treatment,typography_treatment,cultural_constraints,forbidden_traits,global_negative_constraints")
     .eq("organization_id", organizationId)
     .eq("video_project_id", projectId)
     .eq("is_active", true)
     .maybeSingle();
+  if (visualBibleError) throw visualBibleError;
+
+  const brandKit = await generationContextRepository.getBrandKit(organizationId);
+  if (!brandKit) throw new Error("Scene Planning Brand Kit unavailable");
+  const rawVisualBible: Record<string, unknown> = visualBible ? {
+    characters: visualBible.characters,
+    wardrobe: visualBible.wardrobe,
+    locations: visualBible.locations,
+    props: visualBible.props,
+    palette: visualBible.palette,
+    lightingLanguage: visualBible.lighting_language,
+    realismLevel: visualBible.realism_level,
+    cinematographyLanguage: visualBible.cinematography_language,
+    logoTreatment: visualBible.logo_treatment,
+    typographyTreatment: visualBible.typography_treatment,
+    culturalConstraints: visualBible.cultural_constraints,
+    forbiddenTraits: visualBible.forbidden_traits,
+    globalNegativeConstraints: visualBible.global_negative_constraints,
+  } : {};
+  const branded = applyBrandKitDefaults(rawVisualBible, brandKit);
 
   return {
     organizationId,
@@ -201,21 +225,9 @@ async function loadGenerationContext(
       productionConstraints: (project.production_constraints ?? {}) as Record<string, unknown>,
     },
     source: { id: source.id, revision: source.revision, scriptText: source.scriptText, integrityHash },
-    visualBible: visualBible ? {
-      characters: visualBible.characters,
-      wardrobe: visualBible.wardrobe,
-      locations: visualBible.locations,
-      props: visualBible.props,
-      palette: visualBible.palette,
-      lightingLanguage: visualBible.lighting_language,
-      realismLevel: visualBible.realism_level,
-      cinematographyLanguage: visualBible.cinematography_language,
-      logoTreatment: visualBible.logo_treatment,
-      typographyTreatment: visualBible.typography_treatment,
-      culturalConstraints: visualBible.cultural_constraints,
-      forbiddenTraits: visualBible.forbidden_traits,
-      globalNegativeConstraints: visualBible.global_negative_constraints,
-    } : {},
+    brandKitRevision: brandKit.revision,
+    institutionalBrand: branded.institutionalBrand,
+    visualBible: branded.visualBible,
   };
 }
 
@@ -313,6 +325,7 @@ export async function generateScenePlanAction(input: unknown) {
           qualityProfile: context.project.qualityProfile,
           targetPlatforms: context.project.targetPlatforms,
           productionConstraints: Object.entries(context.project.productionConstraints).map(([key, value]) => `${key}: ${String(value)}`),
+          institutionalBrand: context.institutionalBrand,
           visualBible: context.visualBible,
         },
       });
@@ -333,6 +346,8 @@ export async function generateScenePlanAction(input: unknown) {
           aspectRatio: context.project.aspectRatio,
           qualityProfile: context.project.qualityProfile,
           targetPlatforms: context.project.targetPlatforms,
+          brandKitRevision: context.brandKitRevision,
+          institutionalBrand: context.institutionalBrand,
         },
         visualBibleSnapshot: context.visualBible,
         plan: generated.plan,

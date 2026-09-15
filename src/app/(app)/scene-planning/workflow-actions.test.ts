@@ -28,6 +28,14 @@ const context: ScenePlanningGenerationContext = {
     scriptText: "Canonical railway narration.",
     integrityHash: "sha256:current",
   },
+  brandKitRevision: 5,
+  institutionalBrand: {
+    brandKitRevision: 5,
+    defaultPalette: { primary: "#102A43" },
+    brandVoice: "Authoritative and educational.",
+    officialPrimaryLogoAssetId: "66666666-6666-4666-8666-666666666666",
+    approvedImageryAssetIds: [],
+  },
   visualBible: { realismLevel: "photorealistic" },
 };
 

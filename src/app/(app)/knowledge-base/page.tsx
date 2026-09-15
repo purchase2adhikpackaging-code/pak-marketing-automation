@@ -2,8 +2,13 @@ export const dynamic = "force-dynamic";
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { can } from "@/modules/auth/authorization";
+import { getE2EFixtureRole } from "@/modules/auth/e2e-fixture-server";
 import type { AppRole } from "@/modules/auth/roles";
 import { SupabaseKnowledgeRepository } from "@/modules/knowledge-base/repository";
+import {
+  E2E_FIXTURE_ORGANIZATION_ID,
+  E2E_FIXTURE_ORGANIZATION_LABEL,
+} from "@/modules/testing/e2e-organization-fixtures";
 import { KnowledgeBaseManager, type KnowledgeOrganizationWorkspace } from "./knowledge-base-manager";
 
 type MembershipRow = {
@@ -21,31 +26,42 @@ function organizationName(row: MembershipRow): string {
 }
 
 export default async function KnowledgeBasePage() {
-  const supabase = await createServerSupabaseClient();
-  const { data: authData } = await supabase.auth.getUser();
-  let organizations: KnowledgeOrganizationWorkspace[] = [];
+  const fixtureRole = await getE2EFixtureRole();
+  let organizations: KnowledgeOrganizationWorkspace[] = fixtureRole
+    ? [{
+        id: E2E_FIXTURE_ORGANIZATION_ID,
+        label: E2E_FIXTURE_ORGANIZATION_LABEL,
+        role: fixtureRole,
+        records: [],
+      }]
+    : [];
 
-  if (authData.user) {
-    const { data } = await supabase
-      .from("organization_memberships")
-      .select("organization_id, role, organizations(name)")
-      .eq("user_id", authData.user.id);
+  if (!fixtureRole) {
+    const supabase = await createServerSupabaseClient();
+    const { data: authData } = await supabase.auth.getUser();
 
-    const memberships = ((data ?? []) as MembershipRow[]).filter((membership) =>
-      can(membership.role, "knowledge:view"),
-    );
+    if (authData.user) {
+      const { data } = await supabase
+        .from("organization_memberships")
+        .select("organization_id, role, organizations(name)")
+        .eq("user_id", authData.user.id);
 
-    const repository = new SupabaseKnowledgeRepository();
-    organizations = await Promise.all(
-      memberships.map(async (membership) => ({
-        id: membership.organization_id,
-        label: organizationName(membership),
-        role: membership.role,
-        records: can(membership.role, "knowledge:manage")
-          ? await repository.listManageable(membership.organization_id)
-          : await repository.listSelectable(membership.organization_id),
-      })),
-    );
+      const memberships = ((data ?? []) as MembershipRow[]).filter((membership) =>
+        can(membership.role, "knowledge:view"),
+      );
+
+      const repository = new SupabaseKnowledgeRepository();
+      organizations = await Promise.all(
+        memberships.map(async (membership) => ({
+          id: membership.organization_id,
+          label: organizationName(membership),
+          role: membership.role,
+          records: can(membership.role, "knowledge:manage")
+            ? await repository.listManageable(membership.organization_id)
+            : await repository.listSelectable(membership.organization_id),
+        })),
+      );
+    }
   }
 
   return (
