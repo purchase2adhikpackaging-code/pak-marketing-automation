@@ -42,12 +42,12 @@ function eventActor(event: ApprovalEvent): string {
 
 function decisionConfirmation(decision: ApprovalDecision): NonNullable<PendingDecision> {
   if (decision === "APPROVE") {
-    return { decision, label: "Confirm approval", confirmLabel: "Confirm approval" };
+    return { decision, label: "Approval decision", confirmLabel: "Confirm approval" };
   }
   if (decision === "REQUEST_CHANGES") {
-    return { decision, label: "Confirm request changes", confirmLabel: "Confirm request changes" };
+    return { decision, label: "Changes-request decision", confirmLabel: "Confirm request changes" };
   }
-  return { decision, label: "Confirm rejection", confirmLabel: "Confirm rejection" };
+  return { decision, label: "Rejection decision", confirmLabel: "Confirm rejection" };
 }
 
 export function ApprovalReviewClient({
@@ -108,8 +108,6 @@ export function ApprovalReviewClient({
         ...(normalizedComment ? { comment: normalizedComment } : {}),
       });
 
-      // A failed decision may mean another reviewer or a supersession trigger won the race.
-      // Refresh from the authoritative server state before showing the final outcome.
       const refreshed = await refreshAuthoritativeDetail();
       if (refreshed.ok && refreshed.detail) {
         setDetail(refreshed.detail);
@@ -189,18 +187,14 @@ export function ApprovalReviewClient({
             <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
               <p className="text-sm font-semibold text-white">Secure preview</p>
               <p className="mt-1 text-xs leading-5 text-slate-500">A short-lived preview is created only when requested and is never persisted in approval history.</p>
-              <button type="button" onClick={createPreview} disabled={isPending} className="mt-4 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50">
-                Create secure preview
-              </button>
+              <button type="button" onClick={createPreview} disabled={isPending} className="mt-4 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50">Create secure preview</button>
               {previewError ? <p role="alert" className="mt-3 text-sm text-red-300">{previewError}</p> : null}
               {previewUrl ? (
                 <div className="mt-4 space-y-3">
                   <p className="text-sm font-medium text-emerald-300">Secure preview ready</p>
                   {detail.target.mimeType.startsWith("video/") ? <video controls src={previewUrl} className="max-h-80 w-full rounded-xl bg-black" /> : null}
                   {detail.target.mimeType.startsWith("image/") ? <img src={previewUrl} alt={detail.target.displayName} className="max-h-80 w-full rounded-xl object-contain" /> : null}
-                  {!detail.target.mimeType.startsWith("video/") && !detail.target.mimeType.startsWith("image/") ? (
-                    <a href={previewUrl} target="_blank" rel="noreferrer" className="text-sm font-medium text-sky-300 underline underline-offset-4">Open secure preview</a>
-                  ) : null}
+                  {!detail.target.mimeType.startsWith("video/") && !detail.target.mimeType.startsWith("image/") ? <a href={previewUrl} target="_blank" rel="noreferrer" className="text-sm font-medium text-sky-300 underline underline-offset-4">Open secure preview</a> : null}
                 </div>
               ) : null}
             </div>
@@ -213,12 +207,7 @@ export function ApprovalReviewClient({
         <h3 className="mt-2 text-lg font-semibold text-white">Non-authoritative review context</h3>
         {intent.length > 0 ? (
           <dl className="mt-4 grid gap-3 sm:grid-cols-2">
-            {intent.map(([key, value]) => (
-              <div key={key} className="rounded-xl border border-slate-800 p-3">
-                <dt className="text-xs uppercase tracking-wide text-slate-500">{key}</dt>
-                <dd className="mt-1 break-words text-sm text-slate-200">{value}</dd>
-              </div>
-            ))}
+            {intent.map(([key, value]) => <div key={key} className="rounded-xl border border-slate-800 p-3"><dt className="text-xs uppercase tracking-wide text-slate-500">{key}</dt><dd className="mt-1 break-words text-sm text-slate-200">{value}</dd></div>)}
           </dl>
         ) : <p className="mt-3 text-sm text-slate-500">No publication context was supplied.</p>}
       </section>
@@ -229,16 +218,7 @@ export function ApprovalReviewClient({
           <h3 className="mt-2 text-lg font-semibold text-white">Immutable generation-time sources</h3>
           {detail.knowledgeSources.length === 0 ? <p className="mt-3 text-sm text-slate-500">No Knowledge Base snapshots were attached.</p> : (
             <div className="mt-4 space-y-3">
-              {detail.knowledgeSources.map((source) => (
-                <article key={source.id} className="rounded-xl border border-slate-800 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h4 className="font-semibold text-white">{source.title}</h4>
-                    <span className="text-xs text-slate-500">Revision {source.knowledgeRevision}</span>
-                  </div>
-                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-300">{source.content}</p>
-                  <p className="mt-2 text-xs text-slate-500">{source.sourceLabel ?? source.sourceType}</p>
-                </article>
-              ))}
+              {detail.knowledgeSources.map((source) => <article key={source.id} className="rounded-xl border border-slate-800 p-4"><div className="flex flex-wrap items-center justify-between gap-2"><h4 className="font-semibold text-white">{source.title}</h4><span className="text-xs text-slate-500">Revision {source.knowledgeRevision}</span></div><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-300">{source.content}</p><p className="mt-2 text-xs text-slate-500">{source.sourceLabel ?? source.sourceType}</p></article>)}
             </div>
           )}
         </section>
@@ -249,16 +229,7 @@ export function ApprovalReviewClient({
         <h3 className="mt-2 text-lg font-semibold text-white">Immutable approval events</h3>
         {detail.events.length === 0 ? <p className="mt-3 text-sm text-slate-500">No approval events recorded.</p> : (
           <ol className="mt-4 space-y-3">
-            {detail.events.map((event) => (
-              <li key={event.id} className="rounded-xl border border-slate-800 p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-semibold text-slate-100">{event.eventType}</span>
-                  <time className="text-xs text-slate-500">{formatTime(event.createdAt)}</time>
-                </div>
-                <p className="mt-1 text-xs text-slate-500">{eventActor(event)}</p>
-                {event.comment ? <p className="mt-2 text-sm text-slate-300">{event.comment}</p> : null}
-              </li>
-            ))}
+            {detail.events.map((event) => <li key={event.id} className="rounded-xl border border-slate-800 p-4"><div className="flex flex-wrap items-center justify-between gap-2"><span className="font-semibold text-slate-100">{event.eventType}</span><time className="text-xs text-slate-500">{formatTime(event.createdAt)}</time></div><p className="mt-1 text-xs text-slate-500">{eventActor(event)}</p>{event.comment ? <p className="mt-2 text-sm text-slate-300">{event.comment}</p> : null}</li>)}
           </ol>
         )}
       </section>
