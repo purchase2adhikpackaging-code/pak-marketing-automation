@@ -104,6 +104,25 @@ describe("publishing worker route security", () => {
     expect(scheduled).toEqual({ concurrency: 4, credential: "worker-capability" });
   });
 
+  it("does not immediately reschedule a failed batch", async () => {
+    let scheduled = 0;
+    const response = await handlePublishingWorkerRequest(
+      new Request("https://example.test/api/internal/publishing-worker", {
+        method: "POST",
+        headers: { authorization: "Bearer worker-capability", "content-type": "application/json" },
+        body: JSON.stringify({ concurrency: 1 }),
+      }),
+      {
+        authorize: async () => true,
+        run: async () => ({ claimed: 1, yielded: 0, completed: 0, failed: 1 }),
+        scheduleNext: () => { scheduled += 1; },
+      },
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ claimed: 1, failed: 1 });
+    expect(scheduled).toBe(0);
+  });
+
   it("does not schedule another invocation when the queue is empty", async () => {
     let scheduled = 0;
     const response = await handlePublishingWorkerRequest(
