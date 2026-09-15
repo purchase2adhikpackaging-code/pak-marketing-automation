@@ -16,6 +16,7 @@ export interface VisualAssetCandidate {
   bytes: Uint8Array;
   sourceKind: BookVisualSourceKind;
   provenance: string;
+  realismVerified: boolean;
   labelsPresent: boolean;
 }
 
@@ -75,6 +76,18 @@ function assertCandidate(
   if (!Number.isFinite(candidate.width) || !Number.isFinite(candidate.height)) {
     throw new VisualAssetResolutionError(requirement.id, "Resolved visual dimensions are invalid.");
   }
+  if (requirement.realistic && !candidate.realismVerified) {
+    throw new VisualAssetResolutionError(
+      requirement.id,
+      "Resolved visual did not pass realism verification.",
+    );
+  }
+  if (requirement.labelsRequired && !candidate.labelsPresent) {
+    throw new VisualAssetResolutionError(
+      requirement.id,
+      "Resolved visual did not pass technical-label verification.",
+    );
+  }
 }
 
 function toDataUri(mimeType: string, bytes: Uint8Array): string {
@@ -110,6 +123,7 @@ export function createBookVisualResolver(sources: readonly VisualAssetSource[]):
               sourceKind: candidate.sourceKind,
               provenance: candidate.provenance,
               dataUri: toDataUri(candidate.mimeType, candidate.bytes),
+              realismVerified: candidate.realismVerified,
               labelsPresent: candidate.labelsPresent,
             };
             break;
