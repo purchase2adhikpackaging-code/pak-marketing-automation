@@ -95,6 +95,7 @@ function resolvePlan(): ResolvedBookVisualBundle {
         sourceKind: "approved-library",
         provenance: "Polish Railway Academy approved visual library",
         dataUri: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD",
+        realismVerified: true,
         labelsPresent: requirement.labelsRequired,
       };
     }),
@@ -104,14 +105,11 @@ function resolvePlan(): ResolvedBookVisualBundle {
 describe("textbook visual production contract", () => {
   it("plans exactly one front cover, one back cover, and at least one visual per chapter", () => {
     const plan = createBookVisualPlan(manuscript, blueprint);
-
     expect(plan.requirements.filter((visual) => visual.placement === "front-cover")).toHaveLength(1);
     expect(plan.requirements.filter((visual) => visual.placement === "back-cover")).toHaveLength(1);
-
     for (const chapter of manuscript.chapters) {
       expect(plan.requirements.some((visual) => visual.chapterId === chapter.chapterId)).toBe(true);
     }
-
     expect(plan.requirements.some((visual) => visual.placement === "technical-diagram" && visual.labelsRequired)).toBe(true);
     expect(plan.requirements.some((visual) => visual.placement === "practical-photo" && visual.chapterId === "ch-2")).toBe(true);
   });
@@ -129,6 +127,7 @@ describe("textbook visual production contract", () => {
     ["missing provenance", (bundle: ResolvedBookVisualBundle) => ({ ...bundle, visuals: bundle.visuals.map((visual, index) => index === 0 ? { ...visual, provenance: "" } : visual) })],
     ["missing caption", (bundle: ResolvedBookVisualBundle) => ({ ...bundle, visuals: bundle.visuals.map((visual, index) => index === 0 ? { ...visual, caption: "" } : visual) })],
     ["missing alt text", (bundle: ResolvedBookVisualBundle) => ({ ...bundle, visuals: bundle.visuals.map((visual, index) => index === 0 ? { ...visual, altText: "" } : visual) })],
+    ["unverified realism", (bundle: ResolvedBookVisualBundle) => ({ ...bundle, visuals: bundle.visuals.map((visual, index) => index === 0 ? { ...visual, realismVerified: false } : visual) })],
     ["missing required labels", (bundle: ResolvedBookVisualBundle) => ({ ...bundle, visuals: bundle.visuals.map((visual) => visual.labelsRequired ? { ...visual, labelsPresent: false } : visual) })],
     ["placeholder asset", (bundle: ResolvedBookVisualBundle) => ({ ...bundle, visuals: bundle.visuals.map((visual, index) => index === 0 ? { ...visual, provenance: "placeholder image" } : visual) })],
   ])("rejects %s", (_name, mutate) => {
