@@ -22,4 +22,5 @@ export * from "./production-cli";
 export * from "./renderer";
 export * from "./repair";
 export * from "./state-machine";
+export * from "./visual-production";
 export * from "./worker-queue";
