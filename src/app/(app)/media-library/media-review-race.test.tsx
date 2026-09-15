@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import React from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("./actions", () => ({
@@ -43,7 +43,8 @@ describe("Media Library approval submission race", () => {
     await Promise.resolve();
     await Promise.resolve();
 
-    expect(screen.getByRole("heading", { name: "Asset B" })).toBeInTheDocument();
+    const detail = screen.getByRole("complementary", { name: "Media details" });
+    expect(within(detail).getByRole("heading", { name: "Asset B" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Open review request" })).not.toBeInTheDocument();
   });
 });
