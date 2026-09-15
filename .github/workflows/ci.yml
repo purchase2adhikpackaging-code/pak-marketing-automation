@@ -47,6 +47,25 @@ jobs:
         continue-on-error: true
         run: npx vitest run src --reporter=basic
 
+      - name: Diagnostic serialized full unit tests
+        continue-on-error: true
+        run: npx vitest run --no-file-parallelism --reporter=basic
+
+      - name: Diagnostic combined unit report
+        continue-on-error: true
+        run: |
+          mkdir -p artifacts/test-diagnostics
+          npx vitest run --reporter=json --outputFile=artifacts/test-diagnostics/vitest-full.json
+
+      - name: Upload Vitest diagnostic report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: d01-101-vitest-diagnostic
+          path: artifacts/test-diagnostics/vitest-full.json
+          if-no-files-found: warn
+          retention-days: 1
+
       - name: Unit tests
         run: npm run test:run
 
