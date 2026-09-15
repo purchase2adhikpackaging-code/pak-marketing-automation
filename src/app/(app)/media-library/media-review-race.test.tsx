@@ -43,7 +43,7 @@ describe("Media Library approval submission race", () => {
     await Promise.resolve();
     await Promise.resolve();
 
-    expect(screen.getByText("Asset B")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Asset B" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Open review request" })).not.toBeInTheDocument();
   });
 });
