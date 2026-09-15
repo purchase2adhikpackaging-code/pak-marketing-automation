@@ -1,10 +1,16 @@
 import type { ApprovalEventType, ApprovalStatus, ApprovalTargetType } from "./types";
 
+export type ApprovalCursor = {
+  requestedAt: string;
+  id: string;
+};
+
 export type ApprovalListQuery = {
   organizationId: string;
   status?: ApprovalStatus;
   targetType?: ApprovalTargetType;
   limit?: number;
+  cursor?: ApprovalCursor;
 };
 
 export type NormalizedApprovalListQuery = {
@@ -12,6 +18,7 @@ export type NormalizedApprovalListQuery = {
   status: ApprovalStatus;
   limit: number;
   targetType?: ApprovalTargetType;
+  cursor?: ApprovalCursor;
 };
 
 export type ApprovalRequestRow = {
@@ -136,7 +143,10 @@ export type ApprovalDetail = ApprovalQueueItem & {
   knowledgeSources: ApprovalKnowledgeSource[];
 };
 
-export type ApprovalListPage = { items: ApprovalQueueItem[] };
+export type ApprovalListPage = {
+  items: ApprovalQueueItem[];
+  nextCursor?: ApprovalCursor;
+};
 
 function text(value: unknown, fallback = ""): string {
   return typeof value === "string" ? value : fallback;
@@ -165,6 +175,7 @@ export function normalizeApprovalListQuery(input: ApprovalListQuery): Normalized
     status: input.status ?? "PENDING",
     limit,
     ...(input.targetType ? { targetType: input.targetType } : {}),
+    ...(input.cursor ? { cursor: input.cursor } : {}),
   };
 }
 
