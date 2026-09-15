@@ -1,0 +1,4 @@
+{
+  "verify_jwt": false,
+  "auth_contract": "handler-enforced-publishing-worker-only"
+}
