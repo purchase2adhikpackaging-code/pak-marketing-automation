@@ -3,6 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 
 const JSON_HEADERS = { "content-type": "application/json; charset=utf-8" };
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const CHECKSUM_RE = /^sha256:[0-9a-f]{64}$/i;
 const MANAGER_ROLES = new Set(["OWNER", "ADMIN", "EDITOR"]);
 const ADMIN_ROLES = new Set(["OWNER", "ADMIN"]);
 const PREVIEW_TTL_SECONDS = 300;
@@ -38,6 +39,7 @@ type PreviewBody = {
   operation: "preview";
   organizationId: string;
   mediaAssetId: string;
+  expectedChecksum?: string;
 };
 
 type DeleteBody = {
@@ -136,10 +138,24 @@ function parseBody(value: unknown): RequestBody | null {
     return { operation: "finalize-upload", organizationId: input.organizationId, sessionId: input.sessionId };
   }
 
-  if (input.operation === "preview" || input.operation === "delete") {
+  if (input.operation === "preview") {
+    if (
+      typeof input.mediaAssetId !== "string"
+      || !UUID_RE.test(input.mediaAssetId)
+      || (input.expectedChecksum !== undefined && (typeof input.expectedChecksum !== "string" || !CHECKSUM_RE.test(input.expectedChecksum)))
+    ) return null;
+    return {
+      operation: "preview",
+      organizationId: input.organizationId,
+      mediaAssetId: input.mediaAssetId,
+      ...(typeof input.expectedChecksum === "string" ? { expectedChecksum: input.expectedChecksum } : {}),
+    };
+  }
+
+  if (input.operation === "delete") {
     if (typeof input.mediaAssetId !== "string" || !UUID_RE.test(input.mediaAssetId)) return null;
     return {
-      operation: input.operation,
+      operation: "delete",
       organizationId: input.organizationId,
       mediaAssetId: input.mediaAssetId,
     };
@@ -197,12 +213,15 @@ Deno.serve(async (req: Request) => {
   if (body.operation === "preview") {
     const { data: media, error: mediaError } = await admin
       .from("media_assets")
-      .select("id,organization_id,storage_bucket,storage_path,status")
+      .select("id,organization_id,storage_bucket,storage_path,status,checksum")
       .eq("id", body.mediaAssetId)
       .eq("organization_id", body.organizationId)
       .maybeSingle();
     if (mediaError) return json(500, { error: "MEDIA_UNAVAILABLE" });
     if (!media || media.status === "FAILED") return json(404, { error: "MEDIA_NOT_FOUND" });
+    if (body.expectedChecksum && media.checksum !== body.expectedChecksum) {
+      return json(409, { error: "PREVIEW_CHECKSUM_MISMATCH" });
+    }
 
     const { data: signed, error: signError } = await admin.storage
       .from(String(media.storage_bucket))

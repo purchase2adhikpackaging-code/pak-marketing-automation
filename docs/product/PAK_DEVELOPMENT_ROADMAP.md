@@ -1,8 +1,8 @@
 # PAK Marketing Automation — Development Roadmap
 
 **Document ID:** PAK-RM-001  
-**Version:** 1.4  
-**Status:** Current roadmap through Phase 8, Organization Identity / Brand / Knowledge foundation, and UI/UX Production Convergence
+**Version:** 1.5  
+**Status:** Current roadmap through Phase 9 Approval Center, Organization Identity / Brand / Knowledge foundation, and UI/UX Production Convergence
 
 ## Governance rule
 
@@ -226,11 +226,11 @@ Live verification on 13 September 2026:
 - broad inherited table ACLs were reduced to intended least privilege; provenance tables are SELECT-only to authenticated members and `anon` has no table grants;
 - feature-specific Supabase `auth_rls_initplan` warnings were removed; remaining advisor findings pre-date this slice or are maintenance-level index recommendations.
 
-## Cross-phase UI/UX Production Convergence — IMPLEMENTED ON PR #43 BRANCH; MERGE PENDING
+## Cross-phase UI/UX Production Convergence — IMPLEMENTED / MERGED
 
 Purpose:
 - expose already-implemented Phase 0–8 + Organization Identity / Brand / Knowledge capabilities as one coherent operator workflow;
-- keep Phase 9–17 routes visible but truthfully Planned/Foundation until their governed slices are built;
+- keep not-yet-implemented roadmap routes truthful while promoting implemented domains into Operational navigation;
 - remove stale UI maturity copy without changing backend authority, RLS/RBAC, provider or storage boundaries.
 
 Delivered:
@@ -244,28 +244,50 @@ Delivered:
 - no new domain tables, provider workflows, secret exposure, fake Dashboard metrics, signed-URL persistence or roadmap-domain mutation controls.
 
 Verification on 14 September 2026:
-- Task 8 Settings convergence passed exact-head CI #1265 across typecheck, lint, 640 unit tests, production build, final-assembly worker tests/container smoke and Playwright;
+- Task 8 Settings convergence passed exact-head CI #1265 across typecheck, lint, unit tests, production build, final-assembly worker tests/container smoke and Playwright;
 - Task 9 convergence browser contract passed exact-head CI #1277 across the same repository gates;
-- CI browser fixtures intentionally use the existing development-only auth/role gates and do not seed synthetic organization/domain rows solely to force success-state screens; success branches are covered deterministically by component/service tests while browser tests prove truthful recovery/no-workspace and roadmap boundaries;
+- closure verification passed exact-head CI #1343 before merge;
+- browser fixtures intentionally use the existing development-only auth/role gates and do not seed synthetic production domain rows solely to force success-state screens;
 - no production auth bypass or synthetic production behavior was added.
 
 Release state:
-- PR #43 remains draft and unmerged until explicitly authorized;
-- this convergence slice changes presentation/read models/tests/governance only and does not advance Phase 9–17 implementation status.
+- PR #43 was merged into `main` before Phase 9 reconciliation;
+- current `main` remains the source of truth for convergence behavior and must not be overwritten by the historical Phase 9 branch.
 
-## Phase 9 — Approval Center
+## Phase 9 — Approval Center — IMPLEMENTED / LIVE-HARDENED ON PR #44
 
 Requirements:
 - PRD-APR-001..005
 - UX-APR-001..004
 
-Deliverables:
-- `approval_requests`
-- immutable `approval_events`
-- exact artifact/revision/media review
-- approve/request-changes/reject
-- supersede approval after substantive revision
-- integration with existing Scene Planning approval rather than replacement of domain rules
+Delivered:
+- organization-scoped `approval_requests` with exact server-generated target snapshot/fingerprint;
+- immutable `approval_events` audit history;
+- exact content-artifact revision and Media asset checksum review identity;
+- PENDING / CHANGES_REQUESTED / APPROVED / REJECTED / SUPERSEDED lifecycle;
+- OWNER / ADMIN / REVIEWER decision authority;
+- OWNER / ADMIN / EDITOR submit/re-submit authority;
+- required comments for request-changes/reject decisions;
+- deterministic queue pagination and review detail/history UX;
+- Content Studio and Media Library submission handoffs using safe identifiers only;
+- stale-target detection and server-authoritative decision transitions;
+- substantive content edits automatically advance artifact revision and supersede prior approvals;
+- Media deletion supersedes related approvals before target disappearance;
+- current-approval predicate for downstream Phase 10 publication eligibility;
+- Scene Planning approval remains authoritative for `scene_plan_versions`; generic Approval Center integrates without bypassing that domain lifecycle.
+
+Verification on 15 September 2026:
+- exact-head CI #1416 on `ab9f3a721889b298b37fc475e69848e4838b449d` passed typecheck, lint, serialized/default-parallel/normal unit suites, publishing smokes, production build, final-assembly worker tests/container smoke and Playwright E2E;
+- live Supabase migration history was inspected before writes and existing Approval Center migrations were not replayed;
+- only missing release-hardening migrations `approval_media_delete_supersession` and `content_artifact_revision_guard` were applied, in order;
+- live trigger ordering, function privileges and immutable Approval event protections were verified;
+- rollback-only production proof verified content revision `1 → 2`, exact-revision approval supersession, Media-delete supersession, SYSTEM audit events and zero synthetic residue;
+- rollback-only role matrix verified EDITOR submit/decision denial, OWNER/ADMIN/REVIEWER decisions, cross-org denial and exact revision binding;
+- security/performance advisors were rerun; remaining findings are pre-existing project-level maintenance or intentional authenticated RPC observations, not regressions introduced by Phase 9 hardening.
+
+Release state:
+- PR #44 remains draft/unmerged until exact current head receives final CI + Vercel preview/runtime verification and explicit user merge authorization;
+- merge must not be performed automatically.
 
 ## Phase 10 — Publishing foundation + Meta
 

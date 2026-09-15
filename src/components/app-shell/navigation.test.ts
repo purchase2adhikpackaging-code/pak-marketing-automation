@@ -14,10 +14,10 @@ describe("APP_NAVIGATION_GROUPS", () => {
       "/scene-planning",
       "/media-library",
       "/knowledge-base",
+      "/approval-center",
     ]);
     expect(APP_NAVIGATION_GROUPS.find((group) => group.label === "Administration")?.items.map((item) => item.href)).toEqual(["/settings"]);
     expect(APP_NAVIGATION_GROUPS.find((group) => group.label === "Roadmap")?.items.map((item) => item.href)).toEqual([
-      "/approval-center",
       "/publishing",
       "/content-calendar",
       "/analytics",
@@ -44,6 +44,7 @@ describe("APP_NAVIGATION_GROUPS", () => {
     expect(isNavigationItemActive("/content-studio", "/content-studio")).toBe(true);
     expect(isNavigationItemActive("/scene-planning/project-1", "/scene-planning")).toBe(true);
     expect(isNavigationItemActive("/settings/integrations", "/settings")).toBe(true);
+    expect(isNavigationItemActive("/approval-center/request-1", "/approval-center")).toBe(true);
     expect(isNavigationItemActive("/content-studio-old", "/content-studio")).toBe(false);
     expect(isNavigationItemActive("/dashboard", "/settings")).toBe(false);
   });

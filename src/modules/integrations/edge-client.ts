@@ -29,7 +29,13 @@ export type MediaLibraryEdgeRequest =
       displayName?: string;
     }
   | { operation: "finalize-upload"; organizationId: string; sessionId: string }
-  | { operation: "preview" | "delete"; organizationId: string; mediaAssetId: string };
+  | {
+      operation: "preview";
+      organizationId: string;
+      mediaAssetId: string;
+      expectedChecksum?: string;
+    }
+  | { operation: "delete"; organizationId: string; mediaAssetId: string };
 
 async function productionAccessToken(): Promise<string | null> {
   const supabase = await createServerSupabaseClient();
