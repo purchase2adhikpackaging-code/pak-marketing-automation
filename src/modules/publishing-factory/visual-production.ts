@@ -37,6 +37,7 @@ export interface ResolvedBookVisual extends BookVisualRequirement {
   sourceKind: BookVisualSourceKind;
   provenance: string;
   dataUri: string;
+  realismVerified: boolean;
   labelsPresent: boolean;
 }
 
@@ -207,6 +208,9 @@ export function validateResolvedBookVisualBundle(
     if (!visual.caption.trim()) findings.push(`Visual ${visual.id} is missing a caption.`);
     if (!visual.altText.trim()) findings.push(`Visual ${visual.id} is missing alt text.`);
     if (!visual.provenance.trim()) findings.push(`Visual ${visual.id} is missing provenance.`);
+    if (visual.realistic && !visual.realismVerified) {
+      findings.push(`Visual ${visual.id} requires realism verification but did not pass it.`);
+    }
     if (visual.labelsRequired && !visual.labelsPresent) {
       findings.push(`Visual ${visual.id} requires technical labels but none were verified.`);
     }
