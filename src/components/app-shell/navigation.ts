@@ -17,6 +17,7 @@ export const APP_NAVIGATION_GROUPS: readonly AppNavigationGroup[] = [
       { label: "Scene Planning", href: "/scene-planning" },
       { label: "Media Library", href: "/media-library" },
       { label: "Knowledge Base", href: "/knowledge-base" },
+      { label: "Approval Center", href: "/approval-center" },
     ],
   },
   {
@@ -26,7 +27,6 @@ export const APP_NAVIGATION_GROUPS: readonly AppNavigationGroup[] = [
   {
     label: "Roadmap",
     items: [
-      { label: "Approval Center", href: "/approval-center" },
       { label: "Publishing", href: "/publishing" },
       { label: "Content Calendar", href: "/content-calendar" },
       { label: "Analytics", href: "/analytics" },
