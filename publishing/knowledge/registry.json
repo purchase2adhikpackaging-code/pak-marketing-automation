@@ -1,0 +1,29 @@
+{
+  "version": "1.0.0",
+  "packs": [
+    {"packId":"railway-systems","path":"publishing/knowledge/packs/railway-systems.json","revision":"1.0.0","status":"approved"},
+    {"packId":"infrastructure-track","path":"publishing/knowledge/packs/infrastructure-track.json","revision":"1.0.0","status":"approved"},
+    {"packId":"rolling-stock","path":"publishing/knowledge/packs/rolling-stock.json","revision":"1.0.0","status":"approved"},
+    {"packId":"freight-wagons","path":"publishing/knowledge/packs/freight-wagons.json","revision":"1.0.0","status":"approved"},
+    {"packId":"bogies-suspension","path":"publishing/knowledge/packs/bogies-suspension.json","revision":"1.0.0","status":"approved"},
+    {"packId":"wheelsets-bearings","path":"publishing/knowledge/packs/wheelsets-bearings.json","revision":"1.0.0","status":"approved"},
+    {"packId":"braking-pneumatics","path":"publishing/knowledge/packs/braking-pneumatics.json","revision":"1.0.0","status":"approved"},
+    {"packId":"traction-energy","path":"publishing/knowledge/packs/traction-energy.json","revision":"1.0.0","status":"approved"},
+    {"packId":"electrical-electronic","path":"publishing/knowledge/packs/electrical-electronic.json","revision":"1.0.0","status":"approved"},
+    {"packId":"signalling-control","path":"publishing/knowledge/packs/signalling-control.json","revision":"1.0.0","status":"approved"},
+    {"packId":"materials-metallurgy","path":"publishing/knowledge/packs/materials-metallurgy.json","revision":"1.0.0","status":"approved"},
+    {"packId":"mechanical-fundamentals","path":"publishing/knowledge/packs/mechanical-fundamentals.json","revision":"1.0.0","status":"approved"},
+    {"packId":"technical-drawing-documentation","path":"publishing/knowledge/packs/technical-drawing-documentation.json","revision":"1.0.0","status":"approved"},
+    {"packId":"metrology-measurement","path":"publishing/knowledge/packs/metrology-measurement.json","revision":"1.0.0","status":"approved"},
+    {"packId":"welding-fabrication","path":"publishing/knowledge/packs/welding-fabrication.json","revision":"1.0.0","status":"approved"},
+    {"packId":"ndt-inspection","path":"publishing/knowledge/packs/ndt-inspection.json","revision":"1.0.0","status":"approved"},
+    {"packId":"maintenance-ecm","path":"publishing/knowledge/packs/maintenance-ecm.json","revision":"1.0.0","status":"approved"},
+    {"packId":"reliability-rams","path":"publishing/knowledge/packs/reliability-rams.json","revision":"1.0.0","status":"approved"},
+    {"packId":"safety-human-factors","path":"publishing/knowledge/packs/safety-human-factors.json","revision":"1.0.0","status":"approved"},
+    {"packId":"operations-logistics","path":"publishing/knowledge/packs/operations-logistics.json","revision":"1.0.0","status":"approved"},
+    {"packId":"quality-compliance","path":"publishing/knowledge/packs/quality-compliance.json","revision":"1.0.0","status":"approved"},
+    {"packId":"asset-management","path":"publishing/knowledge/packs/asset-management.json","revision":"1.0.0","status":"approved"},
+    {"packId":"digital-railway-condition-monitoring","path":"publishing/knowledge/packs/digital-railway-condition-monitoring.json","revision":"1.0.0","status":"approved"},
+    {"packId":"railway-project-business-management","path":"publishing/knowledge/packs/railway-project-business-management.json","revision":"1.0.0","status":"approved"}
+  ]
+}
