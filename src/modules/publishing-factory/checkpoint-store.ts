@@ -13,6 +13,10 @@ import { BookBlueprintSchema } from "./blueprint";
 import type { BookJob } from "./domain";
 import type { BookManuscript, ChapterManuscript } from "./manuscript-domain";
 import { BookManuscriptSchema, ChapterManuscriptSchema } from "./manuscript-domain";
+import type {
+  BookVisualPlan,
+  ResolvedBookVisualBundle,
+} from "./visual-production";
 
 export interface CheckpointSaveResult {
   path: string;
@@ -24,6 +28,8 @@ export interface LoadedCheckpointRun {
   directory: string;
   blueprint?: BookBlueprint;
   manuscript?: BookManuscript;
+  visualPlan?: BookVisualPlan;
+  visualAssets?: ResolvedBookVisualBundle;
   chapters: ChapterManuscript[];
   completedChapterIds: string[];
   nextChapterNumber: number;
@@ -36,6 +42,55 @@ function sha256(value: string): string {
 
 function json(value: unknown): string {
   return `${JSON.stringify(value, null, 2)}\n`;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function parseVisualPlan(value: unknown): BookVisualPlan {
+  if (!isRecord(value) || typeof value.bookId !== "string" || !Array.isArray(value.requirements)) {
+    throw new Error("Invalid visual plan checkpoint.");
+  }
+  for (const requirement of value.requirements) {
+    if (
+      !isRecord(requirement) ||
+      typeof requirement.id !== "string" ||
+      typeof requirement.placement !== "string" ||
+      typeof requirement.subjectPrompt !== "string" ||
+      typeof requirement.caption !== "string" ||
+      typeof requirement.altText !== "string" ||
+      typeof requirement.realistic !== "boolean" ||
+      typeof requirement.labelsRequired !== "boolean"
+    ) {
+      throw new Error("Invalid visual plan requirement checkpoint.");
+    }
+  }
+  return value as unknown as BookVisualPlan;
+}
+
+function parseVisualAssets(value: unknown): ResolvedBookVisualBundle {
+  if (!isRecord(value) || typeof value.bookId !== "string" || !Array.isArray(value.visuals)) {
+    throw new Error("Invalid visual assets checkpoint.");
+  }
+  for (const visual of value.visuals) {
+    if (
+      !isRecord(visual) ||
+      typeof visual.id !== "string" ||
+      typeof visual.assetId !== "string" ||
+      typeof visual.mimeType !== "string" ||
+      typeof visual.width !== "number" ||
+      typeof visual.height !== "number" ||
+      typeof visual.byteLength !== "number" ||
+      typeof visual.provenance !== "string" ||
+      typeof visual.dataUri !== "string" ||
+      !visual.dataUri.startsWith(`data:${visual.mimeType};base64,`) ||
+      /https?:\/\//i.test(visual.dataUri)
+    ) {
+      throw new Error("Invalid visual asset checkpoint: renderer-safe data URI is required.");
+    }
+  }
+  return value as unknown as ResolvedBookVisualBundle;
 }
 
 async function exists(path: string): Promise<boolean> {
@@ -128,6 +183,39 @@ export class FileCheckpointStore {
     );
   }
 
+  async saveVisualPlan(job: BookJob, visualPlan: BookVisualPlan): Promise<CheckpointSaveResult> {
+    const parsed = parseVisualPlan(visualPlan);
+    if (parsed.bookId !== job.bookId) {
+      throw new Error(`Visual plan book id mismatch: expected ${job.bookId}, received ${parsed.bookId}.`);
+    }
+    const directory = this.jobDirectory(job);
+    await mkdir(directory, { recursive: true });
+    return this.saveImmutableJson(
+      join(directory, "visual-plan.json"),
+      parsed,
+      "visual plan",
+    );
+  }
+
+  async saveVisualAssets(
+    job: BookJob,
+    visualAssets: ResolvedBookVisualBundle,
+  ): Promise<CheckpointSaveResult> {
+    const parsed = parseVisualAssets(visualAssets);
+    if (parsed.bookId !== job.bookId) {
+      throw new Error(
+        `Visual assets book id mismatch: expected ${job.bookId}, received ${parsed.bookId}.`,
+      );
+    }
+    const directory = this.jobDirectory(job);
+    await mkdir(directory, { recursive: true });
+    return this.saveImmutableJson(
+      join(directory, "visual-assets.json"),
+      parsed,
+      "resolved visual assets",
+    );
+  }
+
   async saveStage(job: BookJob, stage: string): Promise<CheckpointSaveResult> {
     if (!stage.trim()) throw new Error("Checkpoint stage must not be blank.");
     const directory = this.jobDirectory(job);
@@ -148,6 +236,8 @@ export class FileCheckpointStore {
 
     const blueprintPath = join(directory, "blueprint.json");
     const manuscriptPath = join(directory, "manuscript.json");
+    const visualPlanPath = join(directory, "visual-plan.json");
+    const visualAssetsPath = join(directory, "visual-assets.json");
     const stagePath = join(directory, "stage.json");
     const chaptersDirectory = join(directory, "chapters");
 
@@ -157,6 +247,12 @@ export class FileCheckpointStore {
         : undefined;
       const manuscript = (await exists(manuscriptPath))
         ? BookManuscriptSchema.parse(JSON.parse(await readFile(manuscriptPath, "utf8")))
+        : undefined;
+      const visualPlan = (await exists(visualPlanPath))
+        ? parseVisualPlan(JSON.parse(await readFile(visualPlanPath, "utf8")))
+        : undefined;
+      const visualAssets = (await exists(visualAssetsPath))
+        ? parseVisualAssets(JSON.parse(await readFile(visualAssetsPath, "utf8")))
         : undefined;
 
       const chapters: ChapterManuscript[] = [];
@@ -194,6 +290,8 @@ export class FileCheckpointStore {
         directory,
         ...(blueprint ? { blueprint } : {}),
         ...(manuscript ? { manuscript } : {}),
+        ...(visualPlan ? { visualPlan } : {}),
+        ...(visualAssets ? { visualAssets } : {}),
         chapters,
         completedChapterIds: chapters.map((chapter) => chapter.chapterId),
         nextChapterNumber,
