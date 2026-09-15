@@ -45,7 +45,28 @@ export async function launchPublicationBrowser() {
 
 export async function verifyPublicationBrowserRuntime(): Promise<void> {
   const browser = await launchPublicationBrowser();
-  await browser.close();
+  try {
+    const page = await browser.newPage({ viewport: { width: 794, height: 1123 } });
+    try {
+      await page.setContent(
+        "<!doctype html><html><head><meta charset=\"utf-8\"><style>@page{size:A4;margin:18mm}body{font-family:Arial,sans-serif}</style></head><body><main><h1>D01-101 Publishing Runtime Probe</h1><p>Deterministic HTML-to-PDF health check.</p></main></body></html>",
+        { waitUntil: "load" },
+      );
+      await page.emulateMedia({ media: "print" });
+      const pdf = await page.pdf({
+        format: "A4",
+        printBackground: true,
+        preferCSSPageSize: true,
+      });
+      if (pdf.byteLength < 1_000 || pdf.subarray(0, 5).toString("ascii") !== "%PDF-") {
+        throw new Error("Publishing browser PDF probe returned an invalid PDF.");
+      }
+    } finally {
+      await page.close();
+    }
+  } finally {
+    await browser.close();
+  }
 }
 
 export async function renderPublication(
