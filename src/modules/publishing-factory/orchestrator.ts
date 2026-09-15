@@ -9,6 +9,8 @@ import {
   type RenderPublicationResult,
 } from "./renderer";
 import { transitionJob } from "./state-machine";
+import type { BookVisualPlan, ResolvedBookVisualBundle } from "./visual-production";
+import { runVisualQa } from "./visual-qa";
 
 export interface DeterministicBookInput {
   job: BookJob;
@@ -16,6 +18,8 @@ export interface DeterministicBookInput {
   artifactRoot: string;
   expectedTitle: string;
   requireBookmarks: boolean;
+  visualPlan?: BookVisualPlan;
+  visualAssets?: ResolvedBookVisualBundle;
 }
 
 export interface DeterministicBookResult {
@@ -45,6 +49,19 @@ async function runLayoutQa(html: string): Promise<QaFinding[]> {
   }
 }
 
+function missingVisualContractFinding(): QaFinding {
+  return {
+    id: "visual-contract-missing",
+    gate: "visual-assets",
+    defectClass: "VISUAL_ASSET_INVALID",
+    severity: "error",
+    message:
+      "Professional textbook visual plan and resolved assets must both be supplied to release QA.",
+    detector: "publishing-visual-qa",
+    repairable: true,
+  };
+}
+
 export async function runDeterministicBook(
   input: DeterministicBookInput,
 ): Promise<DeterministicBookResult> {
@@ -63,6 +80,39 @@ export async function runDeterministicBook(
       subjectTitle: input.job.subjectTitle,
     },
   });
+
+  const visualFindings =
+    input.visualPlan && input.visualAssets
+      ? runVisualQa({
+          plan: input.visualPlan,
+          bundle: input.visualAssets,
+          html: input.html,
+        })
+      : input.visualPlan || input.visualAssets
+        ? [missingVisualContractFinding()]
+        : [];
+
+  if (hasErrorFindings(visualFindings)) {
+    const findings = [...contentFindings, ...visualFindings];
+    return {
+      job: transitionJob(input.job, "BLOCKED"),
+      report: {
+        bookId: input.job.bookId,
+        revision: input.job.revision,
+        startedAt,
+        completedAt: new Date().toISOString(),
+        gateResults: {
+          content: gateResult(findings, "content"),
+          "visual-assets": "FAIL",
+          layout: "NOT_APPLICABLE",
+          pdf: "NOT_APPLICABLE",
+        },
+        findings,
+        passed: false,
+      },
+    };
+  }
+
   const layoutFindings = await runLayoutQa(input.html);
 
   let render: RenderPublicationResult;
@@ -82,7 +132,7 @@ export async function runDeterministicBook(
       detector: "publication-renderer",
       repairable: true,
     };
-    const findings = [...contentFindings, ...layoutFindings, finding];
+    const findings = [...contentFindings, ...visualFindings, ...layoutFindings, finding];
     const blockedJob = transitionJob(input.job, "BLOCKED");
     return {
       job: blockedJob,
@@ -93,6 +143,9 @@ export async function runDeterministicBook(
         completedAt: new Date().toISOString(),
         gateResults: {
           content: gateResult(findings, "content"),
+          ...(input.visualPlan && input.visualAssets
+            ? { "visual-assets": gateResult(findings, "visual-assets") }
+            : {}),
           layout: gateResult(findings, "layout"),
           pdf: "FAIL",
         },
@@ -123,7 +176,12 @@ export async function runDeterministicBook(
     requireBookmarks: input.requireBookmarks,
   });
 
-  const findings = [...contentFindings, ...layoutFindings, ...pdfFindings];
+  const findings = [
+    ...contentFindings,
+    ...visualFindings,
+    ...layoutFindings,
+    ...pdfFindings,
+  ];
   const passed = !hasErrorFindings(findings);
   currentJob = transitionJob(currentJob, passed ? "QA_PASSED" : "QA_FAILED");
 
@@ -134,6 +192,9 @@ export async function runDeterministicBook(
     completedAt: new Date().toISOString(),
     gateResults: {
       content: gateResult(findings, "content"),
+      ...(input.visualPlan && input.visualAssets
+        ? { "visual-assets": gateResult(findings, "visual-assets") }
+        : {}),
       layout: gateResult(findings, "layout"),
       pdf: gateResult(findings, "pdf"),
     },
