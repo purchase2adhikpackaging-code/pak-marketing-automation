@@ -17,6 +17,10 @@ import { FileCheckpointStore } from "@/modules/publishing-factory/checkpoint-sto
 import type { BookJob } from "@/modules/publishing-factory/domain";
 import type { ChapterManuscript } from "@/modules/publishing-factory/manuscript-domain";
 import { loadKnowledgeRegistry } from "@/modules/publishing-factory/knowledge-registry";
+import {
+  createBookVisualResolver,
+  type VisualAssetSource,
+} from "@/modules/publishing-factory/visual-resolver";
 
 interface FixtureFile {
   blueprint: BookBlueprint;
@@ -89,6 +93,24 @@ class FixtureBookProvider implements TextGenerationProvider {
   }
 }
 
+const fixtureVisualSource: VisualAssetSource = {
+  name: "fixture-visuals",
+  async resolve(requirement) {
+    const cover = requirement.placement === "front-cover" || requirement.placement === "back-cover";
+    return {
+      requirementId: requirement.id,
+      assetId: `fixture-${requirement.id}`,
+      mimeType: "image/jpeg",
+      width: cover ? 1800 : 1600,
+      height: cover ? 2700 : 1200,
+      bytes: new Uint8Array(4096).fill(1),
+      sourceKind: "approved-library",
+      provenance: "Deterministic PAK publishing test visual library",
+      labelsPresent: requirement.labelsRequired,
+    };
+  },
+};
+
 async function roots(prefix: string) {
   const root = await mkdtemp(join(tmpdir(), prefix));
   return {
@@ -101,6 +123,7 @@ async function compile(provider: TextGenerationProvider, overrides: Partial<{
   checkpointStore: FileCheckpointStore;
   artifactRoot: string;
   maxNewChapters: number;
+  withoutVisualResolver: boolean;
 }> = {}): Promise<CompileBookResult> {
   const defaults = await roots("pak-book-compiler-");
   return compileBook({
@@ -111,24 +134,39 @@ async function compile(provider: TextGenerationProvider, overrides: Partial<{
     registry: await loadKnowledgeRegistry(process.cwd()),
     checkpointStore: overrides.checkpointStore ?? defaults.checkpointStore,
     artifactRoot: overrides.artifactRoot ?? defaults.artifactRoot,
+    ...(overrides.withoutVisualResolver
+      ? {}
+      : { visualResolver: createBookVisualResolver([fixtureVisualSource]) }),
     ...(overrides.maxNewChapters ? { maxNewChapters: overrides.maxNewChapters } : {}),
   });
 }
 
 describe("end-to-end governed book compiler", () => {
-  it("compiles a deterministic D01-style book through HTML, searchable PDF and QA", async () => {
+  it("compiles a deterministic D01-style book through visuals, HTML, searchable PDF and QA", async () => {
     const provider = new FixtureBookProvider();
     const result = await compile(provider);
 
     expect(result.job.status).toBe("QA_PASSED");
     expect(result.report?.passed).toBe(true);
+    expect(result.report?.gateResults["visual-assets"]).toBe("PASS");
     expect(result.manuscript?.chapters).toHaveLength(2);
+    expect(result.visualPlan?.requirements.length).toBeGreaterThanOrEqual(4);
+    expect(result.visualAssets?.visuals.length).toBe(result.visualPlan?.requirements.length);
     expect(result.generatedChapterIds).toEqual(["D01-102-CH01", "D01-102-CH02"]);
     expect(result.resumedChapterIds).toEqual([]);
-    expect(result.html).toContain("D01-102 — Applied Engineering Mathematics &amp; Physics for Railways");
+    expect(result.html).toContain("book-cover-front");
+    expect(result.html).toContain("book-cover-back");
+    expect(result.html).toContain("data-visual-id=");
     expect(result.render?.pdfPath).toBeTruthy();
     expect(existsSync(result.render!.pdfPath)).toBe(true);
     expect(result.report?.findings.filter((finding) => finding.severity === "error")).toHaveLength(0);
+  });
+
+  it("fails closed instead of publishing a text-only manuscript when no visual resolver is configured", async () => {
+    const result = await compile(new FixtureBookProvider(), { withoutVisualResolver: true });
+    expect(result.job.status).toBe("BLOCKED");
+    expect(result.blockedReason).toMatch(/visual assets|required|resolver/i);
+    expect(result.render).toBeUndefined();
   });
 
   it("resumes from completed chapter checkpoints without calling the provider again for them", async () => {
