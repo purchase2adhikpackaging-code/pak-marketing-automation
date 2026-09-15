@@ -69,6 +69,7 @@ const visuals: ResolvedBookVisualBundle = {
       sourceKind: "approved-library",
       provenance: "PAK approved library",
       dataUri,
+      realismVerified: true,
       labelsPresent: false,
     },
     {
@@ -88,6 +89,7 @@ const visuals: ResolvedBookVisualBundle = {
       sourceKind: "approved-library",
       provenance: "PAK approved library",
       dataUri,
+      realismVerified: true,
       labelsPresent: true,
     },
     {
@@ -106,6 +108,7 @@ const visuals: ResolvedBookVisualBundle = {
       sourceKind: "approved-library",
       provenance: "PAK approved library",
       dataUri,
+      realismVerified: true,
       labelsPresent: false,
     },
   ],
@@ -126,8 +129,8 @@ describe("visual manuscript HTML", () => {
 
   it("marks covers so ordinary running page furniture can be suppressed", () => {
     const html = renderBookHtml({ job, manuscript, visuals });
-    expect(html).toMatch(/\.book-cover\s*\{[^}]*break-after:\s*page/s);
-    expect(html).toMatch(/\.book-cover\s*\{[^}]*height:\s*297mm/s);
+    expect(html).toMatch(/\.book-cover\s*\{[^}]*break-after:\s*page/);
+    expect(html).toMatch(/\.book-cover\s*\{[^}]*height:\s*297mm/);
     expect(html).toContain('data-pak-cover="front"');
     expect(html).toContain('data-pak-cover="back"');
   });
