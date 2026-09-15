@@ -24,14 +24,14 @@ describe("B3 module readiness surface", () => {
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
-  it("defines exactly nine still-future B3 routes with links to implemented workflows only", () => {
+  it("defines exactly eight still-future B3 routes with links to implemented workflows only", () => {
     const configs = Object.values(B3_MODULE_READINESS);
 
-    expect(configs).toHaveLength(9);
+    expect(configs).toHaveLength(8);
     expect(configs.filter((config) => config.status === "Foundation only").map((config) => config.route)).toEqual([
       "/manual-generation",
     ]);
-    expect(configs.filter((config) => config.status === "Planned")).toHaveLength(8);
+    expect(configs.filter((config) => config.status === "Planned")).toHaveLength(7);
 
     for (const config of configs) {
       expect(config.relatedLinks.length).toBeGreaterThanOrEqual(1);
