@@ -9,6 +9,10 @@ const rendererSource = readFileSync(
   "src/modules/publishing-factory/renderer.ts",
   "utf8",
 );
+const browserHealthProbeSource = rendererSource.slice(
+  rendererSource.indexOf("export async function verifyPublicationBrowserRuntime"),
+  rendererSource.indexOf("export async function renderPublication"),
+);
 
 describe("publication renderer", () => {
   it("detects common Vercel/serverless runtime markers and production fallback before choosing Chromium", () => {
@@ -18,6 +22,13 @@ describe("publication renderer", () => {
     expect(rendererSource).toContain("process.env.AWS_LAMBDA_FUNCTION_NAME");
     expect(rendererSource).toContain('process.env.NODE_ENV === "production"');
     expect(rendererSource).toContain("serverlessChromium.executablePath()");
+  });
+
+  it("requires the browser health probe to exercise HTML-to-PDF rendering, not launch-only health", () => {
+    expect(browserHealthProbeSource).toContain("browser.newPage");
+    expect(browserHealthProbeSource).toContain("page.setContent");
+    expect(browserHealthProbeSource).toContain("page.pdf");
+    expect(browserHealthProbeSource).toContain("%PDF-");
   });
 
   it("renders a non-empty A4 PDF and page image inside the artifact root", async () => {
