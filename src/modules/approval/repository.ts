@@ -32,6 +32,7 @@ export interface ApprovalRepository {
 export class SupabaseApprovalRepository implements ApprovalRepository {
   async list(input: ApprovalListQuery): Promise<ApprovalListPage> {
     const normalized = normalizeApprovalListQuery(input);
+    const pageSize = Math.min(normalized.limit, 50);
     const supabase = await createServerSupabaseClient();
     let query = supabase
       .from("approval_requests")
@@ -40,12 +41,30 @@ export class SupabaseApprovalRepository implements ApprovalRepository {
       .eq("status", normalized.status)
       .order("requested_at", { ascending: false })
       .order("id", { ascending: false })
-      .limit(Math.min(normalized.limit, 50));
+      .limit(pageSize + 1);
 
     if (normalized.targetType) query = query.eq("target_type", normalized.targetType);
+    if (normalized.cursor) {
+      query = query.or(
+        `requested_at.lt.${normalized.cursor.requestedAt},and(requested_at.eq.${normalized.cursor.requestedAt},id.lt.${normalized.cursor.id})`,
+      );
+    }
+
     const { data, error } = await query;
     if (error) throw internal("Unable to load the Approval Center queue.");
-    return { items: ((data ?? []) as ApprovalRequestRow[]).map(toApprovalQueueItem) };
+
+    const rows = (data ?? []) as ApprovalRequestRow[];
+    const hasMore = rows.length > pageSize;
+    const visibleRows = hasMore ? rows.slice(0, pageSize) : rows;
+    const items = visibleRows.map(toApprovalQueueItem);
+    const tail = visibleRows.at(-1);
+
+    return {
+      items,
+      ...(hasMore && tail
+        ? { nextCursor: { requestedAt: tail.requested_at, id: tail.id } }
+        : {}),
+    };
   }
 
   async getEvents(organizationId: string, requestId: string): Promise<readonly ApprovalEvent[]> {
