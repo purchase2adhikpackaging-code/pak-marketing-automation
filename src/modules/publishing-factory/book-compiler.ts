@@ -17,6 +17,13 @@ import { runDeterministicBook } from "./orchestrator";
 import { repairPolicy } from "./repair";
 import type { RenderPublicationResult } from "./renderer";
 import { transitionJob } from "./state-machine";
+import {
+  createBookVisualPlan,
+  validateResolvedBookVisualBundle,
+  type BookVisualPlan,
+  type ResolvedBookVisualBundle,
+} from "./visual-production";
+import type { BookVisualResolver } from "./visual-resolver";
 
 export interface CompileBookInput {
   job: BookJob;
@@ -25,6 +32,7 @@ export interface CompileBookInput {
   registry: LoadedKnowledgeRegistry;
   checkpointStore: FileCheckpointStore;
   artifactRoot: string;
+  visualResolver?: BookVisualResolver;
   maxNewChapters?: number;
 }
 
@@ -32,6 +40,8 @@ export interface CompileBookResult {
   job: BookJob;
   blueprint: BookBlueprint;
   manuscript?: BookManuscript;
+  visualPlan?: BookVisualPlan;
+  visualAssets?: ResolvedBookVisualBundle;
   html?: string;
   report?: QaReport;
   render?: RenderPublicationResult;
@@ -133,8 +143,19 @@ function buildManuscript(input: {
 }
 
 export async function compileBook(input: CompileBookInput): Promise<CompileBookResult> {
-  const { job, curriculumText, provider, registry, checkpointStore, artifactRoot } = input;
-  if (input.maxNewChapters !== undefined && (!Number.isInteger(input.maxNewChapters) || input.maxNewChapters < 1)) {
+  const {
+    job,
+    curriculumText,
+    provider,
+    registry,
+    checkpointStore,
+    artifactRoot,
+    visualResolver,
+  } = input;
+  if (
+    input.maxNewChapters !== undefined &&
+    (!Number.isInteger(input.maxNewChapters) || input.maxNewChapters < 1)
+  ) {
     throw new Error("maxNewChapters must be a positive integer when provided.");
   }
 
@@ -228,7 +249,10 @@ export async function compileBook(input: CompileBookInput): Promise<CompileBookR
     chaptersById.set(generated.chapterId, generated);
     generatedChapterIds.push(generated.chapterId);
 
-    if (input.maxNewChapters !== undefined && generatedChapterIds.length >= input.maxNewChapters) {
+    if (
+      input.maxNewChapters !== undefined &&
+      generatedChapterIds.length >= input.maxNewChapters
+    ) {
       const next = blueprint.chapters.find((candidate) => !chaptersById.has(candidate.id));
       if (next) {
         return {
@@ -268,18 +292,74 @@ export async function compileBook(input: CompileBookInput): Promise<CompileBookR
     await checkpointStore.saveManuscript(job, manuscript);
   }
   await checkpointStore.saveStage(job, "MANUSCRIPT_READY");
-
   currentJob = transitionJob(currentJob, "MANUSCRIPT_READY");
+
+  const visualPlan = loaded?.visualPlan ?? createBookVisualPlan(manuscript, blueprint);
+  if (!loaded?.visualPlan) {
+    await checkpointStore.saveVisualPlan(job, visualPlan);
+  }
+
+  let visualAssets = loaded?.visualAssets;
+  if (!visualAssets) {
+    if (!visualResolver) {
+      const blockedReason =
+        "Professional visual assets are required before typesetting; no visual resolver is configured.";
+      currentJob = transitionJob(currentJob, "BLOCKED");
+      await checkpointStore.saveStage(job, "BLOCKED");
+      return {
+        job: currentJob,
+        blueprint,
+        manuscript,
+        visualPlan,
+        resumedChapterIds,
+        generatedChapterIds,
+        incomplete: false,
+        blockedReason,
+      };
+    }
+
+    visualAssets = await visualResolver.resolve(visualPlan);
+    const visualValidation = validateResolvedBookVisualBundle(visualPlan, visualAssets);
+    if (visualValidation.length > 0) {
+      const blockedReason = `Resolved textbook visuals failed production validation:\n${visualValidation.join("\n")}`;
+      currentJob = transitionJob(currentJob, "BLOCKED");
+      await checkpointStore.saveStage(job, "BLOCKED");
+      return {
+        job: currentJob,
+        blueprint,
+        manuscript,
+        visualPlan,
+        visualAssets,
+        resumedChapterIds,
+        generatedChapterIds,
+        incomplete: false,
+        blockedReason,
+      };
+    }
+    await checkpointStore.saveVisualAssets(job, visualAssets);
+  } else {
+    const visualValidation = validateResolvedBookVisualBundle(visualPlan, visualAssets);
+    if (visualValidation.length > 0) {
+      throw new Error(
+        `Checkpointed textbook visuals no longer satisfy the production contract:\n${visualValidation.join("\n")}`,
+      );
+    }
+  }
+
+  currentJob = transitionJob(currentJob, "VISUALS_READY");
+  await checkpointStore.saveStage(job, "VISUALS_READY");
   currentJob = transitionJob(currentJob, "TYPESET_READY");
   await checkpointStore.saveStage(job, "TYPESET_READY");
 
-  const html = renderBookHtml({ job: currentJob, manuscript });
+  const html = renderBookHtml({ job: currentJob, manuscript, visuals: visualAssets });
   const deterministic = await runDeterministicBook({
     job: currentJob,
     html,
     artifactRoot,
     expectedTitle: expectedTitle(job),
     requireBookmarks: false,
+    visualPlan,
+    visualAssets,
   });
   await checkpointStore.saveStage(job, deterministic.job.status);
 
@@ -287,6 +367,8 @@ export async function compileBook(input: CompileBookInput): Promise<CompileBookR
     job: deterministic.job,
     blueprint,
     manuscript,
+    visualPlan,
+    visualAssets,
     html,
     report: deterministic.report,
     ...(deterministic.render ? { render: deterministic.render } : {}),
