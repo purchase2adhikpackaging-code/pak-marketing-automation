@@ -61,6 +61,12 @@ describe("MultilingualContentPanel", () => {
     expect(screen.getByText("Revision 3")).toBeTruthy();
   });
 
+  it("explains that Scene Planning keeps institutional identity server-resolved", () => {
+    renderPanel([artifact()]);
+    expect(screen.getByText(/Scene Planning continues from the persisted script artifact/i)).toBeTruthy();
+    expect(screen.getByText(/current Brand Kit defaults remain server-resolved/i)).toBeTruthy();
+  });
+
   it("shows Create Scene Plan only for persisted GENERATED artifacts", () => {
     renderPanel([
       artifact(),

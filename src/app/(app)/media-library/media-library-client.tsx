@@ -41,11 +41,8 @@ const DEFAULT_FILTERS: FilterState = {
   search: "",
 };
 
-function lineageLabel(asset: SafeMediaAsset): string | null {
+function purposeLabel(asset: SafeMediaAsset): string | null {
   if (asset.metadata.kind === "FINAL_VIDEO") return "Final video";
-  if (asset.source === "GENERATED") return "Generated shot";
-  if (asset.source === "UPLOAD") return "Operator upload";
-  if (asset.source === "IMPORT") return "Imported media";
   return null;
 }
 
@@ -197,6 +194,14 @@ export function MediaLibraryClient({ organizations }: { organizations: MediaOrga
 
   return (
     <div className="mt-8 space-y-5">
+      <section className="rounded-2xl border border-slate-800 bg-slate-950/50 p-5" aria-labelledby="operational-media-heading">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Production media</p>
+        <h3 id="operational-media-heading" className="mt-2 text-xl font-semibold text-white">Operational asset catalogue</h3>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
+          Work with PAK-owned media from uploads, generation, imports and final assembly. Type, origin and lifecycle status come directly from authoritative media records; purpose labels appear only when recorded metadata proves them.
+        </p>
+      </section>
+
       <div className="flex flex-wrap items-end justify-between gap-4 rounded-2xl border border-slate-800 bg-slate-950/60 p-5">
         <div className="min-w-64 flex-1">
           {organizations.length > 1 ? (
@@ -282,7 +287,7 @@ export function MediaLibraryClient({ organizations }: { organizations: MediaOrga
           ) : (
             <div className="divide-y divide-slate-800">
               {items.map((asset) => {
-                const lineage = lineageLabel(asset);
+                const purpose = purposeLabel(asset);
                 return (
                   <article key={asset.id} className="p-4 sm:p-5">
                     <div className="flex flex-wrap items-start justify-between gap-4">
@@ -290,7 +295,9 @@ export function MediaLibraryClient({ organizations }: { organizations: MediaOrga
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className="truncate font-semibold text-white">{asset.displayName}</h3>
                           <span className="rounded-full border border-slate-700 px-2 py-0.5 text-[11px] text-slate-400">{asset.assetType}</span>
-                          {lineage ? <span className="rounded-full border border-emerald-900/70 bg-emerald-950/30 px-2 py-0.5 text-[11px] text-emerald-300">{lineage}</span> : null}
+                          <span className="rounded-full border border-slate-700 px-2 py-0.5 text-[11px] text-slate-400">{asset.source}</span>
+                          <span className="rounded-full border border-slate-700 px-2 py-0.5 text-[11px] text-slate-400">{asset.status}</span>
+                          {purpose ? <span className="rounded-full border border-emerald-900/70 bg-emerald-950/30 px-2 py-0.5 text-[11px] text-emerald-300">{purpose}</span> : null}
                         </div>
                         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
                           <span>{asset.mimeType}</span>

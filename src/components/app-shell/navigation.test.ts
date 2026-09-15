@@ -1,51 +1,36 @@
 import { describe, expect, it } from "vitest";
-import { APP_NAVIGATION, isNavigationItemActive } from "./navigation";
+import { APP_NAVIGATION, APP_NAVIGATION_GROUPS, isNavigationItemActive } from "./navigation";
 
-const existingLabelsInOrder = [
-  "Dashboard",
-  "Content Studio",
-  "AI Representative",
-  "Campus / Locations",
-  "Podcast",
-  "Manual Generation",
-  "Student Testimonials",
-  "Media Library",
-  "Knowledge Base",
-  "Content Calendar",
-  "Approval Center",
-  "Publishing",
-  "Analytics",
-  "Settings",
-];
-
-const expectedLabels = [
-  "Dashboard",
-  "Content Studio",
-  "Scene Planning",
-  "AI Representative",
-  "Campus / Locations",
-  "Podcast",
-  "Manual Generation",
-  "Student Testimonials",
-  "Media Library",
-  "Knowledge Base",
-  "Content Calendar",
-  "Approval Center",
-  "Publishing",
-  "Analytics",
-  "Settings",
-];
-
-describe("APP_NAVIGATION", () => {
-  it("inserts Scene Planning exactly once immediately after Content Studio without reordering existing modules", () => {
-    expect(APP_NAVIGATION.map((item) => item.label)).toEqual(expectedLabels);
-    expect(APP_NAVIGATION.filter((item) => item.href === "/scene-planning")).toHaveLength(1);
-    expect(APP_NAVIGATION.map((item) => item.label).filter((label) => label !== "Scene Planning")).toEqual(
-      existingLabelsInOrder,
-    );
+describe("APP_NAVIGATION_GROUPS", () => {
+  it("groups implemented workflows ahead of administration and roadmap modules", () => {
+    expect(APP_NAVIGATION_GROUPS.map((group) => group.label)).toEqual([
+      "Operational",
+      "Administration",
+      "Roadmap",
+    ]);
+    expect(APP_NAVIGATION_GROUPS.find((group) => group.label === "Operational")?.items.map((item) => item.href)).toEqual([
+      "/dashboard",
+      "/content-studio",
+      "/scene-planning",
+      "/media-library",
+      "/knowledge-base",
+    ]);
+    expect(APP_NAVIGATION_GROUPS.find((group) => group.label === "Administration")?.items.map((item) => item.href)).toEqual(["/settings"]);
+    expect(APP_NAVIGATION_GROUPS.find((group) => group.label === "Roadmap")?.items.map((item) => item.href)).toEqual([
+      "/approval-center",
+      "/publishing",
+      "/content-calendar",
+      "/analytics",
+      "/ai-representative",
+      "/podcast",
+      "/campus-locations",
+      "/student-testimonials",
+      "/manual-generation",
+    ]);
   });
 
-  it("contains every approved module exactly once", () => {
+  it("derives the flat navigation from the grouped contract without duplicate routes", () => {
+    expect(APP_NAVIGATION).toEqual(APP_NAVIGATION_GROUPS.flatMap((group) => group.items));
     expect(new Set(APP_NAVIGATION.map((item) => item.href)).size).toBe(APP_NAVIGATION.length);
   });
 

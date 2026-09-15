@@ -217,65 +217,96 @@ export function ScenePlanningWorkspace({ organizationId, actorRole, project, vis
   }
 
   return (
-    <div className="mt-8 space-y-6">
+    <div className="mt-8 space-y-8">
       {error ? <div role="alert" className="rounded-xl border border-red-900/60 bg-red-950/30 p-4 text-sm text-red-200">{error}</div> : null}
       {notice ? <div role="status" className="rounded-xl border border-emerald-900/60 bg-emerald-950/30 p-4 text-sm text-emerald-200">{notice}</div> : null}
 
-      <section className="rounded-2xl border border-slate-800 bg-slate-950/50 p-6" aria-labelledby="production-brief-heading">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Project controls</p><h3 id="production-brief-heading" className="mt-2 text-xl font-semibold text-white">Production Brief</h3></div>
-          <div className="text-right text-xs text-slate-500"><div>Source language {project.language}</div><div className="mt-1 font-mono">{project.sourceIntegrityHash}</div></div>
+      <section className="space-y-6" aria-labelledby="source-plan-stage-heading">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Production stage</p>
+          <h3 id="source-plan-stage-heading" className="mt-2 text-2xl font-semibold text-white">1. Source & plan</h3>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">Confirm the production brief, project creative direction, canonical source freshness, and current Scene Plan version before quality review.</p>
         </div>
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
-          <label className="text-sm text-slate-300">Project title<input aria-label="Project title" value={title} onChange={(event) => setTitle(event.target.value)} disabled={!canEditProject || isPending} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-60" /></label>
-          <label className="text-sm text-slate-300">Target duration (seconds)<input aria-label="Target duration" type="number" min="1" value={targetDurationSeconds} onChange={(event) => setTargetDurationSeconds(event.target.value)} disabled={!canEditProject || isPending} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-60" /></label>
-          <label className="text-sm text-slate-300 md:col-span-2">Purpose<textarea aria-label="Purpose" value={purpose} onChange={(event) => setPurpose(event.target.value)} disabled={!canEditProject || isPending} rows={3} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-60" /></label>
-          <label className="text-sm text-slate-300">Aspect ratio<select aria-label="Aspect ratio" value={aspectRatio} onChange={(event) => setAspectRatio(event.target.value as ProjectView["aspectRatio"])} disabled={!canEditProject || isPending} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-60"><option value="16:9">16:9</option><option value="9:16">9:16</option><option value="1:1">1:1</option><option value="4:5">4:5</option></select></label>
-          <label className="text-sm text-slate-300">Quality profile<select aria-label="Quality profile" value={qualityProfile} onChange={(event) => setQualityProfile(event.target.value as ProjectView["qualityProfile"])} disabled={!canEditProject || isPending} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-60"><option value="STANDARD">Standard</option><option value="PREMIUM">Premium</option><option value="CINEMATIC">Cinematic</option></select></label>
-          <label className="text-sm text-slate-300 md:col-span-2">Target platforms<textarea aria-label="Target platforms" value={targetPlatforms} onChange={(event) => setTargetPlatforms(event.target.value)} disabled={!canEditProject || isPending} rows={2} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-60" /></label>
-        </div>
-        {canEditProject ? <button type="button" onClick={saveBrief} disabled={isPending} className="mt-5 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50">Save production brief</button> : null}
-      </section>
 
-      <section className="rounded-2xl border border-slate-800 bg-slate-950/50 p-6" aria-labelledby="visual-bible-heading">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Continuity controls</p><h3 id="visual-bible-heading" className="mt-2 text-xl font-semibold text-white">Visual Bible</h3>
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
-          <label className="text-sm text-slate-300">Characters<textarea aria-label="Characters" value={characters} onChange={(event) => setCharacters(event.target.value)} disabled={!canEditProject || isPending} rows={5} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-60" /></label>
-          <label className="text-sm text-slate-300">Locations<textarea aria-label="Locations" value={locations} onChange={(event) => setLocations(event.target.value)} disabled={!canEditProject || isPending} rows={5} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-60" /></label>
-          <label className="text-sm text-slate-300 md:col-span-2">Global negative constraints<textarea aria-label="Global negative constraints" value={negativeConstraints} onChange={(event) => setNegativeConstraints(event.target.value)} disabled={!canEditProject || isPending} rows={3} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-60" /></label>
-          <label className="text-sm text-slate-300">Realism level<textarea aria-label="Realism level" value={realismLevel} onChange={(event) => setRealismLevel(event.target.value)} disabled={!canEditProject || isPending} rows={3} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-60" /></label>
-          <label className="text-sm text-slate-300">Cinematography language<textarea aria-label="Cinematography language" value={cinematographyLanguage} onChange={(event) => setCinematographyLanguage(event.target.value)} disabled={!canEditProject || isPending} rows={3} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-60" /></label>
-          <label className="text-sm text-slate-300 md:col-span-2">Lighting language<textarea aria-label="Lighting language" value={lightingLanguage} onChange={(event) => setLightingLanguage(event.target.value)} disabled={!canEditProject || isPending} rows={3} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-60" /></label>
-        </div>
-        {canEditProject ? <button type="button" onClick={saveVisualBible} disabled={isPending} className="mt-5 rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Save Visual Bible</button> : null}
-      </section>
-
-      <section className="rounded-2xl border border-slate-800 bg-slate-950/50 p-6" aria-labelledby="timeline-heading">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Versioned planning</p><h3 id="timeline-heading" className="mt-2 text-xl font-semibold text-white">Scene & Shot Timeline</h3></div>
-          <div className="flex flex-wrap gap-2">
-            {EDIT_ROLES.includes(actorRole) ? <button type="button" onClick={generatePlan} disabled={isPending} className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50">Generate Scene Plan</button> : null}
-            {plan && EDIT_ROLES.includes(actorRole) && ["DRAFT", "QC_REQUIRED", "REVIEW_REQUIRED"].includes(plan.status) ? <button type="button" onClick={runQc} disabled={isPending} className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Run QC</button> : null}
+        <section className="rounded-2xl border border-slate-800 bg-slate-950/50 p-6" aria-labelledby="production-brief-heading">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Project controls</p><h4 id="production-brief-heading" className="mt-2 text-xl font-semibold text-white">Production Brief</h4></div>
+            <div className="text-right text-xs text-slate-500"><div>Source language {project.language}</div><div className="mt-1 font-mono">{project.sourceIntegrityHash}</div></div>
           </div>
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <label className="text-sm text-slate-300">Project title<input aria-label="Project title" value={title} onChange={(event) => setTitle(event.target.value)} disabled={!canEditProject || isPending} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-60" /></label>
+            <label className="text-sm text-slate-300">Target duration (seconds)<input aria-label="Target duration" type="number" min="1" value={targetDurationSeconds} onChange={(event) => setTargetDurationSeconds(event.target.value)} disabled={!canEditProject || isPending} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-60" /></label>
+            <label className="text-sm text-slate-300 md:col-span-2">Purpose<textarea aria-label="Purpose" value={purpose} onChange={(event) => setPurpose(event.target.value)} disabled={!canEditProject || isPending} rows={3} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-60" /></label>
+            <label className="text-sm text-slate-300">Aspect ratio<select aria-label="Aspect ratio" value={aspectRatio} onChange={(event) => setAspectRatio(event.target.value as ProjectView["aspectRatio"])} disabled={!canEditProject || isPending} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-60"><option value="16:9">16:9</option><option value="9:16">9:16</option><option value="1:1">1:1</option><option value="4:5">4:5</option></select></label>
+            <label className="text-sm text-slate-300">Quality profile<select aria-label="Quality profile" value={qualityProfile} onChange={(event) => setQualityProfile(event.target.value as ProjectView["qualityProfile"])} disabled={!canEditProject || isPending} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-60"><option value="STANDARD">Standard</option><option value="PREMIUM">Premium</option><option value="CINEMATIC">Cinematic</option></select></label>
+            <label className="text-sm text-slate-300 md:col-span-2">Target platforms<textarea aria-label="Target platforms" value={targetPlatforms} onChange={(event) => setTargetPlatforms(event.target.value)} disabled={!canEditProject || isPending} rows={2} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-60" /></label>
+          </div>
+          {canEditProject ? <button type="button" onClick={saveBrief} disabled={isPending} className="mt-5 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50">Save production brief</button> : null}
+        </section>
+
+        <section className="rounded-2xl border border-slate-800 bg-slate-950/50 p-6" aria-labelledby="visual-bible-heading">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Continuity controls</p><h4 id="visual-bible-heading" className="mt-2 text-xl font-semibold text-white">Visual Bible</h4>
+          <p className="mt-2 text-sm leading-6 text-slate-400">Brand Kit provides official institutional identity; Visual Bible controls project-specific creative direction.</p>
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <label className="text-sm text-slate-300">Characters<textarea aria-label="Characters" value={characters} onChange={(event) => setCharacters(event.target.value)} disabled={!canEditProject || isPending} rows={5} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-60" /></label>
+            <label className="text-sm text-slate-300">Locations<textarea aria-label="Locations" value={locations} onChange={(event) => setLocations(event.target.value)} disabled={!canEditProject || isPending} rows={5} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-60" /></label>
+            <label className="text-sm text-slate-300 md:col-span-2">Global negative constraints<textarea aria-label="Global negative constraints" value={negativeConstraints} onChange={(event) => setNegativeConstraints(event.target.value)} disabled={!canEditProject || isPending} rows={3} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-60" /></label>
+            <label className="text-sm text-slate-300">Realism level<textarea aria-label="Realism level" value={realismLevel} onChange={(event) => setRealismLevel(event.target.value)} disabled={!canEditProject || isPending} rows={3} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-60" /></label>
+            <label className="text-sm text-slate-300">Cinematography language<textarea aria-label="Cinematography language" value={cinematographyLanguage} onChange={(event) => setCinematographyLanguage(event.target.value)} disabled={!canEditProject || isPending} rows={3} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-60" /></label>
+            <label className="text-sm text-slate-300 md:col-span-2">Lighting language<textarea aria-label="Lighting language" value={lightingLanguage} onChange={(event) => setLightingLanguage(event.target.value)} disabled={!canEditProject || isPending} rows={3} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white disabled:opacity-60" /></label>
+          </div>
+          {canEditProject ? <button type="button" onClick={saveVisualBible} disabled={isPending} className="mt-5 rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Save Visual Bible</button> : null}
+        </section>
+
+        <section className="rounded-2xl border border-slate-800 bg-slate-950/50 p-6" aria-labelledby="timeline-heading">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Versioned planning</p><h4 id="timeline-heading" className="mt-2 text-xl font-semibold text-white">Scene & Shot Timeline</h4></div>
+            {EDIT_ROLES.includes(actorRole) ? <button type="button" onClick={generatePlan} disabled={isPending} className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50">Generate Scene Plan</button> : null}
+          </div>
+          {!plan ? <p className="mt-5 text-sm text-slate-400">No Scene Plan version exists yet. Generate one from the current brief and Visual Bible.</p> : (
+            <div className="mt-5 flex flex-wrap items-center gap-3"><span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusTone(plan.status)}`}>Version {plan.versionNumber} · {plan.status}</span><span className={plan.sourceFresh ? "text-xs text-emerald-300" : "text-xs text-red-300"}>{plan.sourceFresh ? "Source current" : "Source stale"}</span></div>
+          )}
+        </section>
+      </section>
+
+      <section className="space-y-6" aria-labelledby="quality-approval-stage-heading">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Production stage</p>
+          <h3 id="quality-approval-stage-heading" className="mt-2 text-2xl font-semibold text-white">2. Quality & approval</h3>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">Run deterministic QC, resolve blockers, acknowledge warnings when permitted, and preserve approved versions through copy-on-write editing.</p>
         </div>
-        {!plan ? <p className="mt-5 text-sm text-slate-400">No Scene Plan version exists yet. Generate one from the current brief and Visual Bible.</p> : (
-          <div className="mt-5 space-y-5">
-            <div className="flex flex-wrap items-center gap-3"><span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusTone(plan.status)}`}>Version {plan.versionNumber} · {plan.status}</span><span className={plan.sourceFresh ? "text-xs text-emerald-300" : "text-xs text-red-300"}>{plan.sourceFresh ? "Source current" : "Source stale"}</span></div>
-            {plan.status === "APPROVED" ? <p className="rounded-xl border border-emerald-900/50 bg-emerald-950/20 p-3 text-sm text-emerald-200">Approved versions are immutable.</p> : null}
+
+        <section className="rounded-2xl border border-slate-800 bg-slate-950/50 p-6" aria-labelledby="qc-heading">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Deterministic quality gate</p><h4 id="qc-heading" className="mt-2 text-xl font-semibold text-white">QC & Approval</h4></div>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-sm text-slate-400">{findingSummary}</span>
+              {plan && EDIT_ROLES.includes(actorRole) && ["DRAFT", "QC_REQUIRED", "REVIEW_REQUIRED"].includes(plan.status) ? <button type="button" onClick={runQc} disabled={isPending} className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Run QC</button> : null}
+            </div>
+          </div>
+          {plan?.status === "APPROVED" ? <p className="mt-5 rounded-xl border border-emerald-900/50 bg-emerald-950/20 p-3 text-sm text-emerald-200">Approved versions are immutable.</p> : null}
+          {plan?.findings.length ? <div className="mt-5 space-y-3">{plan.findings.map((finding) => <div key={finding.id} className="rounded-xl border border-slate-800 bg-slate-950 p-4"><div className="flex flex-wrap items-center gap-2"><span className="text-xs font-semibold text-slate-300">{finding.severity}</span><span className="font-mono text-xs text-slate-500">{finding.code}</span>{finding.acknowledged ? <span className="text-xs text-emerald-300">Acknowledged</span> : null}</div><p className="mt-2 text-sm leading-6 text-slate-300">{finding.message}</p></div>)}</div> : <p className="mt-5 text-sm text-slate-400">No QC findings are recorded for the current plan.</p>}
+          {plan && warningCount > 0 && canApprove ? <label className="mt-5 flex items-start gap-3 text-sm text-slate-300"><input type="checkbox" aria-label="Acknowledge outstanding QC warnings" checked={acknowledgeWarnings} onChange={(event) => setAcknowledgeWarnings(event.target.checked)} className="mt-1" /><span>Acknowledge outstanding QC warnings</span></label> : null}
+          <div className="mt-5 flex flex-wrap gap-3">
+            {plan && canApprove ? <button type="button" onClick={approvePlan} disabled={approvalDisabled} className="rounded-xl bg-emerald-200 px-4 py-2 text-sm font-semibold text-emerald-950 disabled:opacity-40">Approve Scene Plan</button> : null}
+            {plan?.status === "APPROVED" && EDIT_ROLES.includes(actorRole) ? <button type="button" onClick={cloneForEdit} disabled={isPending} className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Create editable version</button> : null}
+          </div>
+        </section>
+      </section>
+
+      <section className="space-y-6" aria-labelledby="generate-stage-heading">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Production stage</p>
+          <h3 id="generate-stage-heading" className="mt-2 text-2xl font-semibold text-white">3. Generate</h3>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">Review per-shot creative direction and generation specifications, then generate approved current shots through the secure provider workflow.</p>
+        </div>
+
+        {!plan ? <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-6 text-sm text-slate-400">Generate a Scene Plan in stage 1 before shot-level work is available.</div> : (
+          <div className="space-y-5">
             {plan.status === "APPROVED" && plan.sourceFresh ? <div className="rounded-xl border border-emerald-800/60 bg-emerald-950/20 p-4"><p className="text-sm font-semibold text-emerald-100">Approved Scene Plan is ready for Phase 7 shot generation.</p><p className="mt-1 text-sm leading-6 text-emerald-200/80">Generate each approved shot through the secure provider worker; completed output is imported into PAK Media before it is marked ready.</p></div> : null}
             <ScenePlanEditor organizationId={organizationId} actorRole={actorRole} planVersionId={plan.id} status={plan.status} sourceFresh={plan.sourceFresh} scenes={plan.scenes} />
           </div>
         )}
-      </section>
-
-      <section className="rounded-2xl border border-slate-800 bg-slate-950/50 p-6" aria-labelledby="qc-heading">
-        <div className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Deterministic quality gate</p><h3 id="qc-heading" className="mt-2 text-xl font-semibold text-white">QC & Approval</h3></div><span className="text-sm text-slate-400">{findingSummary}</span></div>
-        {plan?.findings.length ? <div className="mt-5 space-y-3">{plan.findings.map((finding) => <div key={finding.id} className="rounded-xl border border-slate-800 bg-slate-950 p-4"><div className="flex flex-wrap items-center gap-2"><span className="text-xs font-semibold text-slate-300">{finding.severity}</span><span className="font-mono text-xs text-slate-500">{finding.code}</span>{finding.acknowledged ? <span className="text-xs text-emerald-300">Acknowledged</span> : null}</div><p className="mt-2 text-sm leading-6 text-slate-300">{finding.message}</p></div>)}</div> : <p className="mt-5 text-sm text-slate-400">No QC findings are recorded for the current plan.</p>}
-        {plan && warningCount > 0 && canApprove ? <label className="mt-5 flex items-start gap-3 text-sm text-slate-300"><input type="checkbox" aria-label="Acknowledge outstanding QC warnings" checked={acknowledgeWarnings} onChange={(event) => setAcknowledgeWarnings(event.target.checked)} className="mt-1" /><span>Acknowledge outstanding QC warnings</span></label> : null}
-        <div className="mt-5 flex flex-wrap gap-3">
-          {plan && canApprove ? <button type="button" onClick={approvePlan} disabled={approvalDisabled} className="rounded-xl bg-emerald-200 px-4 py-2 text-sm font-semibold text-emerald-950 disabled:opacity-40">Approve Scene Plan</button> : null}
-          {plan?.status === "APPROVED" && EDIT_ROLES.includes(actorRole) ? <button type="button" onClick={cloneForEdit} disabled={isPending} className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Create editable version</button> : null}
-        </div>
       </section>
     </div>
   );

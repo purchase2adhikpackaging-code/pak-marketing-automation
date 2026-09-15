@@ -1,8 +1,8 @@
 # PAK Marketing Automation — UI/UX Design Specification
 
 **Document ID:** PAK-UX-001  
-**Version:** 1.2  
-**Status:** Current baseline through Organization Profile / Brand Kit / Knowledge ingestion foundation
+**Version:** 1.3  
+**Status:** Current baseline through Phase 8, Organization Identity / Brand / Knowledge foundation, and UI/UX Production Convergence
 
 ## 1. UX objective
 
@@ -24,16 +24,16 @@ A route is not considered implemented merely because it renders. Primary journey
 
 | Surface | Current maturity |
 |---|---|
-| Global shell/navigation | Implemented |
-| Content Studio | Implemented |
+| Global shell/navigation | Implemented; grouped Operational / Administration / Roadmap navigation |
+| Dashboard | Implemented production command center |
+| Content Studio | Implemented; authoritative Profile/Brand/Core context is visible and server-resolved |
 | Knowledge Base + Core/ingestion controls | Implemented |
-| Settings → Organization Profile | Implemented |
+| Settings landing + Organization Profile | Implemented |
 | Settings → Brand Kit | Implemented |
 | Settings → Integrations OpenAI/LTX | Implemented |
-| Scene Planning | Implemented; Brand Kit defaults integrated |
+| Scene Planning | Implemented; Brand Kit defaults integrated and production stages surfaced |
 | Approved-shot video generation controls | Implemented |
-| Media Library | Implemented foundation used by Brand/document flows |
-| Dashboard | Partial |
+| Media Library | Implemented operational catalogue/detail/preview/upload/archive/delete surface |
 | Approval Center / Publishing / Calendar / Analytics | Roadmap-governed |
 | AI Representative / Campus / Podcast / Testimonials | Roadmap-governed |
 | Manual Generation | Foundation/readiness only |
@@ -53,18 +53,24 @@ Truthful readiness screens are intentional product behavior for unimplemented mo
 
 ## 4. Navigation
 
-Current primary navigation remains:
-Dashboard, Content Studio, Scene Planning, AI Representative, Campus / Locations, Podcast, Manual Generation, Student Testimonials, Media Library, Knowledge Base, Content Calendar, Approval Center, Publishing, Analytics and Settings.
+Navigation is grouped by workflow maturity while retaining all governed routes:
 
-Settings exposes Organization Profile, Brand Kit and Integrations. Authorization remains server/database controlled. Hiding a control never substitutes for authorization.
+- **Operational:** Dashboard, Content Studio, Scene Planning, Media Library, Knowledge Base.
+- **Administration:** Settings.
+- **Roadmap:** Approval Center, Publishing, Content Calendar, Analytics, AI Representative, Podcast, Campus / Locations, Student Testimonials and Manual Generation.
+
+Settings exposes Organization Profile, Brand Kit and Integrations. Authorization remains server/database controlled. Hiding a control never substitutes for authorization. Roadmap routes remain visible and truthfully labelled rather than being hidden or simulated as implemented workflows.
 
 ## 5. Dashboard
 
 - **UX-DASH-001** Display active organization, role and concise system state.
-- **UX-DASH-002** Show workflow counts/links as authoritative domains become available.
-- **UX-DASH-003** Show recent generation/review/publish/integration metadata without secrets.
+- **UX-DASH-002** Show authoritative institutional readiness, content, Knowledge, scene/video production, Media Library and integration state from server-side organization-scoped reads.
+- **UX-DASH-003** Show OpenAI/LTX normalized integration metadata without exposing secrets.
+- **UX-DASH-004** Resolve a deterministic next production action from authoritative workflow state rather than synthetic scores or browser guesses.
+- **UX-DASH-005** Preserve safe error/no-workspace states when the authenticated account has no usable organization context.
+- **UX-DASH-006** Do not display a fabricated numeric health score.
 
-**Current maturity:** Partial.
+**Current maturity:** Implemented production command center.
 
 ## 6. Content Studio
 
@@ -92,6 +98,9 @@ A GENERATED artifact may expose `Create Scene Plan`; authoritative script/revisi
 ### UX-CS-008 Automatic identity grounding
 The user does not paste or edit authoritative Organization Profile/Brand Kit content inside the generation form. Those inputs are resolved automatically server-side. Additional context remains visibly separate from institutional authority.
 
+### UX-CS-009 Authoritative context visibility
+The operator workspace exposes a read-only `Authoritative context` summary for current Profile revision, Brand Kit revision and automatically grounded Core Knowledge count. Explicit selected non-Core Knowledge remains a separate `0..20` selection concept; zero selected non-Core sources does not disable Core grounding.
+
 **Current maturity:** Implemented.
 
 ## 7. Knowledge Base
@@ -100,7 +109,7 @@ The user does not paste or edit authoritative Organization Profile/Brand Kit con
 Show title, status, source type, source label, revision, Core badge where applicable and last update.
 
 ### UX-KB-002 Manual create form
-Fields: Title, Content, Source type, Source label, Source reference. New records begin DRAFT.
+Fields: Title, Content, Source label and Source reference for manual entry. New records begin DRAFT. Document/URL sources use the dedicated ingestion flow rather than a manual source-type selector.
 
 ### UX-KB-003 Edit form
 Managers edit business fields with current revision visible.
@@ -115,7 +124,7 @@ REVIEWER/ANALYST see ACTIVE approved Knowledge only and no mutation controls.
 Revision conflict prompts reload rather than silent overwrite.
 
 ### UX-KB-007 Core Knowledge control
-OWNER/ADMIN see `Mark Core` / `Remove Core` control and a visible Core Knowledge badge. EDITOR may manage normal Knowledge but sees no Core mutation control. REVIEWER/ANALYST remain read-only.
+OWNER/ADMIN see `Mark Core` / `Remove Core` control and a visible Core Knowledge badge with clear automatic-grounding semantics. EDITOR may manage normal Knowledge but sees no Core mutation control. REVIEWER/ANALYST remain read-only.
 
 ### UX-KB-008 Document ingestion
 Authorized managers may upload PDF, DOCX, PPTX or TXT. The file first uses the private Media Library upload path, then Knowledge ingestion receives the safe Media asset ID. The form exposes a `Document source title` input and upload progress/error state.
@@ -129,7 +138,10 @@ Successful document/URL extraction displays an explicit review message such as `
 ### UX-KB-011 Source provenance
 Document/URL-generated records expose safe source label/reference metadata and linked lifecycle context without revealing private storage paths or signed URLs.
 
-**Current maturity:** Implemented and E2E-verified for OWNER document→DRAFT plus REVIEWER read-only behavior.
+### UX-KB-012 Source-entry hierarchy
+The operator surface visibly separates `Add manually` from `Ingest document or URL`, and explains DRAFT versus ACTIVE lifecycle semantics before mutation.
+
+**Current maturity:** Implemented; lifecycle, Core RBAC and ingestion behavior are covered by unit/action/live proofs, with browser coverage using the repository's existing fixture gates.
 
 ## 8. Settings
 
@@ -140,7 +152,7 @@ Provider cards show provider name/purpose, safe state, masked hint, last verifie
 API key is password/write-only. After save, clear input and display only safe masked metadata.
 
 ### UX-SET-003 Meta configuration
-Future Meta secret fields remain write-only; non-secret IDs may be readable/editable.
+Meta remains a truthful `Planned · Phase 10` integration on the Settings landing until Phase 10 is implemented. No fake credential workflow is exposed.
 
 ### UX-SET-004 Test connection
 Where safe, provider validation returns normalized health only.
@@ -169,7 +181,10 @@ Asset selection lists only safe same-org ACTIVE image Media assets. UI stores/se
 ### UX-SET-012 Institutional identity clarity
 Official logo assignment is presented as organizational identity, not a per-project creative preference. Scene Planning Visual Bible may refine presentation but does not replace the official logo asset.
 
-**Current maturity:** Organization Profile, Brand Kit and OpenAI/LTX Integrations implemented.
+### UX-SET-013 Three-domain landing
+Settings landing summarizes Organization Profile and Brand Kit configured/not-configured state with current revision when available, and Integrations with normalized OpenAI/LTX state. Repository/query failures remain visible safe errors rather than being converted to `Not configured`. Raw API keys/secrets are never rendered.
+
+**Current maturity:** Settings landing, Organization Profile, Brand Kit and OpenAI/LTX Integrations implemented; Meta remains Planned Phase 10.
 
 ## 9. Media Library
 
@@ -188,7 +203,10 @@ Generated video references PAK-owned private Media identity, not provider URLs.
 ### UX-MEDIA-005 Brand/document reuse
 Brand Kit image pickers and Knowledge document ingestion reuse Media Library asset identities instead of implementing parallel binary stores.
 
-**Current maturity:** Implemented foundation sufficient for Brand Kit/document workflows.
+### UX-MEDIA-006 Operational catalogue semantics
+The Media Library is an operational Phase 8 surface, not `Foundation only`. It presents only metadata that actually exists (asset type/source/status/lineage) and does not infer a category when authoritative metadata is absent.
+
+**Current maturity:** Implemented operational catalogue/detail/preview/upload/archive/delete surface used by Brand, Knowledge and video workflows.
 
 ## 10. Scene Planning
 
@@ -231,6 +249,9 @@ Scene Planning automatically receives current Brand Kit institutional palette/ty
 ### UX-SCENE-013 Official-logo authority
 Where institutional brand context is displayed, official logo asset identity is distinct from Visual Bible creative direction. Project styling may refine placement/treatment but must not imply that a different logo becomes official.
 
+### UX-SCENE-014 Production-stage hierarchy
+The workspace presents the implemented production flow as four stages: `Plan`, `Review & approve`, `Generate shots`, `Assemble`. This hierarchy is presentation-only and does not alter lifecycle/RBAC authority. A completed final assembly may link to `/media-library`; unsupported asset deep links are not invented.
+
 **Current maturity:** Implemented.
 
 ## 11. Approved-shot video generation
@@ -264,12 +285,12 @@ AI Representative, Podcast, Campus/Locations, Student Testimonials, Content Cale
 ## 14. Responsive behavior
 
 ### Desktop
-Persistent navigation, multi-column workspaces where useful, dense but readable administrative information.
+Persistent grouped navigation, multi-column workspaces where useful, dense but readable administrative information.
 
 ### Mobile
-Single-column critical flows, accessible navigation disclosure, cards instead of horizontal-table dependency and no critical control requiring horizontal overflow.
+Single-column critical flows, accessible grouped navigation disclosure, cards instead of horizontal-table dependency and no critical control requiring horizontal overflow.
 
-Content Studio, Knowledge Base, Settings/Profile, Settings/Brand Kit, Scene Planning and Settings/Integrations should remain usable in modern mobile Chrome.
+Dashboard, Content Studio, Knowledge Base, Settings/Profile, Settings/Brand Kit, Scene Planning, Media Library and Settings/Integrations should remain usable in modern mobile Chrome.
 
 ## 15. Accessibility baseline
 
@@ -291,3 +312,5 @@ Future visual refreshes may alter theme without changing semantic hierarchy, sta
 ## 17. UX acceptance rule
 
 A screen is implemented only when its primary journey, loading/empty/error/success states, authorization behavior and responsive interaction are defined and verified. A readiness/placeholder page is intentionally Planned/Foundation only and must never be counted as implementation of the corresponding PRD workflow. For ingestion, `DRAFT created` and `Knowledge activated` are always distinct user states.
+
+The browser E2E suite uses the repository's existing development-only fixture gates and does not fabricate organization/domain rows solely to force success-state rendering. Success-state UI branches are verified deterministically at component/service level; browser tests additionally prove truthful no-workspace/recovery behavior, navigation and roadmap boundaries.

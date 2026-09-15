@@ -1,8 +1,11 @@
 export const dynamic = "force-dynamic";
 
+import { AppError } from "@/lib/errors/app-error";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type { AppRole } from "@/modules/auth/roles";
+import { brandKitRepository } from "@/modules/brand-kit/repository";
 import { SupabaseKnowledgeRepository } from "@/modules/knowledge-base/repository";
+import { organizationProfileRepository } from "@/modules/organization-profile/repository";
 import { ContentStudioForm } from "./content-studio-form";
 import type { SelectableKnowledgeRecord } from "./knowledge-selector";
 
@@ -17,16 +20,32 @@ type MembershipRow = {
     | null;
 };
 
+type AuthoritativeGenerationContext = {
+  profileRevision: number | null;
+  brandKitRevision: number | null;
+  activeCoreKnowledgeCount: number;
+};
+
 type ContentStudioOrganization = {
   id: string;
   label: string;
   role: AppRole;
   knowledgeRecords: SelectableKnowledgeRecord[];
+  authoritativeContext: AuthoritativeGenerationContext;
 };
 
 function organizationName(row: MembershipRow): string {
   const organization = Array.isArray(row.organizations) ? row.organizations[0] : row.organizations;
   return organization?.name?.trim() || "PAK Organization";
+}
+
+async function revisionOrNull(load: () => Promise<{ revision: number }>): Promise<number | null> {
+  try {
+    return (await load()).revision;
+  } catch (error) {
+    if (error instanceof AppError && error.code === "NOT_FOUND") return null;
+    throw error;
+  }
 }
 
 export default async function ContentStudioPage() {
@@ -52,16 +71,29 @@ export default async function ContentStudioPage() {
     const knowledgeRepository = new SupabaseKnowledgeRepository();
     organizations = await Promise.all(
       eligibleOrganizations.map(async (organization) => {
-        const records = await knowledgeRepository.listSelectable(organization.id);
+        const [records, profileRevision, brandKitRevision] = await Promise.all([
+          knowledgeRepository.listSelectable(organization.id),
+          revisionOrNull(() => organizationProfileRepository.get(organization.id)),
+          revisionOrNull(() => brandKitRepository.get(organization.id)),
+        ]);
+        const activeCoreKnowledgeCount = records.filter((record) => record.isCore).length;
+
         return {
           ...organization,
-          knowledgeRecords: records.map((record) => ({
-            id: record.id,
-            title: record.title,
-            sourceType: record.sourceType,
-            ...(record.sourceLabel !== undefined ? { sourceLabel: record.sourceLabel } : {}),
-            revision: record.revision,
-          })),
+          authoritativeContext: {
+            profileRevision,
+            brandKitRevision,
+            activeCoreKnowledgeCount,
+          },
+          knowledgeRecords: records
+            .filter((record) => !record.isCore)
+            .map((record) => ({
+              id: record.id,
+              title: record.title,
+              sourceType: record.sourceType,
+              ...(record.sourceLabel !== undefined ? { sourceLabel: record.sourceLabel } : {}),
+              revision: record.revision,
+            })),
         };
       }),
     );
