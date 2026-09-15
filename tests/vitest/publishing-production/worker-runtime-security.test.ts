@@ -33,9 +33,9 @@ describe("publishing worker runtime privilege boundary", () => {
     expect(runtimeSource).toContain("upsertPublication");
   });
 
-  it("propagates the already-authorized opaque worker capability through the automatic wrapper into the runtime", () => {
-    expect(routeSource).toMatch(/runConfiguredAutomaticPublishingWorker\(\{[\s\S]*credential/);
-    expect(automaticRuntimeSource).toMatch(/runConfiguredPublishingWorker\(\{[\s\S]*credential:\s*input\.credential/);
+  it("propagates the already-authorized opaque worker capability directly into the bounded D01 runtime", () => {
+    expect(routeSource).toMatch(/runConfiguredPublishingWorker\(\{[\s\S]*credential/);
+    expect(routeSource).not.toContain("runConfiguredAutomaticPublishingWorker");
     expect(runtimeSource).toMatch(/runConfiguredPublishingWorker\(input:\s*\{[\s\S]*credential:\s*string/);
   });
 });
