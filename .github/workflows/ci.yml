@@ -35,6 +35,18 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Diagnostic publishing production tests
+        continue-on-error: true
+        run: npx vitest run tests/vitest/publishing-production --reporter=basic
+
+      - name: Diagnostic publishing factory tests
+        continue-on-error: true
+        run: npx vitest run tests/vitest/publishing-factory --reporter=basic
+
+      - name: Diagnostic source tests
+        continue-on-error: true
+        run: npx vitest run src --reporter=basic
+
       - name: Unit tests
         run: npm run test:run
 
