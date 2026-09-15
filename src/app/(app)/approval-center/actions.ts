@@ -31,11 +31,17 @@ const SUBMIT_ROLES: readonly AppRole[] = ["OWNER", "ADMIN", "EDITOR"];
 const DECIDE_ROLES: readonly AppRole[] = ["OWNER", "ADMIN", "REVIEWER"];
 const REVIEW_ROLES: readonly AppRole[] = ["OWNER", "ADMIN", "EDITOR", "REVIEWER"];
 
+const cursorSchema = z.object({
+  requestedAt: z.string().datetime(),
+  id: z.string().uuid(),
+}).strict();
+
 const listSchema = z.object({
   organizationId: z.string().uuid(),
   status: z.enum(APPROVAL_STATUSES).optional(),
   targetType: z.enum(APPROVAL_TARGET_TYPES).optional(),
   limit: z.number().int().positive().max(50).optional(),
+  cursor: cursorSchema.optional(),
 }).strict();
 
 const detailSchema = z.object({
@@ -45,7 +51,7 @@ const detailSchema = z.object({
 
 const previewSchema = z.object({
   organizationId: z.string().uuid(),
-  mediaAssetId: z.string().uuid(),
+  requestId: z.string().uuid(),
 }).strict();
 
 const previewResultSchema = z.object({
@@ -186,6 +192,7 @@ export async function executeListApprovalRequestsAction(
       ...(parsed.data.status !== undefined ? { status: parsed.data.status } : {}),
       ...(parsed.data.targetType !== undefined ? { targetType: parsed.data.targetType } : {}),
       ...(parsed.data.limit !== undefined ? { limit: parsed.data.limit } : {}),
+      ...(parsed.data.cursor !== undefined ? { cursor: parsed.data.cursor } : {}),
     };
     return { ok: true, page: await dependencies.list(listInput) };
   } catch {
@@ -217,7 +224,7 @@ export async function executePreviewApprovalMediaAction(
   dependencies: ApprovalCenterActionDependencies,
 ): Promise<PreviewApprovalMediaActionResult> {
   const parsed = previewSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: "Please check the media asset." };
+  if (!parsed.success) return { ok: false, error: "Please check the approval request." };
 
   try {
     const authorization = await authorizeMember(parsed.data.organizationId, dependencies);
@@ -225,13 +232,27 @@ export async function executePreviewApprovalMediaAction(
     if (!REVIEW_ROLES.includes(authorization.role)) {
       return { ok: false, error: "You do not have permission to preview approval media." };
     }
+
+    const detail = await dependencies.getDetail(parsed.data.organizationId, parsed.data.requestId);
+    if (!detail || detail.target.type !== "MEDIA_ASSET" || detail.status === "SUPERSEDED") {
+      return { ok: false, error: "This approval media preview is no longer available." };
+    }
+
+    const expectedChecksum = detail.targetChecksum;
+    if (!expectedChecksum || expectedChecksum !== detail.target.checksum) {
+      return { ok: false, error: "The approval media identity could not be verified." };
+    }
+
     const response = await dependencies.previewMedia({
       operation: "preview",
       organizationId: parsed.data.organizationId,
-      mediaAssetId: parsed.data.mediaAssetId,
+      mediaAssetId: detail.target.mediaAssetId,
+      expectedChecksum,
     });
     const safe = previewResultSchema.safeParse(response);
-    if (!safe.success) return { ok: false, error: "The secure media preview response was invalid." };
+    if (!safe.success || safe.data.mediaAssetId !== detail.target.mediaAssetId) {
+      return { ok: false, error: "The secure media preview response was invalid." };
+    }
     return { ok: true, ...safe.data };
   } catch {
     return { ok: false, error: "A secure media preview could not be created." };
