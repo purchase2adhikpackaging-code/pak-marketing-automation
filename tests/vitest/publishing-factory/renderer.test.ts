@@ -31,6 +31,17 @@ describe("publication renderer", () => {
     expect(browserHealthProbeSource).toContain("%PDF-");
   });
 
+  it("waits for every image to decode and rejects broken images before PDF generation", () => {
+    expect(rendererSource).toContain("waitForPublicationImages");
+    expect(rendererSource).toContain("document.images");
+    expect(rendererSource).toContain("image.decode");
+    expect(rendererSource).toContain("naturalWidth");
+    expect(rendererSource).toContain("Broken publication image");
+    expect(rendererSource.indexOf("waitForPublicationImages(page)")).toBeLessThan(
+      rendererSource.indexOf("await page.pdf({"),
+    );
+  });
+
   it("renders a non-empty A4 PDF and page image inside the artifact root", async () => {
     const artifactRoot = await mkdtemp(join(tmpdir(), "pak-publishing-"));
     const html = readFileSync("publishing/fixtures/manuscript-good.fixture.html", "utf8");
