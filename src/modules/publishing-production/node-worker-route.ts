@@ -60,7 +60,9 @@ export async function handlePublishingWorkerRequest(
   const workerId = `vercel-${crypto.randomUUID()}`;
   try {
     const result = await dependencies.run({ workerId, concurrency, credential });
-    if (result.claimed > 0) dependencies.scheduleNext?.({ concurrency, credential });
+    if (result.claimed > 0 && result.failed === 0) {
+      dependencies.scheduleNext?.({ concurrency, credential });
+    }
     return json(200, { ok: true, ...result });
   } catch (error) {
     return json(500, {
