@@ -13,6 +13,12 @@ import {
 
 const DECISION_ROLES: readonly AppRole[] = ["OWNER", "ADMIN", "REVIEWER"];
 
+type PendingDecision = {
+  decision: ApprovalDecision;
+  label: string;
+  confirmLabel: string;
+} | null;
+
 function formatTime(value: string): string {
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleString();
@@ -34,6 +40,16 @@ function eventActor(event: ApprovalEvent): string {
   return event.actorUserId ? `User ${event.actorUserId.slice(0, 8)}…` : "User";
 }
 
+function decisionConfirmation(decision: ApprovalDecision): NonNullable<PendingDecision> {
+  if (decision === "APPROVE") {
+    return { decision, label: "Confirm approval", confirmLabel: "Confirm approval" };
+  }
+  if (decision === "REQUEST_CHANGES") {
+    return { decision, label: "Confirm request changes", confirmLabel: "Confirm request changes" };
+  }
+  return { decision, label: "Confirm rejection", confirmLabel: "Confirm rejection" };
+}
+
 export function ApprovalReviewClient({
   organizationId,
   role,
@@ -45,6 +61,7 @@ export function ApprovalReviewClient({
 }) {
   const [detail, setDetail] = useState(initialDetail);
   const [comment, setComment] = useState("");
+  const [pendingDecision, setPendingDecision] = useState<PendingDecision>(null);
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
@@ -53,6 +70,7 @@ export function ApprovalReviewClient({
   useEffect(() => {
     setDetail(initialDetail);
     setComment("");
+    setPendingDecision(null);
     setError(null);
     setPreviewUrl(null);
     setPreviewError(null);
@@ -64,37 +82,50 @@ export function ApprovalReviewClient({
     return loadApprovalDetailAction({ organizationId, requestId: detail.id });
   }
 
-  function decide(decision: ApprovalDecision) {
+  function requestDecision(decision: ApprovalDecision) {
     const normalizedComment = comment.trim();
     if ((decision === "REQUEST_CHANGES" || decision === "REJECT") && !normalizedComment) {
+      setPendingDecision(null);
       setError("A comment is required for request changes or rejection.");
       return;
     }
-
     setError(null);
+    setPendingDecision(decisionConfirmation(decision));
+  }
+
+  function confirmDecision() {
+    if (!pendingDecision) return;
+    const selected = pendingDecision;
+    const normalizedComment = comment.trim();
+    setPendingDecision(null);
+    setError(null);
+
     startTransition(async () => {
       const result = await decideApprovalAction({
         organizationId,
         requestId: detail.id,
-        decision,
+        decision: selected.decision,
         ...(normalizedComment ? { comment: normalizedComment } : {}),
       });
+
+      // A failed decision may mean another reviewer or a supersession trigger won the race.
+      // Refresh from the authoritative server state before showing the final outcome.
+      const refreshed = await refreshAuthoritativeDetail();
+      if (refreshed.ok && refreshed.detail) {
+        setDetail(refreshed.detail);
+        setComment("");
+      } else if (refreshed.ok && !refreshed.detail) {
+        setError("The approval request is no longer available.");
+        return;
+      } else if (!refreshed.ok) {
+        setError(refreshed.error);
+        return;
+      }
+
       if (!result.ok) {
         setError(result.error);
         return;
       }
-
-      const refreshed = await refreshAuthoritativeDetail();
-      if (!refreshed.ok) {
-        setError(refreshed.error);
-        return;
-      }
-      if (!refreshed.detail) {
-        setError("The approval request is no longer available.");
-        return;
-      }
-      setDetail(refreshed.detail);
-      setComment("");
       if (result.staleTarget) {
         setError("The reviewed target changed and the request was superseded.");
       }
@@ -105,9 +136,8 @@ export function ApprovalReviewClient({
     if (detail.target.type !== "MEDIA_ASSET") return;
     setPreviewError(null);
     setPreviewUrl(null);
-    const mediaAssetId = detail.target.mediaAssetId;
     startTransition(async () => {
-      const result = await previewApprovalMediaAction({ organizationId, mediaAssetId });
+      const result = await previewApprovalMediaAction({ organizationId, requestId: detail.id });
       if (!result.ok) {
         setPreviewError(result.error);
         return;
@@ -159,12 +189,7 @@ export function ApprovalReviewClient({
             <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4">
               <p className="text-sm font-semibold text-white">Secure preview</p>
               <p className="mt-1 text-xs leading-5 text-slate-500">A short-lived preview is created only when requested and is never persisted in approval history.</p>
-              <button
-                type="button"
-                onClick={createPreview}
-                disabled={isPending}
-                className="mt-4 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50"
-              >
+              <button type="button" onClick={createPreview} disabled={isPending} className="mt-4 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50">
                 Create secure preview
               </button>
               {previewError ? <p role="alert" className="mt-3 text-sm text-red-300">{previewError}</p> : null}
@@ -243,23 +268,25 @@ export function ApprovalReviewClient({
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300">Decision</p>
           <label className="mt-4 block space-y-2">
             <span className="text-sm font-medium text-slate-200">Decision comment</span>
-            <textarea
-              aria-label="Decision comment"
-              value={comment}
-              onChange={(event) => setComment(event.target.value)}
-              maxLength={2000}
-              rows={4}
-              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
-              placeholder="Required for request changes or rejection; optional for approval."
-              disabled={isPending}
-            />
+            <textarea aria-label="Decision comment" value={comment} onChange={(event) => setComment(event.target.value)} maxLength={2000} rows={4} className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white" placeholder="Required for request changes or rejection; optional for approval." disabled={isPending || Boolean(pendingDecision)} />
           </label>
           {error ? <p role="alert" className="mt-3 text-sm text-red-300">{error}</p> : null}
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button type="button" onClick={() => decide("APPROVE")} disabled={isPending} className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50">Approve</button>
-            <button type="button" onClick={() => decide("REQUEST_CHANGES")} disabled={isPending} className="rounded-xl border border-amber-800 px-4 py-2 text-sm font-semibold text-amber-200 disabled:opacity-50">Request changes</button>
-            <button type="button" onClick={() => decide("REJECT")} disabled={isPending} className="rounded-xl border border-red-900 px-4 py-2 text-sm font-semibold text-red-200 disabled:opacity-50">Reject</button>
-          </div>
+          {pendingDecision ? (
+            <div className="mt-4 rounded-xl border border-amber-800/70 bg-amber-950/30 p-4">
+              <p className="text-sm font-semibold text-amber-100">{pendingDecision.label}</p>
+              <p className="mt-1 text-xs leading-5 text-amber-200/80">This decision is recorded in immutable approval history. Confirm to continue.</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button type="button" onClick={confirmDecision} disabled={isPending} className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50">{pendingDecision.confirmLabel}</button>
+                <button type="button" onClick={() => setPendingDecision(null)} disabled={isPending} className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 disabled:opacity-50">Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button type="button" onClick={() => requestDecision("APPROVE")} disabled={isPending} className="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50">Approve</button>
+              <button type="button" onClick={() => requestDecision("REQUEST_CHANGES")} disabled={isPending} className="rounded-xl border border-amber-800 px-4 py-2 text-sm font-semibold text-amber-200 disabled:opacity-50">Request changes</button>
+              <button type="button" onClick={() => requestDecision("REJECT")} disabled={isPending} className="rounded-xl border border-red-900 px-4 py-2 text-sm font-semibold text-red-200 disabled:opacity-50">Reject</button>
+            </div>
+          )}
         </section>
       ) : error ? <p role="alert" className="rounded-xl border border-red-900/50 bg-red-950/20 p-4 text-sm text-red-300">{error}</p> : null}
     </div>
