@@ -1,0 +1,128 @@
+@page {
+  size: A4;
+  margin: 18mm 16mm 18mm 20mm;
+}
+
+:root {
+  --pak-navy: #0b2d4d;
+  --pak-red: #d8262e;
+  --pak-steel: #60758a;
+  --pak-light: #edf3f7;
+  --pak-text: #14212b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--pak-text);
+  background: white;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+body {
+  font-size: 10.5pt;
+  line-height: 1.45;
+}
+
+main {
+  width: 100%;
+}
+
+h1,
+h2,
+h3 {
+  color: var(--pak-navy);
+  break-after: avoid;
+}
+
+h1 {
+  font-size: 24pt;
+  line-height: 1.1;
+}
+
+h2 {
+  font-size: 16pt;
+  line-height: 1.2;
+  margin-top: 8mm;
+}
+
+figure,
+table,
+.pak-avoid-break {
+  break-inside: avoid;
+}
+
+figure {
+  margin: 5mm 0;
+}
+
+figure img,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+figcaption {
+  font-size: 8.5pt;
+  color: var(--pak-steel);
+  margin-top: 2mm;
+}
+
+[data-pak-box] {
+  overflow: visible;
+  box-sizing: border-box;
+}
+
+.pak-callout {
+  border: 0.35mm solid var(--pak-steel);
+  border-left: 2mm solid var(--pak-red);
+  padding: 4mm;
+  margin: 4mm 0;
+  break-inside: avoid;
+}
+
+.pak-card {
+  border: 0.35mm solid #aebdca;
+  border-radius: 2mm;
+  padding: 4mm;
+  margin: 4mm 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin: 4mm 0;
+}
+
+th,
+td {
+  border: 0.25mm solid #aebdca;
+  padding: 2.5mm;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+th {
+  background: var(--pak-light);
+  color: var(--pak-navy);
+  font-weight: 700;
+}
+
+.pak-page-break {
+  break-before: page;
+}
+
+@media print {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+}

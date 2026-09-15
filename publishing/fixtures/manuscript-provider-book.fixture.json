@@ -1,0 +1,140 @@
+{
+  "blueprint": {
+    "bookId": "PAK-D01-S1-D01-102-TEXTBOOK",
+    "programmeCode": "PAK-D01",
+    "subjectCode": "D01-102",
+    "subjectTitle": "Applied Engineering Mathematics & Physics for Railways",
+    "level": "diploma",
+    "purpose": "Build applied railway engineering calculation competence using controlled units, force models and explicit engineering assumptions.",
+    "prerequisites": [],
+    "knowledgePackIds": ["mechanical-fundamentals"],
+    "chapters": [
+      {
+        "id": "D01-102-CH01",
+        "number": 1,
+        "title": "Engineering quantities and units",
+        "purpose": "Establish controlled engineering quantity, unit and conversion conventions for railway calculations.",
+        "learningOutcomes": ["Apply consistent engineering units and explicit conversion steps in railway calculations."],
+        "requiredKnowledgePackIds": ["mechanical-fundamentals"],
+        "requiredVisualIds": [],
+        "workedExampleRequirements": ["A railway unit-conversion calculation"],
+        "practicalRequirements": [],
+        "assessmentRequirements": ["Short applied calculation set"],
+        "safetyCritical": false,
+        "referenceSourceIds": ["pak-engineering-synthesis"]
+      },
+      {
+        "id": "D01-102-CH02",
+        "number": 2,
+        "title": "Forces, motion and railway engineering models",
+        "purpose": "Apply simplified force and motion models while keeping system boundaries and assumptions explicit.",
+        "learningOutcomes": ["Apply a supervised force-and-motion model to a simplified railway engineering problem."],
+        "requiredKnowledgePackIds": ["mechanical-fundamentals"],
+        "requiredVisualIds": ["mechanical-fundamentals-visual-01"],
+        "workedExampleRequirements": ["A force-balance calculation"],
+        "practicalRequirements": [],
+        "assessmentRequirements": ["Applied force-and-motion problem"],
+        "safetyCritical": false,
+        "referenceSourceIds": ["pak-engineering-synthesis"]
+      }
+    ]
+  },
+  "chapters": {
+    "D01-102-CH01": {
+      "chapterId": "D01-102-CH01",
+      "number": 1,
+      "title": "Engineering quantities and units",
+      "purpose": "Establish controlled engineering quantity, unit and conversion conventions for railway calculations.",
+      "learningOutcomes": ["Apply consistent engineering units and explicit conversion steps in railway calculations."],
+      "keyTerms": [
+        {
+          "term": "engineering unit",
+          "explanation": "A stated unit attached to a physical quantity so that a technical calculation can be interpreted and independently checked."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "Quantities, units and traceable calculation steps",
+          "paragraphs": [
+            "Railway engineering calculations should state each physical quantity together with its unit because an isolated number does not communicate the dimensional meaning needed for technical checking. A disciplined calculation therefore writes the given quantity, performs any necessary conversion explicitly, substitutes the converted value into the selected relationship and carries the resulting unit through the calculation.",
+            "Unit conversion is a mathematical transformation rather than a change to the physical quantity itself. The student should preserve enough intermediate working for another competent reader to reproduce the conversion, identify an incorrect factor and confirm that the final dimensional unit is appropriate for the intended engineering relationship."
+          ]
+        }
+      ],
+      "workedExamples": [
+        {
+          "title": "Convert a train speed for an engineering equation",
+          "problem": "A training exercise provides a train speed in kilometres per hour, while the downstream mechanics relationship requires metres per second. Describe the controlled conversion method without introducing an operational speed limit.",
+          "solutionSteps": [
+            "Write the given speed together with the original kilometres-per-hour unit.",
+            "Apply the kilometre-to-metre and hour-to-second conversion factors as dimensional fractions so that the original units cancel visibly.",
+            "Retain the metres-per-second unit with the converted value and check that the dimensional result is suitable for the downstream equation."
+          ],
+          "conclusion": "The converted training value is dimensionally prepared for the intended mechanics equation; it is not an operational limit or authorization."
+        }
+      ],
+      "practicalActivities": [],
+      "safetyNotes": [
+        "Training calculations do not replace controlled operating, maintenance, inspection or design limits applicable to a real railway vehicle or infrastructure asset."
+      ],
+      "knowledgeChecks": [
+        "Why should the dimensional unit be retained through intermediate calculation steps?"
+      ],
+      "summary": [
+        "State quantities with units, show conversion factors explicitly and check the dimensional result before using a value in a railway engineering relationship."
+      ],
+      "reviewQuestions": [
+        "Describe a reproducible method for checking a railway engineering unit conversion."
+      ],
+      "sourceIds": ["pak-engineering-synthesis"]
+    },
+    "D01-102-CH02": {
+      "chapterId": "D01-102-CH02",
+      "number": 2,
+      "title": "Forces, motion and railway engineering models",
+      "purpose": "Apply simplified force and motion models while keeping system boundaries and assumptions explicit.",
+      "learningOutcomes": ["Apply a supervised force-and-motion model to a simplified railway engineering problem."],
+      "keyTerms": [
+        {
+          "term": "free-body diagram",
+          "explanation": "A representation that isolates a chosen body and shows the external forces and moments acting on that body for engineering analysis."
+        }
+      ],
+      "sections": [
+        {
+          "heading": "System boundaries before force calculations",
+          "paragraphs": [
+            "A useful mechanics calculation begins by defining the body or system being analysed. In a railway teaching problem this may be a simplified vehicle, component or assembly. The analyst then represents the external actions on that selected system rather than mixing forces that act on different boundaries, because a clear boundary is necessary for a meaningful equilibrium or motion relationship.",
+            "The classical relationship between the sum of external forces, mass and acceleration can support supervised training calculations when its assumptions are stated. Real railway behaviour can include additional interfaces, compliance, uncertainty and controlled design constraints, so a simplified classroom model must not be presented as a validated vehicle-design or acceptance calculation."
+          ]
+        }
+      ],
+      "workedExamples": [
+        {
+          "title": "Organise a simplified longitudinal force balance",
+          "problem": "For a training-only vehicle model, describe how to organise a longitudinal force balance before calculating acceleration.",
+          "solutionSteps": [
+            "Define the vehicle training model as the system boundary and choose a positive longitudinal direction.",
+            "List the external longitudinal forces acting on that boundary and assign signs consistently with the chosen direction.",
+            "Form the net external-force expression and relate it to mass and acceleration only after the boundary, units and assumptions have been checked."
+          ],
+          "conclusion": "The calculation structure is suitable for supervised mechanics learning but does not establish a real vehicle performance or acceptance limit."
+        }
+      ],
+      "practicalActivities": [],
+      "safetyNotes": [
+        "Do not convert simplified teaching loads or force examples into component acceptance limits, operating instructions or authorization decisions."
+      ],
+      "knowledgeChecks": [
+        "Why must the system boundary be defined before summing forces in a railway mechanics model?"
+      ],
+      "summary": [
+        "Define the system boundary, represent external actions consistently and state the assumptions of any simplified force-and-motion model."
+      ],
+      "reviewQuestions": [
+        "Explain how a free-body diagram supports a checkable force calculation for a simplified railway component or vehicle."
+      ],
+      "sourceIds": ["pak-engineering-synthesis"]
+    }
+  }
+}

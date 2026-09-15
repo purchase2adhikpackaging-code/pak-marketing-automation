@@ -9,21 +9,35 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "publishing:registry": "tsx src/modules/publishing-factory/cli.ts registry",
+    "publishing:knowledge-validate": "tsx src/modules/publishing-factory/cli.ts knowledge-validate",
+    "publishing:knowledge-list": "tsx src/modules/publishing-factory/cli.ts knowledge-list",
+    "publishing:knowledge-context": "tsx src/modules/publishing-factory/cli.ts knowledge-context",
+    "publishing:qa-fixture": "tsx src/modules/publishing-factory/cli.ts qa-fixture --fixture good",
+    "publishing:book-plan": "tsx src/modules/publishing-factory/cli.ts book-plan",
+    "publishing:book-write": "tsx src/modules/publishing-factory/cli.ts book-write",
+    "publishing:workers": "tsx src/modules/publishing-factory/cli.ts workers",
+    "publishing:resume": "tsx src/modules/publishing-factory/cli.ts resume",
+    "publishing:status": "tsx src/modules/publishing-factory/cli.ts production-status",
+    "publishing:production-smoke": "vitest run tests/vitest/publishing-production --reporter=basic"
   },
   "dependencies": {
+    "@sparticuz/chromium": "^152.0.0",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.57.0",
     "next": "^15.5.0",
     "officeparser": "^7.8.0",
     "openai": "^6.0.0",
+    "pdfjs-dist": "^6.3.289",
+    "playwright-core": "^1.63.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "zod": "^4.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.0",
-    "@playwright/test": "^1.55.0",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4.1.0",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
@@ -34,6 +48,7 @@
     "eslint-config-next": "^15.5.0",
     "jsdom": "^26.1.0",
     "tailwindcss": "^4.1.0",
+    "tsx": "^4.20.5",
     "typescript": "^5.9.0",
     "vitest": "^3.2.0"
   }
